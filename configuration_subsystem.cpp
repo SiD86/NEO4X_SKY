@@ -1,13 +1,8 @@
 #include <Arduino.h>
 #include "TXRX_PROTOCOL.h"
-#include "LIBRARY\I2C.h"
+#include "LIBRARY\EEPROM.h"
 #include "configuration_subsystem.h"
-#define EEPROM_ADDRESS						(0x50)
 
-static bool read_memory(uint8_t* buffer);
-static bool write_memory(uint8_t* buffer);
-static bool read_block_32bytes(uint32_t address, uint8_t* buffer);
-static bool write_block_32bytes(uint32_t address, uint8_t* buffer);
 static bool check_configuration();
 
 CONFIGSS::configuration_t g_configuration;
@@ -16,42 +11,95 @@ CONFIGSS::configuration_t g_configuration;
 //
 // EXTERNAL INTERFACE
 //
+bool CONFIGSS::reset_configuration() {
+	
+	if (EEPROM_write_4bytes(0x0000, 0x01, 1) == false)	// Memory map version
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0001, 0x00, 1) == false)	// FW version
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0002, 0x78563412, 4) == false) // Device ID
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0030, 0x00, 1) == false)	// Calibration ESC
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0031, 400, 2) == false)	// ESC PWM frequency
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0033, 1000, 2) == false)	// Low battery voltage
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0035, 1000, 2) == false)	// Connection lost timeout
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0037, 100, 1) == false)	// Send state data interval
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0040, 2500, 2) == false)	// PID interval
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0042, 300, 2) == false)	// PID limit
+		return false;
+	
+	if (EEPROM_write_4bytes(0x0044, 0, 2) == false)		// PID threshold
+		return false;
+
+	return true;
+}
+
 bool CONFIGSS::load_and_check_configuration() {
 
 	uint8_t buffer[256] = { 0 };
-	if (read_memory(buffer) == false)
+	if (EEPROM_read_bytes(0x0000, buffer, 256) == false)
 		return false;
 
-	memcpy(&g_configuration.memory_map_version, &buffer[0x0000], 1);
-	memcpy(&g_configuration.firmware_version,	&buffer[0x0001], 1);
-	memcpy(&g_configuration.device_ID,			&buffer[0x0002], 4);
+	memcpy(&g_configuration.memory_map_version,			&buffer[0x0000], 1);
+	memcpy(&g_configuration.firmware_version,			&buffer[0x0001], 1);
+	memcpy(&g_configuration.device_ID,					&buffer[0x0002], 4);
 
-	memcpy(&g_configuration.calibration_ESC,	&buffer[0x0030], 1);
-	memcpy(&g_configuration.PWM_frequency_ESC,	&buffer[0x0031], 2);
+	memcpy(&g_configuration.calibration_ESC,			&buffer[0x0030], 1);
+	memcpy(&g_configuration.PWM_frequency_ESC,			&buffer[0x0031], 2);
 
-	memcpy(&g_configuration.battery_low_voltage,&buffer[0x0033], 2);
-	memcpy(&g_configuration.connection_timeout, &buffer[0x0035], 2);
+	memcpy(&g_configuration.battery_low_voltage,		&buffer[0x0033], 2);
+	memcpy(&g_configuration.connection_lost_timeout,	&buffer[0x0035], 2);
+	memcpy(&g_configuration.send_state_data_interval,	&buffer[0x0035], 2);
 
-	memcpy(&g_configuration.PID_interval,		&buffer[0x0040], 2);
-	memcpy(&g_configuration.PID_limit,			&buffer[0x0042], 2);
-	memcpy(&g_configuration.PID_start,			&buffer[0x0044], 2);
+	memcpy(&g_configuration.PID_interval,				&buffer[0x0040], 2);
+	memcpy(&g_configuration.PID_limit,					&buffer[0x0042], 2);
+	memcpy(&g_configuration.PID_threshold,				&buffer[0x0044], 2);
 
-	memcpy(&g_configuration.PID_X,				&buffer[0x0050], 12);
-	memcpy(&g_configuration.I_X_limit,			&buffer[0x005C], 4);
-	
-	memcpy(&g_configuration.PID_Y,				&buffer[0x0060], 12);
-	memcpy(&g_configuration.I_Y_limit,			&buffer[0x006C], 4);
+	memcpy(&g_configuration.PID_X,						&buffer[0x0050], 12);
+	memcpy(&g_configuration.I_X_limit,					&buffer[0x005C], 4);
+		
+	memcpy(&g_configuration.PID_Y,						&buffer[0x0060], 12);
+	memcpy(&g_configuration.I_Y_limit,					&buffer[0x006C], 4);
 
-	memcpy(&g_configuration.PID_Z,				&buffer[0x0070], 12);
-	memcpy(&g_configuration.I_Z_limit,			&buffer[0x007C], 4);
+	memcpy(&g_configuration.PID_Z,						&buffer[0x0070], 12);
+	memcpy(&g_configuration.I_Z_limit,					&buffer[0x007C], 4);
 
-	memcpy(&g_configuration.PID_H,				&buffer[0x0080], 12);
-	memcpy(&g_configuration.I_H_limit,			&buffer[0x008C], 4);
+	memcpy(&g_configuration.PID_H,						&buffer[0x0080], 12);
+	memcpy(&g_configuration.I_H_limit,					&buffer[0x008C], 4);
+
+	delay(1000);
+
+	Serial.println(g_configuration.memory_map_version);
+	Serial.println(g_configuration.firmware_version);
+	Serial.println(g_configuration.device_ID);
+	Serial.println(g_configuration.calibration_ESC);
+	Serial.println(g_configuration.PWM_frequency_ESC);
+	Serial.println(g_configuration.battery_low_voltage);
+	Serial.println(g_configuration.connection_lost_timeout);
+	Serial.println(g_configuration.send_state_data_interval);
+	Serial.println(g_configuration.PID_interval);
+	Serial.println(g_configuration.PID_limit);
+	Serial.println(g_configuration.PID_threshold);
 
 	// Reset calibration ESC parameter
-	if (g_configuration.calibration_ESC == 0x01) {
-		buffer[0x0030] = 0x00;
-		write_memory(buffer);
+	if (g_configuration.calibration_ESC == 0xAA) {
+		Serial.println("CALIBRATION RESET");
+		EEPROM_write_4bytes(0x0030, 0x00, 1);
 	}
 	
 	return check_configuration();
@@ -109,14 +157,14 @@ void CONFIGSS::enter_to_configuration_mode() {
 
 		case TXRX::UART_CMD_LOAD_MEMORY_PAGE:
 			data_for_write = TXRX::UART_ACK_SUCCESS;
-			if (read_memory(buffer) == false)
+			if (EEPROM_read_bytes(0x0000, buffer, 256) == false)
 				data_for_write = TXRX::UART_ACK_FAIL;
 			Serial.write(&data_for_write, 1);
 			break;
 
 		case TXRX::UART_CMD_SAVE_MEMORY_PAGE:
 			data_for_write = TXRX::UART_ACK_SUCCESS;
-			if (write_memory(buffer) == false)
+			if (EEPROM_write_bytes(0x0000, buffer, 256) == false)
 				data_for_write = TXRX::UART_ACK_FAIL;
 			Serial.write(&data_for_write, 1);
 			break;
@@ -132,53 +180,6 @@ void CONFIGSS::enter_to_configuration_mode() {
 //
 // INTERNAL INTERFACE
 //
-static bool read_memory(uint8_t* buffer) {
-
-	I2C_set_internal_address_length(2);
-
-	for (uint32_t address = 0x00; address <= 0xE0; address += 0x20) {
-
-		if (read_block_32bytes(address, buffer + address) == false)
-			return false;
-	}
-	return true;
-}
-
-static bool write_memory(uint8_t* buffer) {
-
-	I2C_set_internal_address_length(2);
-
-	for (uint32_t address = 0x00; address <= 0xE0; address += 0x20) {
-
-		if (write_block_32bytes(address, buffer + address) == false)
-			return false;
-	}
-	delay(1000);
-	return true;
-}
-
-static bool read_block_32bytes(uint32_t address, uint8_t* buffer) {
-
-	for (uint32_t i = 0; i < 10; ++i) {
-
-		if (I2C_read_bytes(EEPROM_ADDRESS, address, buffer, 32) == true)
-			return true;
-		delay(100);
-	}
-	return false;
-}
-
-static bool write_block_32bytes(uint32_t address, uint8_t* buffer) {
-
-	for (uint32_t i = 0; i < 10; ++i) {
-
-		if (I2C_write_bytes(EEPROM_ADDRESS, address, buffer, 32) == true)
-			return true;
-		delay(100);
-	}
-	return false;
-}
-
 static bool check_configuration() {
 
 	if (g_configuration.PWM_frequency_ESC > 400) {

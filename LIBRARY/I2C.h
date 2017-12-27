@@ -1,7 +1,7 @@
 #ifndef __I2C_H__
 #define __I2C_H__
 
-// LIBRARY VERSION: 0.0.9
+// LIBRARY VERSION: 0.0.10
 
 #define I2C_DRIVER_DEFAULT_TIMEOUT_US	(1000)
 
@@ -79,7 +79,6 @@ uint8_t* I2C_async_get_rx_buffer_address();
 
 /**************************************************************************
 * @brief	Function for write bits to register
-* @note		None
 * @param	dev_addr: I2C device address
 * @param	reg_addr: internal register address on I2C device
 * @param	mask: bits mask

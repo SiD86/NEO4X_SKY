@@ -38,26 +38,19 @@ void I2C_initialize(uint32_t clock_speed) {
 
 
 	// Software reset
-	TWI1->TWI_CR = TWI_CR_SWRST; 
+	REG_TWI1_CR = TWI_CR_SWRST;
 	delay(10);
 
-	// Disable Master mode and Slave mode
-	TWI1->TWI_CR = TWI_CR_SVDIS | TWI_CR_MSDIS; 
+	
+	REG_TWI1_CR = TWI_CR_SVDIS | TWI_CR_MSDIS; // Disable Master mode and Slave mode
+	REG_TWI1_RHR; // Reset holding register
+	REG_TWI1_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS; // Disable PDC channel
+	REG_TWI1_CR = TWI_CR_MSEN | TWI_CR_SVDIS; // Enable Master mode, disable Slave mode
 
-	// Reset holding register
-	TWI1->TWI_RHR;
-
-	// Disable PDC channel
-	TWI1->TWI_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
-
-	// Enable Master mode, disable Slave mode
-	TWI1->TWI_CR = TWI_CR_MSEN | TWI_CR_SVDIS;
-
-	// Configure clock
 	set_clock(clock_speed);
 
 	// Configure interrupts
-	TWI1->TWI_IDR = 0xFFFFFFFF;
+	REG_TWI1_IDR = 0xFFFFFFFF;
 	NVIC_EnableIRQ(TWI1_IRQn);
 }
 
@@ -109,21 +102,21 @@ bool I2C_async_write_bytes(uint8_t dev_addr, uint32_t internal_addr, uint32_t si
 	REG_TC0_IER0 = TC_IER_CPCS;
 
 	// Disable all I2C interrupts
-	TWI1->TWI_IDR = 0xFFFFFFFF;
+	REG_TWI1_IDR = 0xFFFFFFFF;
 
 	// Configure TX PDC channel
-	TWI1->TWI_TPR = (uint32_t)tx_buffer;
-	TWI1->TWI_TCR = size;
+	REG_TWI1_TPR = (uint32_t)tx_buffer;
+	REG_TWI1_TCR = size;
 
 	// Configure Master mode (DADR | write mode | internal address length)
-	TWI1->TWI_MMR = (dev_addr << 16) | (0 << 12) | (g_internal_address_length << 8);
-	TWI1->TWI_IADR = internal_addr;
+	REG_TWI1_MMR = (dev_addr << 16) | (0 << 12) | (g_internal_address_length << 8);
+	REG_TWI1_IADR = internal_addr;
 
 	// Enable transmiter
-	TWI1->TWI_PTCR = TWI_PTCR_TXTEN | TWI_PTCR_RXTDIS;
+	REG_TWI1_PTCR = TWI_PTCR_TXTEN | TWI_PTCR_RXTDIS;
 
 	// Configure interrupts
-	TWI1->TWI_IER = TWI_IER_ENDTX | TWI_IER_NACK;
+	REG_TWI1_IER = TWI_IER_ENDTX | TWI_IER_NACK;
 
 	g_status = I2C_DRIVER_BUSY;
 	return true;
@@ -169,24 +162,24 @@ bool I2C_async_read_bytes(uint8_t dev_addr, uint32_t internal_addr, uint32_t siz
 	REG_TC0_IER0 = TC_IER_CPCS;
 
 	// Disable all I2C interrupts
-	TWI1->TWI_IDR = 0xFFFFFFFF;
+	REG_TWI1_IDR = 0xFFFFFFFF;
 
 	// Configure RX PDC channel
-	TWI1->TWI_RPR = (uint32_t)rx_buffer;
-	TWI1->TWI_RCR = size - 1;
+	REG_TWI1_RPR = (uint32_t)rx_buffer;
+	REG_TWI1_RCR = size - 1; // Without last byte (for send STOP)
 
 	// Configure Master mode (DADR | read mode | internal addres length)
-	TWI1->TWI_MMR = (dev_addr << 16) | TWI_MMR_MREAD | (g_internal_address_length << 8);
-	TWI1->TWI_IADR = internal_addr;
+	REG_TWI1_MMR = (dev_addr << 16) | TWI_MMR_MREAD | (g_internal_address_length << 8);
+	REG_TWI1_IADR = internal_addr;
 
 	// Enable reciever
-	TWI1->TWI_PTCR = TWI_PTCR_TXTDIS | TWI_PTCR_RXTEN;
+	REG_TWI1_PTCR = TWI_PTCR_TXTDIS | TWI_PTCR_RXTEN;
 
 	// Send START
-	TWI1->TWI_CR = TWI_CR_START;
+	REG_TWI1_CR = TWI_CR_START;
 
 	// Configure interrupts
-	TWI1->TWI_IER = TWI_IER_ENDRX;
+	REG_TWI1_IER = TWI_IER_ENDRX;
 
 	g_status = I2C_DRIVER_BUSY;
 	return true;
@@ -233,15 +226,15 @@ static void set_clock(uint32_t clock_speed) {
 static void stop_communication() {
 
 	// Disable PDC
-	TWI1->TWI_PTCR = TWI_PTCR_TXTDIS | TWI_PTCR_RXTDIS;
-	TWI1->TWI_RCR = 0;
-	TWI1->TWI_TCR = 0;
+	REG_TWI1_PTCR = TWI_PTCR_TXTDIS | TWI_PTCR_RXTDIS;
+	REG_TWI1_RCR = 0;
+	REG_TWI1_TCR = 0;
 
 	// Disable all I2C interrupts
-	TWI1->TWI_IDR = 0xFFFFFFFF;
+	REG_TWI1_IDR = 0xFFFFFFFF;
 
 	// Reset status register
-	TWI1->TWI_SR;
+	REG_TWI1_SR;
 
 	// Disable watch timeout timer
 	REG_TC0_IDR0 = TC_IDR_CPCS;
@@ -253,8 +246,8 @@ static void stop_communication() {
 //
 void TWI1_Handler() {
 
-	uint32_t status = TWI1->TWI_SR;
-	uint32_t irq_mask = TWI1->TWI_IMR;
+	uint32_t status = REG_TWI1_SR;
+	uint32_t irq_mask = REG_TWI1_IMR;
 
 	// Errors
 	if (IS_SET(status, TWI_SR_NACK) && IS_SET(irq_mask, TWI_IMR_NACK)) {
@@ -272,40 +265,40 @@ void TWI1_Handler() {
 	else if (IS_SET(status, TWI_SR_ENDTX) && IS_SET(irq_mask, TWI_IMR_ENDTX)) {
 
 		// Disable TX PDC channel
-		TWI1->TWI_PTCR = TWI_PTCR_TXTDIS;
+		REG_TWI1_PTCR = TWI_PTCR_TXTDIS;
 
 		// Send STOP
-		TWI1->TWI_CR = TWI_CR_STOP;
+		REG_TWI1_CR = TWI_CR_STOP;
 
 		// Configure interrupts
-		TWI1->TWI_IDR = 0xFFFFFFFF;
-		TWI1->TWI_IER = TWI_IER_TXCOMP;
+		REG_TWI1_IDR = 0xFFFFFFFF;
+		REG_TWI1_IER = TWI_IER_TXCOMP;
 	}
 
 	// RX handler
 	else if (IS_SET(status, TWI_SR_ENDRX) && IS_SET(irq_mask, TWI_IMR_ENDRX)) {
 
 		// Disable RX PDC channel
-		TWI1->TWI_PTCR = TWI_PTCR_RXTDIS;
+		REG_TWI1_PTCR = TWI_PTCR_RXTDIS;
 
 		// Send STOP
-		TWI1->TWI_CR = TWI_CR_STOP;
+		REG_TWI1_CR = TWI_CR_STOP;
 
 		// Configure interrupts
-		TWI1->TWI_IDR = 0xFFFFFFFF;
-		TWI1->TWI_IER = TWI_IER_RXRDY;
+		REG_TWI1_IDR = 0xFFFFFFFF;
+		REG_TWI1_IER = TWI_IER_RXRDY;
 	}
 
 	// Recv last byte
 	else if (IS_SET(status, TWI_SR_RXRDY) && IS_SET(irq_mask, TWI_IMR_RXRDY)) {
 
 		// Read last byte
-		uint8_t* buffer_addr = (uint8_t*)TWI1->TWI_RPR;
-		*buffer_addr = TWI1->TWI_RHR;
+		uint8_t* buffer_addr = (uint8_t*)REG_TWI1_RPR;
+		*buffer_addr = REG_TWI1_RHR;
 
 		// Configure interrupts
-		TWI1->TWI_IDR = 0xFFFFFFFF;
-		TWI1->TWI_IER = TWI_IER_TXCOMP;
+		REG_TWI1_IDR = 0xFFFFFFFF;
+		REG_TWI1_IER = TWI_IER_TXCOMP;
 	}
 }
 

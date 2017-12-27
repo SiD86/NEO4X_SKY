@@ -63,7 +63,7 @@ void PDGSS::initialize(uint32_t ESC_frequency, uint32_t is_calibration) {
 
 	delay(100);
 
-	if (is_calibration)
+	if (is_calibration == 0xAA)
 		calibration_ESC();
 }
 

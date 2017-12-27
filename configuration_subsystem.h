@@ -14,11 +14,12 @@ namespace CONFIGSS {
 		uint16_t PWM_frequency_ESC;
 
 		uint16_t battery_low_voltage;
-		uint16_t connection_timeout;
+		uint16_t connection_lost_timeout;
+		uint16_t send_state_data_interval;
 
 		uint16_t PID_interval;
 		uint16_t PID_limit;
-		uint16_t PID_start;
+		uint16_t PID_threshold;
 		float PID_X[3];
 		float I_X_limit;
 		float PID_Y[3];
@@ -29,12 +30,12 @@ namespace CONFIGSS {
 		float I_H_limit;
 
 	} configuration_t;
-
 }
 
 // External interface
 namespace CONFIGSS {
 
+	bool reset_configuration();
 	bool load_and_check_configuration();
 	void enter_to_configuration_mode();
 }

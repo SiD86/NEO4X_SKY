@@ -84,6 +84,7 @@
     <ClInclude Include="configuration_subsystem.h" />
     <ClInclude Include="fly_core.h" />
     <ClInclude Include="LIBRARY\BMP280.h" />
+    <ClInclude Include="LIBRARY\EEPROM.h" />
     <ClInclude Include="library\I2C.h" />
     <ClInclude Include="library\MPU6050.h" />
     <ClInclude Include="LIBRARY\USART3_PDC.h" />
@@ -102,6 +103,7 @@
     <ClCompile Include="configuration_subsystem.cpp" />
     <ClCompile Include="fly_core.cpp" />
     <ClCompile Include="LIBRARY\BMP280.cpp" />
+    <ClCompile Include="LIBRARY\EEPROM.cpp" />
     <ClCompile Include="library\I2C.cpp" />
     <ClCompile Include="library\MPU6050.cpp" />
     <ClCompile Include="LIBRARY\USART3_PDC.cpp" />

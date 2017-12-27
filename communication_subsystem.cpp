@@ -5,9 +5,6 @@
 #include "util.h"
 #define USART_BAUDRATE						(175000)
 #define DEVICE_ADDRESS_DEFAULT				(255)
-#define CONNECTION_LOST_TIMEOUT_MS			(1000)
-#define CONNECTION_SILENCE_DELAY_MS			(200)
-#define SEND_PACKET_INTERVAL				(100)
 
 static const uint32_t g_packet_size = sizeof(TXRX::fly_controller_packet_t);
 static const uint32_t g_data_size = sizeof(TXRX::fly_controller_packet_t::data);
@@ -17,20 +14,28 @@ static void process_tx();
 static bool process_rx_data();
 static uint8_t calculate_CRC8(const uint8_t* data);
 
+// Configurable parameters
+static uint32_t g_send_state_data_interval = 100;  // [ms]
+static uint32_t g_connection_lost_timeout = 1000;  // [ms]
+
 static uint32_t g_status = CSS::NO_ERROR;
 
 TXRX::control_data_t g_cp = {0};
 TXRX::state_data_t g_sp = {0};
 
+uint32_t g_hardware_error_count = 0; // DEBUG
+uint32_t g_software_error_count = 0; // DEBUG
+uint32_t g_desync_count = 0; // DEBUG
 
-uint32_t g_hardware_error_count = 0;
-uint32_t g_software_error_count = 0;
-uint32_t g_desync_count = 0;
 
 //
 // EXTERNAL INTERFACE
 //
-void CSS::initialize() {
+void CSS::initialize(uint32_t send_state_data_interval, uint32_t conn_lost_timeout) {
+	
+	g_send_state_data_interval = send_state_data_interval;
+	g_connection_lost_timeout = conn_lost_timeout;
+	
 	USART3_initialize(USART_BAUDRATE);
 	USART3_RX_start(g_packet_size);
 }
@@ -61,7 +66,7 @@ static void process_tx() {
 	static uint32_t prev_tx_time = 0;
 
 	// Check TX interval
-	if (millis() - prev_tx_time < SEND_PACKET_INTERVAL)
+	if (millis() - prev_tx_time < g_send_state_data_interval)
 		return;
 
 	// Check complite TX previus data
@@ -120,7 +125,7 @@ static void process_rx() {
 		if (g_status & CSS::DESYNC) {
 
 			// Wait silence window and reset receiver
-			if (millis() - prev_rx_any_data_time > CONNECTION_SILENCE_DELAY_MS) {
+			if (millis() - prev_rx_any_data_time > g_send_state_data_interval * 2) {
 				USART3_reset(false, true);
 				USART3_RX_start(g_packet_size);
 				CLEAR_STATUS_BIT(g_status, CSS::DESYNC);
@@ -129,7 +134,7 @@ static void process_rx() {
 		}
 
 		// Check communication timeout
-		if (millis() - prev_rx_state_data_time > CONNECTION_LOST_TIMEOUT_MS) {
+		if (millis() - prev_rx_state_data_time > g_connection_lost_timeout) {
 			SET_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
 			Serial.println("CONN LOST"); // DEBUG
 		}

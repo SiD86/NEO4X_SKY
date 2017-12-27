@@ -77,7 +77,11 @@ void setup() {
 	// Initialize I2C wire
 	I2C_initialize(400000);
 
-	//OSS_unit_test_loop();
+	//
+	// Тут нужно ввести мониторинг пина для сброса настроек
+	//
+	//if (CONFIGSS::reset_configuration() == false)
+		//SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
 
 	pinMode(2, INPUT);
 	digitalWrite(2, HIGH);
@@ -87,15 +91,10 @@ void setup() {
 	if (CONFIGSS::load_and_check_configuration() == false)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
 
-	Serial.println(g_configuration.PWM_frequency_ESC);
-	
+	CSS::initialize(g_configuration.send_state_data_interval, 
+				    g_configuration.connection_lost_timeout);
+	ASS::initialize(g_configuration.battery_low_voltage);
 
-	CSS::initialize();
-	ASS::initialize(0/*g_configuration.battery_low_voltage*/);
-
-	/*while (true) {
-		ASS::process();
-	}*/
 	FLY_CORE::initialize();
 }
 
