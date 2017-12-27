@@ -83,51 +83,55 @@ static void process_tx() {
 
 static void process_rx() {
 
-	static uint32_t prev_rx_time = 0;
+	static uint32_t prev_rx_any_data_time = 0;
+	static uint32_t prev_rx_state_data_time = 0;
+
 	if (USART3_RX_is_complete() == true) {
 
-		// Process recv control data
-		bool status = process_rx_data();
+		// Update time
+		prev_rx_any_data_time = millis();
 
-		// Process software error (data validation error)
-		static uint32_t error_count = 0;
-		if (status == false) {
+		// Process data
+		if ((g_status & CSS::DESYNC) == 0) {
 
-			++g_software_error_count;
-			if (++error_count >= 5) {
-				++g_desync_count;
-				SET_STATUS_BIT(g_status, CSS::DESYNC);
-				Serial.println("DESYNC");
+			static uint32_t error_count = 0;
+			if (process_rx_data() == false) {
+
+				++g_software_error_count; // DEBUG
+				if (++error_count >= 5) {
+					SET_STATUS_BIT(g_status, CSS::DESYNC);
+					++g_desync_count; // DEBUG
+					Serial.println("DESYNC"); // DEBUG
+				}
+			}
+			else {
+				error_count = 0;
+				CLEAR_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
+				prev_rx_state_data_time = prev_rx_any_data_time;
 			}
 		}
-		else {
-			error_count = 0;
-		}
 
-		// Start RX data
+		// Initialize start receive next data
 		USART3_RX_start(g_packet_size);
-
-		// Update time and status
-		prev_rx_time = millis();
-		CLEAR_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
 	}
 	else {
 
-		// Check communication silence state
+		// Check desync communication
 		if (g_status & CSS::DESYNC) {
 
-			if (millis() - prev_rx_time > CONNECTION_SILENCE_DELAY_MS) {
+			// Wait silence window and reset receiver
+			if (millis() - prev_rx_any_data_time > CONNECTION_SILENCE_DELAY_MS) {
 				USART3_reset(false, true);
 				USART3_RX_start(g_packet_size);
 				CLEAR_STATUS_BIT(g_status, CSS::DESYNC);
-				Serial.println("RX RST");
+				Serial.println("RX RST"); // DEBUG
 			}
 		}
 
 		// Check communication timeout
-		if (millis() - prev_rx_time > CONNECTION_LOST_TIMEOUT_MS) {
+		if (millis() - prev_rx_state_data_time > CONNECTION_LOST_TIMEOUT_MS) {
 			SET_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
-			Serial.println("CONN_LOST");
+			Serial.println("CONN LOST"); // DEBUG
 		}
 	}
 }

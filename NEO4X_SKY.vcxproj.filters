@@ -81,6 +81,9 @@
     <ClInclude Include="configuration_subsystem.h">
       <Filter>Заголовочные файлы\MAIN_CORE</Filter>
     </ClInclude>
+    <ClInclude Include="__vm\.Новая папка.vsarduino.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="library\I2C.cpp">
