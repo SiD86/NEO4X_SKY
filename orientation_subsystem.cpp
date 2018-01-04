@@ -90,8 +90,6 @@ void OSS::process() {
 	case STATE_DISABLE:
 		break;
 	}
-
-	error_status_update(false);
 }
 
 void OSS::get_position(float* XYZH) {
@@ -123,6 +121,8 @@ static void state_MPU6050_CHECK_RDY_handler() {
 		g_state = STATE_MPU6050_GET_DATA;
 	else
 		g_state = STATE_BMP280_CHECK_RDY;
+
+	error_status_update(false);
 }
 
 /**************************************************************************
@@ -139,6 +139,8 @@ static void state_MPU6050_GET_DATA_handler() {
 	MPU6050_get_data(&g_XYZH[0], &g_XYZH[1], &g_XYZH[2]);
 	if (MPU6050_get_status() != MPU6050_DRIVER_BUSY)
 		g_state = STATE_BMP280_CHECK_RDY;
+
+	error_status_update(false);
 }
 
 /**************************************************************************
@@ -156,6 +158,8 @@ static void state_BMP280_CHECK_RDY_handler() {
 		g_state = STATE_BMP280_GET_DATA;
 	else
 		g_state = STATE_MPU6050_CHECK_RDY;
+
+	error_status_update(false);
 }
 
 /**************************************************************************
@@ -171,6 +175,8 @@ static void state_BMP280_GET_DATA_handler() {
 	BMP280_get_data(nullptr, nullptr, &g_XYZH[3]);
 	if (BMP280_get_status() != BMP280_DRIVER_BUSY)
 		g_state = STATE_MPU6050_CHECK_RDY;
+
+	error_status_update(false);
 }
 
 /**************************************************************************

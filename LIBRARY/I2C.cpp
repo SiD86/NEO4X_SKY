@@ -19,13 +19,13 @@ static volatile uint32_t g_status = I2C_DRIVER_NO_ERROR;
 void I2C_initialize(uint32_t clock_speed) {
 
 	// Enable I2C and watch timeout timer clock
-	REG_PMC_PCER0 = PMC_PCER0_PID23 | PMC_PCER0_PID27;
+	REG_PMC_PCER0 = PMC_PCER0_PID23 | PMC_PCER0_PID30;
 	while (	REG_PMC_PCSR0 & (PMC_PCER0_PID23 & PMC_PCER0_PID27) );
 
 	// Configure watch timeout timer
-	REG_TC0_CMR0 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;
-	REG_TC0_RC0 = I2C_DRIVER_DEFAULT_TIMEOUT_US * (VARIANT_MCK / 8 / 1000 / 1000);
-	NVIC_EnableIRQ(TC0_IRQn);
+	REG_TC1_CMR0 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;
+	REG_TC1_RC0 = I2C_DRIVER_DEFAULT_TIMEOUT_US * (VARIANT_MCK / 8 / 1000 / 1000);
+	NVIC_EnableIRQ(TC3_IRQn);
 
 
 	// Configure SDA
@@ -98,8 +98,8 @@ bool I2C_async_write_bytes(uint8_t dev_addr, uint32_t internal_addr, uint32_t si
 		return false;
 
 	// Start watch timeout timer
-	REG_TC0_CCR0 = TC_CCR_SWTRG | TC_CCR_CLKEN;
-	REG_TC0_IER0 = TC_IER_CPCS;
+	REG_TC1_CCR0 = TC_CCR_SWTRG | TC_CCR_CLKEN;
+	REG_TC1_IER0 = TC_IER_CPCS;
 
 	// Disable all I2C interrupts
 	REG_TWI1_IDR = 0xFFFFFFFF;
@@ -158,8 +158,8 @@ bool I2C_async_read_bytes(uint8_t dev_addr, uint32_t internal_addr, uint32_t siz
 		return false;
 
 	// Start watch timeout timer
-	REG_TC0_CCR0 = TC_CCR_SWTRG | TC_CCR_CLKEN;
-	REG_TC0_IER0 = TC_IER_CPCS;
+	REG_TC1_CCR0 = TC_CCR_SWTRG | TC_CCR_CLKEN;
+	REG_TC1_IER0 = TC_IER_CPCS;
 
 	// Disable all I2C interrupts
 	REG_TWI1_IDR = 0xFFFFFFFF;
@@ -237,8 +237,8 @@ static void stop_communication() {
 	REG_TWI1_SR;
 
 	// Disable watch timeout timer
-	REG_TC0_IDR0 = TC_IDR_CPCS;
-	REG_TC0_CCR0 = TC_CCR_CLKDIS;
+	REG_TC1_IDR0 = 0xFFFFFFFF;
+	REG_TC1_CCR0 = TC_CCR_CLKDIS;
 }
 
 //
@@ -302,10 +302,10 @@ void TWI1_Handler() {
 	}
 }
 
-void TC0_Handler() {
+void TC3_Handler() {
 
-	uint32_t status = REG_TC0_SR0;
-	uint32_t irq_mask = REG_TC0_IMR0;
+	uint32_t status = REG_TC1_SR0;
+	uint32_t irq_mask = REG_TC1_IMR0;
 
 	if ((irq_mask & TC_IMR_CPCS) && (status & TC_SR_CPCS)) {
 		stop_communication();

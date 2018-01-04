@@ -81,9 +81,6 @@
     <ClInclude Include="configuration_subsystem.h">
       <Filter>Заголовочные файлы\MAIN_CORE</Filter>
     </ClInclude>
-    <ClInclude Include="__vm\.Новая папка.vsarduino.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="LIBRARY\EEPROM.h">
       <Filter>library</Filter>
     </ClInclude>

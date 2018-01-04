@@ -18,6 +18,7 @@
 #define MPU6050_ADDRESS_AD0_LOW     0x68						// Адрес, если на ножке низкий уровень
 #define MPU6050_ADDRESS_AD0_HIGH    0x69						// Адрес, есии на ножке высокий уровень
 #define MPU6050_FREQUENCY_DIV		0x01						// Делитель частоты 200Hz / (1 + DIV) 
+#define MPU6050_DATA_READY_TIMEOUT	100							// 100 ms
 
 #define ADDRESS						MPU6050_ADDRESS_AD0_LOW		// Адрес по умолчанию
 
@@ -303,6 +304,12 @@ void MPU6050_initialize(uint32_t data_ready_IRQ_pin) {
 	I2C_set_internal_address_length(1);
 	g_status = MPU6050_DRIVER_ERROR;
 
+	// Configure watch dara ready timeout timer clock
+	REG_PMC_PCER0 = PMC_PCER0_PID31;
+	REG_TC1_CMR1 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;
+	REG_TC1_RC1 = MPU6050_DATA_READY_TIMEOUT * (VARIANT_MCK / 8 / 1000);
+	NVIC_EnableIRQ(TC4_IRQn);
+
 	// Проверка подключения устройства
     uint8_t reg = 0;
 	if (!I2C_read_byte(ADDRESS, REG_WHO_AM_I, &reg))
@@ -384,10 +391,14 @@ void MPU6050_initialize(uint32_t data_ready_IRQ_pin) {
 }
 
 void MPU6050_DMP_start() {
-	
+
 	// Initialize success
 	I2C_set_internal_address_length(1);
 	g_status = MPU6050_DRIVER_ERROR;
+
+	// Enable data ready timeout timer
+	REG_TC1_CCR1 = TC_CCR_SWTRG | TC_CCR_CLKEN;
+	REG_TC1_IER1 = TC_IER_CPCS;
 
 	// Reset FIFO and DMP
 	if (I2C_write_byte(ADDRESS, REG_USER_CTRL, 0x0C) == false)
@@ -408,6 +419,10 @@ void MPU6050_DMP_stop() {
 
 	I2C_set_internal_address_length(1);
 	g_status = MPU6050_DRIVER_ERROR;
+
+	// Disable data ready timeout timer
+	REG_TC1_IDR1 = 0xFFFFFFFF;
+	REG_TC1_CCR1 = TC_CCR_CLKDIS;
 
 	// Disable FIFO and DMP
 	if (I2C_write_byte(ADDRESS, REG_USER_CTRL, 0x00) == false)
@@ -430,6 +445,9 @@ bool MPU6050_is_data_ready() {
 	if (g_is_data_ready == false)
 		return false;
 	g_is_data_ready = false;
+
+	// Reset data ready timeout timer
+	REG_TC1_CCR1 = TC_CCR_SWTRG | TC_CCR_CLKEN;
 
 
 	I2C_set_internal_address_length(1);
@@ -659,4 +677,14 @@ static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
 //
 static void data_ready_IRQ_callback() {
 	g_is_data_ready = true;
+}
+
+void TC4_Handler() {
+
+	uint32_t status = REG_TC1_SR1;
+	uint32_t irq_mask = REG_TC1_IMR1;
+
+	if ((irq_mask & TC_IMR_CPCS) && (status & TC_SR_CPCS)) {
+		g_status = I2C_DRIVER_ERROR;
+	}
 }

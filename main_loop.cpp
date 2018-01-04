@@ -17,57 +17,6 @@ static void make_state_packet();
 
 static uint8_t g_status = TXRX::MAIN_CORE_STATUS_NO_ERROR;
 
-/*
-static void OSS_unit_test_loop() {
-
-	delay(5000);
-
-	OSS::initialize();
-	Serial.print("INITIALIZE STATUS: ");
-	Serial.println(OSS::get_status());
-
-	OSS::start();
-	Serial.print("RUN STATUS: ");
-	Serial.println(OSS::get_status());
-
-	while (true) {
-
-		float XYZH[4] = { 0 };
-		OSS::get_position(XYZH, true);
-
-		static uint32_t begin = 0;
-
-		uint32_t MPU6050_status = MPU6050_get_status();
-		uint32_t BMP280_status = BMP280_get_status();
-		if (MPU6050_status == MPU6050_DRIVER_ERROR || BMP280_status == BMP280_DRIVER_ERROR ||
-			millis() - begin > 1000)
-		{
-			Serial.print("T: ");
-			Serial.print(g_device_cur_process_time);
-			Serial.print(" OSS_STATUS: ");
-			Serial.print(OSS::get_status());
-			Serial.print(" OSS_STATE: ");
-			Serial.print(g_state);
-			Serial.print(" OSS_ER_CNT: ");
-			Serial.print(g_errors_count);
-			Serial.print(" MPU_DRV: ");
-			Serial.print(MPU6050_status);
-			Serial.print(" BMP_DRV: ");
-			Serial.print(BMP280_status);
-			Serial.print(" DATA: ");
-			Serial.print(XYZH[0]);
-			Serial.print(" ");
-			Serial.print(XYZH[1]);
-			Serial.print(" ");
-			Serial.print(XYZH[2]);
-			Serial.print(" ");
-			Serial.println(XYZH[3]);
-
-			begin = millis();
-		}
-	}
-}
-*/
 
 void setup() {
 
@@ -80,9 +29,14 @@ void setup() {
 	//
 	// Тут нужно ввести мониторинг пина для сброса настроек
 	//
-	//if (CONFIGSS::reset_configuration() == false)
-		//SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
+	if (CONFIGSS::reset_configuration() == false)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
 
+	Serial.println(g_status);
+	delay(5000);
+
+
+	// Check request enter to configuration mode
 	pinMode(2, INPUT);
 	digitalWrite(2, HIGH);
 	if (digitalRead(2) == LOW)
@@ -91,6 +45,10 @@ void setup() {
 	if (CONFIGSS::load_and_check_configuration() == false)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
 
+	Serial.println(g_status);
+	delay(5000);
+
+	// Initialize subsystems and fly core
 	CSS::initialize(g_configuration.send_state_data_interval, 
 				    g_configuration.connection_lost_timeout);
 	ASS::initialize(g_configuration.battery_low_voltage);
@@ -159,6 +117,8 @@ static void make_state_packet() {
 	memset(&g_sp, 0, sizeof(g_sp));
 
 	g_sp.main_core_status = g_status;
+
+	// Debug info
 	g_sp.hardware_error_count = g_hardware_error_count;
 	g_sp.software_error_count = g_software_error_count;
 	g_sp.desync_count = g_desync_count;
@@ -166,16 +126,4 @@ static void make_state_packet() {
 
 	FLY_CORE::make_state_data(&g_sp);
 	ASS::make_state_data(&g_sp);
-
-	/*g_sp.XYZH[0] = 10;
-	g_sp.XYZH[1] = 20;
-	g_sp.XYZH[2] = 30;
-	g_sp.XYZH[3] = 40;
-
-	g_sp.battery_voltage = 50;
-
-	g_sp.motors_power[0] = 70;
-	g_sp.motors_power[1] = 80;
-	g_sp.motors_power[2] = 90;
-	g_sp.motors_power[3] = 100;*/
 }
