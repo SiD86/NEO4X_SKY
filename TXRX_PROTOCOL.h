@@ -24,13 +24,13 @@ namespace TXRX {
 
 		uint8_t motors_power[4];		// Motors power [0 - 100], %
 		int16_t	XYZH[4];				// X, Y, Z and alttitude
-		uint8_t	battery_voltage;		// Current battery voltage [0 - 255], 0.1V
+		uint16_t battery_voltage;		// Current battery voltage [0 - 65535], 0.01V
 
 		uint32_t hardware_error_count;
 		uint32_t software_error_count;
 		uint32_t desync_count;
 		
-		uint8_t reserve[2];
+		uint8_t reserve[1];
 	};
 	#pragma pack (pop)
 
@@ -90,15 +90,13 @@ namespace TXRX {
 namespace TXRX {
 
 	const uint8_t UART_CMD_NO_COMMAND			= 0x00;
-	const uint8_t UART_CMD_GET_MEMORY_BLOCK		= 0x01;
-	const uint8_t UART_CMD_WRITE_CELL			= 0x02;
-	const uint8_t UART_CMD_LOAD_MEMORY_PAGE		= 0x03;
-	const uint8_t UART_CMD_SAVE_MEMORY_PAGE		= 0x04;
-	const uint8_t UART_CMD_CHECK_MODE			= 0xFE;
-	const uint8_t UART_CMD_EXIT					= 0xFF;
+	const uint8_t UART_CMD_WHO_I_AM				= 0x01;
+	const uint8_t UART_CMD_GET_MEMORY_BLOCK		= 0x02;
+	const uint8_t UART_CMD_WRITE_CELL			= 0x03;
 
-	const uint8_t UART_ACK_SUCCESS				= 0x01;
 	const uint8_t UART_ACK_FAIL					= 0x00;
+	const uint8_t UART_ACK_SUCCESS				= 0x01;
+	const uint8_t UART_ACK_QUADCOPTER			= 0x02;
 }
 
 #endif // _TXRX_PROTOCOL_H_

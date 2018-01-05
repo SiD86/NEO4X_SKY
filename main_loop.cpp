@@ -23,30 +23,38 @@ void setup() {
 	Serial.begin(460800);	// DEBUG
 	delay(1000);
 
+	pinMode(13, OUTPUT);
+	digitalWrite(13, LOW);
+
 	// Initialize I2C wire
 	I2C_initialize(400000);
 
 	//
 	// Тут нужно ввести мониторинг пина для сброса настроек
 	//
-	if (CONFIGSS::reset_configuration() == false)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
-
-	Serial.println(g_status);
-	delay(5000);
-
+	//if (CONFIGSS::reset_configuration() == false)
+		//SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
 
 	// Check request enter to configuration mode
-	pinMode(2, INPUT);
+	/*pinMode(2, INPUT);
 	digitalWrite(2, HIGH);
 	if (digitalRead(2) == LOW)
 		CONFIGSS::enter_to_configuration_mode();
 
 	if (CONFIGSS::load_and_check_configuration() == false)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);*/
 
-	Serial.println(g_status);
-	delay(5000);
+	pinMode(2, INPUT);
+	digitalWrite(2, HIGH);
+	if (digitalRead(2) == LOW)
+		g_configuration.calibration_ESC = 0xAA;
+	else
+		g_configuration.calibration_ESC = 0x00;
+
+	g_configuration.PWM_frequency_ESC = 400;
+	g_configuration.send_state_data_interval = 100;
+	g_configuration.connection_lost_timeout = 1000;
+	g_configuration.battery_low_voltage = 1000;
 
 	// Initialize subsystems and fly core
 	CSS::initialize(g_configuration.send_state_data_interval, 

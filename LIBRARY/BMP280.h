@@ -1,7 +1,7 @@
 #ifndef __BMP280_H__
 #define __BMP280_H__
 
-// LIBRARY VERSION: 0.0.3
+// LIBRARY VERSION: 0.0.4
 
 const uint32_t BMP280_DRIVER_NO_ERROR		= 0x00;
 const uint32_t BMP280_DRIVER_BUSY			= 0x01;
@@ -32,10 +32,10 @@ bool BMP280_is_data_ready();
 void BMP280_get_data(float* pressure, int32_t* temperature, float* altitude);
 
 /**************************************************************************
-* @brief	Function for get or reset (only error) current driver status
+* @brief	Functions for get and reset current driver status
 * @retval	Current driver status
 **************************************************************************/
 uint32_t BMP280_get_status();
-void BMP280_force_reset_error_status();
+void BMP280_reset_status();
 
 #endif /* __BMP280_H__ */

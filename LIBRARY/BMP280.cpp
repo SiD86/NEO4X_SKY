@@ -179,12 +179,9 @@ uint32_t BMP280_get_status() {
 	return g_status;
 }
 
-void BMP280_force_reset_error_status() {
-
-	if (g_status == BMP280_DRIVER_ERROR)
-		g_status = BMP280_DRIVER_NO_ERROR;
+void BMP280_reset_status() {
+	g_status = BMP280_DRIVER_NO_ERROR;
 }
-
 
 //
 // INTERNAL INTERFACE

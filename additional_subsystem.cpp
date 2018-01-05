@@ -93,8 +93,6 @@ uint32_t ASS::get_status() {
 //
 static void process_measurements_battery_voltage(uint32_t adc) {
 
-	//uint32_t begin = micros();
-
 	// Filtering
 	static float prev_flt_value = adc;
 	float flt_value = adc * MEAS_VOLTAGE_ALPHA + prev_flt_value * (1 - MEAS_VOLTAGE_ALPHA);
@@ -107,16 +105,12 @@ static void process_measurements_battery_voltage(uint32_t adc) {
 	// Output: (V * 100)
 	g_battery_voltage = flt_value * (3.3 / 4095.0) * 656;
 
-	//uint32_t end = micros();
-
 	/*Serial.print("RAW: ");
 	Serial.print(adc);
 	Serial.print("\tFLT: ");
 	Serial.print(flt_value);
 	Serial.print("\tVOLTAGE: ");
-	Serial.print(g_battery_voltage);
-	Serial.print("\tTIME: ");
-	Serial.println(end - begin);*/
+	Serial.println(g_battery_voltage);*/
 }
 
 static void error_status_update() {

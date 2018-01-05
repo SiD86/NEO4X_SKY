@@ -107,18 +107,18 @@ bool CONFIGSS::load_and_check_configuration() {
 
 void CONFIGSS::enter_to_configuration_mode() {
 
-	uint8_t buffer[256] = { 0 };
 	bool is_need_reset_UART = false;
+	uint8_t memory_image[256] = { 0 };
+
+	EEPROM_read_bytes(0x0000, memory_image, 256);
 
 	// Configuration loop
 	while (true) {
+
 		if (Serial.available() > 3 || is_need_reset_UART == true) {
 			Serial.end();
-			while (Serial.available())
-				Serial.read();
 			Serial.begin(460800);
-			delay(100);
-			continue;
+			is_need_reset_UART = false;
 		}
 
 		if (Serial.available() != 3)
@@ -135,37 +135,24 @@ void CONFIGSS::enter_to_configuration_mode() {
 		case TXRX::UART_CMD_NO_COMMAND:
 			break;
 
-		case TXRX::UART_CMD_CHECK_MODE:
-			data_for_write = TXRX::UART_ACK_SUCCESS;
+		case TXRX::UART_CMD_WHO_I_AM:
+			data_for_write = TXRX::UART_ACK_QUADCOPTER;
 			Serial.write(&data_for_write, 1);
+			digitalWrite(13, HIGH);
 			break;
 
-		case TXRX::UART_CMD_EXIT:
-			data_for_write = TXRX::UART_ACK_SUCCESS;
-			Serial.write(&data_for_write, 1);
-			return;
-
 		case TXRX::UART_CMD_GET_MEMORY_BLOCK:
-			Serial.write(&buffer[arg1 * 32], 32);
+			Serial.write(&memory_image[arg1 * 32], 32);
 			break;
 
 		case TXRX::UART_CMD_WRITE_CELL:
-			buffer[arg1] = arg2;
-			data_for_write = TXRX::UART_ACK_SUCCESS;
-			Serial.write(&data_for_write, 1);
-			break;
+			EEPROM_write_4bytes(arg1, arg2, 1);
+			EEPROM_read_bytes(arg1, &memory_image[arg1], 1);
 
-		case TXRX::UART_CMD_LOAD_MEMORY_PAGE:
 			data_for_write = TXRX::UART_ACK_SUCCESS;
-			if (EEPROM_read_bytes(0x0000, buffer, 256) == false)
+			if (memory_image[arg1] != arg2)
 				data_for_write = TXRX::UART_ACK_FAIL;
-			Serial.write(&data_for_write, 1);
-			break;
 
-		case TXRX::UART_CMD_SAVE_MEMORY_PAGE:
-			data_for_write = TXRX::UART_ACK_SUCCESS;
-			if (EEPROM_write_bytes(0x0000, buffer, 256) == false)
-				data_for_write = TXRX::UART_ACK_FAIL;
 			Serial.write(&data_for_write, 1);
 			break;
 

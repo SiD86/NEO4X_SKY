@@ -294,6 +294,7 @@ static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize);
 
 static uint32_t g_status = MPU6050_DRIVER_NO_ERROR;
 static volatile bool g_is_data_ready = false;
+static volatile bool g_is_data_ready_timeout = false;
 
 
 //
@@ -442,12 +443,12 @@ void MPU6050_DMP_stop() {
 bool MPU6050_is_data_ready() {
 
 	// Check IQR data ready flag
-	if (g_is_data_ready == false)
+	if (g_is_data_ready == false) {
+		if (g_is_data_ready_timeout == true)
+			g_status = MPU6050_DRIVER_ERROR;
 		return false;
+	}
 	g_is_data_ready = false;
-
-	// Reset data ready timeout timer
-	REG_TC1_CCR1 = TC_CCR_SWTRG | TC_CCR_CLKEN;
 
 
 	I2C_set_internal_address_length(1);
@@ -509,10 +510,8 @@ uint32_t MPU6050_get_status() {
 	return g_status;
 }
 
-void MPU6050_force_reset_error_status() {
-
-	if (g_status == MPU6050_DRIVER_ERROR)
-		g_status = MPU6050_DRIVER_NO_ERROR;
+void MPU6050_reset_status() {
+	g_status = MPU6050_DRIVER_NO_ERROR;
 }
 
 //
@@ -676,7 +675,12 @@ static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
 // IRQ handlers
 //
 static void data_ready_IRQ_callback() {
+
 	g_is_data_ready = true;
+	g_is_data_ready_timeout = false;
+
+	// Reset data ready timeout timer
+	REG_TC1_CCR1 = TC_CCR_SWTRG | TC_CCR_CLKEN;
 }
 
 void TC4_Handler() {
@@ -685,6 +689,6 @@ void TC4_Handler() {
 	uint32_t irq_mask = REG_TC1_IMR1;
 
 	if ((irq_mask & TC_IMR_CPCS) && (status & TC_SR_CPCS)) {
-		g_status = I2C_DRIVER_ERROR;
+		g_is_data_ready_timeout = true;
 	}
 }

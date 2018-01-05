@@ -4,9 +4,9 @@
 #include "orientation_subsystem.h"
 #include "CONFIG.h"
 #include "util.h"
-#define MAX_ERROR_COUNT									(20)
+#define MAX_ERROR_COUNT									(10)
 
-static void error_status_update(bool is_fatal_operation);
+static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_fatal_operation);
 static void state_MPU6050_CHECK_RDY_handler();
 static void state_MPU6050_GET_DATA_handler();
 static void state_BMP280_CHECK_RDY_handler();
@@ -40,7 +40,7 @@ void OSS::initialize() {
 	//
 
 	g_state = STATE_DISABLE;
-	error_status_update(true);
+	error_status_update(true, true, true);
 }
 
 void OSS::send_command(uint32_t cmd) {
@@ -64,7 +64,7 @@ void OSS::send_command(uint32_t cmd) {
 
 	g_MPU6050_error_count = 0;
 	g_BMP280_error_count = 0;
-	error_status_update(true);
+	error_status_update(true, false, true);
 }
 
 void OSS::process() {
@@ -122,7 +122,7 @@ static void state_MPU6050_CHECK_RDY_handler() {
 	else
 		g_state = STATE_BMP280_CHECK_RDY;
 
-	error_status_update(false);
+	error_status_update(true, false, false);
 }
 
 /**************************************************************************
@@ -140,7 +140,7 @@ static void state_MPU6050_GET_DATA_handler() {
 	if (MPU6050_get_status() != MPU6050_DRIVER_BUSY)
 		g_state = STATE_BMP280_CHECK_RDY;
 
-	error_status_update(false);
+	error_status_update(true, false, false);
 }
 
 /**************************************************************************
@@ -159,7 +159,7 @@ static void state_BMP280_CHECK_RDY_handler() {
 	else
 		g_state = STATE_MPU6050_CHECK_RDY;
 
-	error_status_update(false);
+	error_status_update(false, true, false);
 }
 
 /**************************************************************************
@@ -176,32 +176,36 @@ static void state_BMP280_GET_DATA_handler() {
 	if (BMP280_get_status() != BMP280_DRIVER_BUSY)
 		g_state = STATE_MPU6050_CHECK_RDY;
 
-	error_status_update(false);
+	error_status_update(false, true, false);
 }
 
 /**************************************************************************
 * @brief	Function for check status devices and update subsystem status
 * @param	is_fatal_operation: true - error bit set skip error counter 
 **************************************************************************/
-static void error_status_update(bool is_fatal_operation) {
+static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_fatal_operation) {
 
 	// Check MPU6050 status
-	if (MPU6050_get_status() == MPU6050_DRIVER_ERROR) {
+	if (check_MPU6050 == true) {
 
-		if (++g_MPU6050_error_count > MAX_ERROR_COUNT || is_fatal_operation == true)
-			SET_STATUS_BIT(g_status, OSS::MPU6050_ERROR);
-		MPU6050_force_reset_error_status();
+		if (MPU6050_get_status() == MPU6050_DRIVER_ERROR) {
+			if (++g_MPU6050_error_count > MAX_ERROR_COUNT || is_fatal_operation == true)
+				SET_STATUS_BIT(g_status, OSS::MPU6050_ERROR);
+		}
+		MPU6050_reset_status();
 	}
 
 	// Check BMP280 status
-	if (BMP280_get_status() == BMP280_DRIVER_ERROR) {
+	if (check_BMP280 == true) {
 
-		if (++g_BMP280_error_count > MAX_ERROR_COUNT || is_fatal_operation == true)
-			SET_STATUS_BIT(g_status, OSS::BMP280_ERROR);
-		BMP280_force_reset_error_status();
+		if (BMP280_get_status() == BMP280_DRIVER_ERROR) {
+			if (++g_BMP280_error_count > MAX_ERROR_COUNT || is_fatal_operation == true)
+				SET_STATUS_BIT(g_status, OSS::BMP280_ERROR);
+		}
+		BMP280_reset_status();
 	}
 
-	//
 	// Check HCSR04 status
-	//
 }
+
+
