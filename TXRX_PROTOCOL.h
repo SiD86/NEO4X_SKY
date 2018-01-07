@@ -26,11 +26,14 @@ namespace TXRX {
 		int16_t	XYZH[4];				// X, Y, Z and alttitude
 		uint16_t battery_voltage;		// Current battery voltage [0 - 65535], 0.01V
 
-		uint32_t hardware_error_count;
-		uint32_t software_error_count;
-		uint32_t desync_count;
+		uint8_t hardware_error_count;
+		uint8_t software_error_count;
+		uint8_t desync_count;
+		uint8_t MPU6050_get_FIFO_size_error_count;
+		uint8_t MPU6050_check_FIFO_size_error_count;
+		uint8_t MPU6050_get_data_error_count;
 		
-		uint8_t reserve[1];
+		uint8_t reserve[10];
 	};
 	#pragma pack (pop)
 

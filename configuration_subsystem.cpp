@@ -82,7 +82,7 @@ bool CONFIGSS::load_and_check_configuration() {
 	memcpy(&g_configuration.PID_H,						&buffer[0x0080], 12);
 	memcpy(&g_configuration.I_H_limit,					&buffer[0x008C], 4);
 
-	delay(1000);
+	/*delay(1000);
 
 	Serial.println(g_configuration.memory_map_version);
 	Serial.println(g_configuration.firmware_version);
@@ -94,7 +94,7 @@ bool CONFIGSS::load_and_check_configuration() {
 	Serial.println(g_configuration.send_state_data_interval);
 	Serial.println(g_configuration.PID_interval);
 	Serial.println(g_configuration.PID_limit);
-	Serial.println(g_configuration.PID_threshold);
+	Serial.println(g_configuration.PID_threshold);*/
 
 	// Reset calibration ESC parameter
 	if (g_configuration.calibration_ESC == 0xAA) {
