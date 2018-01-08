@@ -452,6 +452,7 @@ bool MPU6050_is_data_ready() {
 			g_status = MPU6050_DRIVER_ERROR;
 		return false;
 	}
+	g_is_data_ready_timeout = false;
 	g_is_data_ready = false;
 
 
@@ -468,14 +469,14 @@ bool MPU6050_is_data_ready() {
 	uint32_t FIFO_bytes_count = (static_cast<uint16_t>(buffer[0]) << 8) | buffer[1];
 
 	// Check FIFO buffer size
-	if (FIFO_bytes_count > MPU6050_FIFO_PACKET_SIZE) {
+	if (FIFO_bytes_count != MPU6050_FIFO_PACKET_SIZE) {
 		I2C_write_bits(ADDRESS, REG_USER_CTRL, USERCTRL_FIFO_RESET_MASK, USERCTRL_FIFO_RESET);
 		++MPU6050_check_FIFO_size_error_count;
 		return false;
 	}
 
 	g_status = MPU6050_DRIVER_NO_ERROR;
-	return (FIFO_bytes_count == MPU6050_FIFO_PACKET_SIZE);
+	return true;
 }
 
 void MPU6050_get_data(float* X, float* Y, float* Z) {
@@ -485,6 +486,7 @@ void MPU6050_get_data(float* X, float* Y, float* Z) {
 
 		I2C_set_internal_address_length(1);
 		if (I2C_async_read_bytes(ADDRESS, REG_FIFO_R_W, MPU6050_FIFO_PACKET_SIZE) == false) {
+			++MPU6050_get_data_error_count;
 			g_status = MPU6050_DRIVER_ERROR;
 			return;
 		}
@@ -686,7 +688,6 @@ static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
 static void data_ready_IRQ_callback() {
 
 	g_is_data_ready = true;
-	g_is_data_ready_timeout = false;
 
 	// Reset data ready timeout timer
 	REG_TC1_CCR1 = TC_CCR_SWTRG | TC_CCR_CLKEN;

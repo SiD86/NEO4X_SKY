@@ -189,7 +189,7 @@ static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_f
 	if (check_MPU6050 == true) {
 
 		if (MPU6050_get_status() == MPU6050_DRIVER_ERROR) {
-			if (++g_MPU6050_error_count > MAX_ERROR_COUNT || is_fatal_operation == true)
+			if (++g_MPU6050_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::MPU6050_ERROR);
 		}
 		MPU6050_reset_status();
@@ -199,13 +199,28 @@ static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_f
 	if (check_BMP280 == true) {
 
 		if (BMP280_get_status() == BMP280_DRIVER_ERROR) {
-			if (++g_BMP280_error_count > MAX_ERROR_COUNT || is_fatal_operation == true)
+			if (++g_BMP280_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::BMP280_ERROR);
 		}
 		BMP280_reset_status();
 	}
 
-	// Check HCSR04 status
+	// Reset error counters
+	static uint32_t prev_check_time = 0;
+	if (millis() - prev_check_time > 1000) {
+
+		static uint32_t prev_MPU6050_error_count = 0;
+		if (prev_MPU6050_error_count == g_MPU6050_error_count)
+			g_MPU6050_error_count = 0;
+		
+		static uint32_t prev_BMP280_error_count = 0;
+		if (prev_BMP280_error_count == g_BMP280_error_count)
+			g_BMP280_error_count = 0;
+
+		prev_check_time = millis();
+		prev_MPU6050_error_count = g_MPU6050_error_count;
+		prev_BMP280_error_count = g_BMP280_error_count;
+	}
 }
 
 
