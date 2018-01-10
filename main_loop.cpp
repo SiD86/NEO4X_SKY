@@ -99,7 +99,7 @@ void loop() {
 	// Update state data
 	make_state_packet();
 
-	Serial.print(FLY_cur_process_time);
+	/*Serial.print(FLY_cur_process_time);
 	Serial.print(" ");
 	Serial.print(FLY_max_process_time);
 	Serial.print(" ");
@@ -109,7 +109,7 @@ void loop() {
 	Serial.print(" ");
 	Serial.print(BMP280_cur_process_time);
 	Serial.print(" ");
-	Serial.println(BMP280_max_process_time);
+	Serial.println(BMP280_max_process_time);*/
 }
 
 
