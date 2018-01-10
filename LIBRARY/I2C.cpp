@@ -179,7 +179,7 @@ bool I2C_async_read_bytes(uint8_t dev_addr, uint32_t internal_addr, uint32_t siz
 	REG_TWI1_CR = TWI_CR_START;
 
 	// Configure interrupts
-	REG_TWI1_IER = TWI_IER_ENDRX;
+	REG_TWI1_IER = TWI_IER_ENDRX | TWI_IER_NACK;
 
 	g_status = I2C_DRIVER_BUSY;
 	return true;
@@ -244,6 +244,8 @@ static void stop_communication() {
 //
 // IRQ handlers
 //
+uint8_t I2C_nack_count = 0;
+uint8_t I2C_timeout_count = 0;
 void TWI1_Handler() {
 
 	uint32_t status = REG_TWI1_SR;
@@ -253,6 +255,7 @@ void TWI1_Handler() {
 	if (IS_SET(status, TWI_SR_NACK) && IS_SET(irq_mask, TWI_IMR_NACK)) {
 		stop_communication();
 		g_status = I2C_DRIVER_ERROR;
+		++I2C_nack_count;
 	}
 	
 	// Send STOP complite
@@ -310,5 +313,6 @@ void TC3_Handler() {
 	if ((irq_mask & TC_IMR_CPCS) && (status & TC_SR_CPCS)) {
 		stop_communication();
 		g_status = I2C_DRIVER_ERROR;
+		++I2C_timeout_count;
 	}
 }

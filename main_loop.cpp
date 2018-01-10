@@ -20,6 +20,8 @@ static uint8_t g_status = TXRX::MAIN_CORE_STATUS_NO_ERROR;
 extern uint8_t MPU6050_get_FIFO_size_error_count;
 extern uint8_t MPU6050_check_FIFO_size_error_count;
 extern uint8_t MPU6050_get_data_error_count;
+extern uint8_t I2C_nack_count;
+extern uint8_t I2C_timeout_count;
 
 
 void setup() {
@@ -138,6 +140,9 @@ static void make_state_packet() {
 	g_sp.MPU6050_get_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
 	g_sp.MPU6050_check_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
 	g_sp.MPU6050_get_data_error_count = MPU6050_get_data_error_count;
+
+	g_sp.I2C_nack_count = I2C_nack_count;
+	g_sp.I2C_timeout_count = I2C_timeout_count;
 
 
 	FLY_CORE::make_state_data(&g_sp);
