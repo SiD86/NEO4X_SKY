@@ -244,8 +244,8 @@ static void stop_communication() {
 //
 // IRQ handlers
 //
-uint8_t I2C_nack_count = 0;
-uint8_t I2C_timeout_count = 0;
+volatile uint8_t I2C_nack_count = 0;
+volatile uint8_t I2C_timeout_count = 0;
 void TWI1_Handler() {
 
 	uint32_t status = REG_TWI1_SR;

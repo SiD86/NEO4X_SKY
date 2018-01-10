@@ -52,6 +52,8 @@ void FLY_CORE::initialize() {
 	error_status_handling(STATE_IDLE);
 }
 
+uint32_t FLY_max_process_time = 0;
+uint32_t FLY_cur_process_time = 0;
 void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data) {
 
 	// Process commands
@@ -61,6 +63,8 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 	// Process OSS
 	OSS::process();
 
+	uint32_t begin = 0;
+
 	switch (g_state)
 	{
 	case STATE_ENABLE:
@@ -68,7 +72,14 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 		break;
 
 	case STATE_PROCESS:
+		begin = micros();
+
 		state_PROCESS_handling(control_data->XYZ, control_data->thrust);
+
+		FLY_cur_process_time = micros() - begin;
+		if (FLY_cur_process_time > FLY_max_process_time)
+			FLY_max_process_time = FLY_cur_process_time;
+
 		break;
 
 	case STATE_DISABLE:
@@ -198,6 +209,8 @@ static void state_ENABLE_handling() {
 }
 
 static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
+
+
 
 	// Get current position
 	float cur_XYZH[4] = { 0 };

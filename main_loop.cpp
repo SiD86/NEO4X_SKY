@@ -20,8 +20,15 @@ static uint8_t g_status = TXRX::MAIN_CORE_STATUS_NO_ERROR;
 extern uint8_t MPU6050_get_FIFO_size_error_count;
 extern uint8_t MPU6050_check_FIFO_size_error_count;
 extern uint8_t MPU6050_get_data_error_count;
-extern uint8_t I2C_nack_count;
-extern uint8_t I2C_timeout_count;
+extern volatile uint8_t I2C_nack_count;
+extern volatile uint8_t I2C_timeout_count;
+
+extern uint32_t FLY_max_process_time;
+extern uint32_t FLY_cur_process_time;
+extern uint32_t MPU6050_max_process_time;
+extern uint32_t MPU6050_cur_process_time;
+extern uint32_t BMP280_max_process_time;
+extern uint32_t BMP280_cur_process_time;
 
 
 void setup() {
@@ -91,6 +98,18 @@ void loop() {
 
 	// Update state data
 	make_state_packet();
+
+	Serial.print(FLY_cur_process_time);
+	Serial.print(" ");
+	Serial.print(FLY_max_process_time);
+	Serial.print(" ");
+	Serial.print(MPU6050_cur_process_time);
+	Serial.print(" ");
+	Serial.print(MPU6050_max_process_time);
+	Serial.print(" ");
+	Serial.print(BMP280_cur_process_time);
+	Serial.print(" ");
+	Serial.println(BMP280_max_process_time);
 }
 
 
