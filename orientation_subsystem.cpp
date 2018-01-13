@@ -31,7 +31,7 @@ static float g_XYZH[4] = { 0 };
 void OSS::initialize() {
 
 	// Initialize MPU6050
-	MPU6050_initialize(OSS_MPU6050_DATA_RDY_PIN);
+	MPU6050_initialize();
 	
 	// Initialize BMP280
 	BMP280_initialize();

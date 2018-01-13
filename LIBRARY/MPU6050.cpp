@@ -19,6 +19,8 @@
 #define MPU6050_ADDRESS_AD0_HIGH    0x69						// Адрес, есии на ножке высокий уровень
 #define MPU6050_FREQUENCY_DIV		0x01						// Делитель частоты 200Hz / (1 + DIV) 
 #define MPU6050_DATA_READY_TIMEOUT	100							// 100 ms
+#define MPU6050_DATA_RDY_PIN		5
+#define MPU6050_CHIP_ID				0x34
 
 #define ADDRESS						MPU6050_ADDRESS_AD0_LOW		// Адрес по умолчанию
 
@@ -304,23 +306,17 @@ uint8_t MPU6050_get_data_error_count = 0;
 //
 // EXTERNAL INTERFACE
 //
-void MPU6050_initialize(uint32_t data_ready_IRQ_pin) {
+void MPU6050_initialize() {
 	
 	I2C_set_internal_address_length(1);
 	g_status = MPU6050_DRIVER_ERROR;
-
-	// Configure watch dara ready timeout timer clock
-	REG_PMC_PCER0 = PMC_PCER0_PID31;
-	REG_TC1_CMR1 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;
-	REG_TC1_RC1 = MPU6050_DATA_READY_TIMEOUT * (VARIANT_MCK / 8 / 1000);
-	NVIC_EnableIRQ(TC4_IRQn);
 
 	// Проверка подключения устройства
     uint8_t reg = 0;
 	if (!I2C_read_byte(ADDRESS, REG_WHO_AM_I, &reg))
 		return;
 	
-	if ( (reg >> 1) != 0x34 ) // FIXME
+	if ( (reg >> 1) != MPU6050_CHIP_ID)
         return;
 
 	// Перезагрузка устройства
@@ -386,10 +382,16 @@ void MPU6050_initialize(uint32_t data_ready_IRQ_pin) {
 		return;
 
 	// Configure data ready IRQ
-	pinMode(data_ready_IRQ_pin, INPUT);
-	digitalWrite(data_ready_IRQ_pin, LOW);
-	detachInterrupt(data_ready_IRQ_pin);
-	attachInterrupt(data_ready_IRQ_pin, data_ready_IRQ_callback, RISING);
+	pinMode(MPU6050_DATA_RDY_PIN, INPUT);
+	digitalWrite(MPU6050_DATA_RDY_PIN, LOW);
+	detachInterrupt(MPU6050_DATA_RDY_PIN);
+	attachInterrupt(MPU6050_DATA_RDY_PIN, data_ready_IRQ_callback, RISING);
+
+	// Configure watch data ready timeout timer clock
+	REG_PMC_PCER0 = PMC_PCER0_PID31;
+	REG_TC1_CMR1 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;
+	REG_TC1_RC1 = MPU6050_DATA_READY_TIMEOUT * (VARIANT_MCK / 8 / 1000);
+	NVIC_EnableIRQ(TC4_IRQn);
 
 	// Initialize success
 	g_status = MPU6050_DRIVER_NO_ERROR;
@@ -574,16 +576,14 @@ static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
 }
 
 static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Bank, uint8_t Addr, bool IsUseProgMem)  {
+	
 	const int MemoryChunkSize = 16;
-	///////////////////////////////////////////////////////////
-	// Выделение памяти
 	uint8_t* pVerifyBuffer = (uint8_t*)malloc(MemoryChunkSize);
 	uint8_t* pProgBuffer = nullptr;
     if (IsUseProgMem == true) 
 		pProgBuffer = (uint8_t*)malloc(MemoryChunkSize);
-	//
-	///////////////////////////////////////////////////////////
-    if (I2C_write_byte(ADDRESS, REG_BANK_SEL,Bank & 0x1F) == false)	// Установка хранилища данных
+
+    if (I2C_write_byte(ADDRESS, REG_BANK_SEL, Bank & 0x1F) == false)	// Установка хранилища данных
 		return false;
 	if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, Addr) == false)	// Установка начального адреса
 		return false;
@@ -604,18 +604,17 @@ static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Ban
 		else 
             pProgBuffer = (uint8_t*)pData + i;
 		
-        if (I2C_write_bytes(ADDRESS, REG_MEM_R_W,pProgBuffer,ChunkSize) == false)
+        if (I2C_write_bytes(ADDRESS, REG_MEM_R_W, pProgBuffer, ChunkSize) == false)
 			return false;
 		///////////////////////////////////////////////////////////
 		// Проверка записанных данных
-		if (I2C_write_byte(ADDRESS, REG_BANK_SEL,Bank & 0x1F) == false)	// Установка хранилища данных
+		if (I2C_write_byte(ADDRESS, REG_BANK_SEL, Bank & 0x1F) == false)	// Установка хранилища данных
 			return false;
 		if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, Addr) == false)	// Установка начального адреса
 			return false;
 		//
-		I2C_read_bytes(ADDRESS,REG_MEM_R_W,pVerifyBuffer,ChunkSize);
-		if (memcmp(pProgBuffer, pVerifyBuffer, ChunkSize) != 0) 
-		{
+		I2C_read_bytes(ADDRESS, REG_MEM_R_W, pVerifyBuffer, ChunkSize);
+		if (memcmp(pProgBuffer, pVerifyBuffer, ChunkSize) != 0)  {
 			free(pVerifyBuffer);
 			if (IsUseProgMem == true) 
 				free(pProgBuffer);
@@ -629,9 +628,9 @@ static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Ban
 		{
 			if (Addr == 0) 
 				Bank++;
-			if (I2C_write_byte(ADDRESS,REG_BANK_SEL,Bank & 0x1F) == false)	// Установка хранилища данных
+			if (I2C_write_byte(ADDRESS, REG_BANK_SEL, Bank & 0x1F) == false)	// Установка хранилища данных
 				return false;
-			if (I2C_write_byte(ADDRESS,REG_MEM_START_ADDR,Addr) == false)	// Установка начального адреса
+			if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, Addr) == false)	// Установка начального адреса
 				return false;
 		}
     }
@@ -642,6 +641,7 @@ static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Ban
 }
 
 static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
+
 	uint8_t BufferSize = 64;
     uint8_t* pProgBuffer = new uint8_t[BufferSize];
     // [bank] [offset] [length] [byte[0], byte[1], ..., byte[length]]
@@ -651,10 +651,9 @@ static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
 		uint8_t Offset = pgm_read_byte(pData + i++);
 		uint8_t Len = pgm_read_byte(pData + i++);
         // Запись данных в DMP или выполнение специальных действий
-        if (Len > 0) 
-		{
-			if (BufferSize < Len) 
-			{
+        if (Len > 0) {
+			
+			if (BufferSize < Len)  {
 				BufferSize = Len;
 				delete[] pProgBuffer;
 				pProgBuffer = new uint8_t[BufferSize];
@@ -662,25 +661,21 @@ static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
 			for (int j = 0; j < Len; ++j) 
 				pProgBuffer[j] = pgm_read_byte(pData + i + j);
 			//
-			if (writeMemoryBlock(pProgBuffer,Len,Bank,Offset,false) == false)
-			{
+			if (writeMemoryBlock(pProgBuffer, Len, Bank, Offset, false) == false) {
 				free(pProgBuffer);
 				return false;
 			}
             i += Len;
         } 
-		else 
-		{
-			if (pgm_read_byte(pData + i++) == 0x01) 
-			{
-				if (!I2C_write_byte(ADDRESS,REG_INT_ENABLE,0x32))
-				{
+		else  {
+
+			if (pgm_read_byte(pData + i++) == 0x01)  {
+				if (!I2C_write_byte(ADDRESS, REG_INT_ENABLE, 0x32)) {
 					free(pProgBuffer);
 					return false;
 				}
             } 
-			else 
-			{
+			else  {
 				free(pProgBuffer);
 				return false;
 			}

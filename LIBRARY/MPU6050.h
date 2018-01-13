@@ -1,7 +1,7 @@
 #ifndef __MPU6050_H__
 #define __MPU6050_H__
 
-// LIBRARY VERSION: 0.0.11
+// LIBRARY VERSION: 0.0.12
 
 const uint32_t MPU6050_DRIVER_NO_ERROR			= 0x00;
 const uint32_t MPU6050_DRIVER_BUSY				= 0x01;
@@ -10,10 +10,9 @@ const uint32_t MPU6050_DRIVER_ERROR				= 0x02;
 /**************************************************************************
 * @brief	Function for initialize MPU6050
 * @note		Write firmware for DMP
-* @param	data_ready_IRQ_pin: pin for mapping data ready interrupt
 * @retval	true - initialize success, false - initialize fail
 **************************************************************************/
-void MPU6050_initialize(uint32_t data_ready_IRQ_pin);
+void MPU6050_initialize();
 
 /**************************************************************************
 * @brief	Function for DMP start
