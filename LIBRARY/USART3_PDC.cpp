@@ -22,7 +22,7 @@ void USART3_initialize(uint32_t speed) {
 	REG_USART3_CR = US_CR_RSTTX | US_CR_RSTRX | US_CR_RSTSTA;
 
 	// Configure 8N1 mode
-	REG_USART3_MR = US_MR_CHRL_8_BIT | UART_MR_PAR_NO | US_MR_NBSTOP_1_BIT;
+	REG_USART3_MR = US_MR_CHRL_8_BIT | US_MR_PAR_NO | US_MR_NBSTOP_1_BIT | US_MR_USART_MODE_NORMAL | US_MR_USCLKS_MCK | US_MR_CHMODE_NORMAL;
 
 	// Configure baudrate
 	REG_USART3_BRGR = (SystemCoreClock / speed) / 16;

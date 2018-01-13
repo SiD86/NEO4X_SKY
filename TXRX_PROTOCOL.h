@@ -35,7 +35,7 @@ namespace TXRX {
 		uint8_t I2C_nack_count;
 		uint8_t I2C_timeout_count;
 		
-		uint8_t reserve[8];
+		uint8_t reserve[5];
 	};
 	#pragma pack (pop)
 
