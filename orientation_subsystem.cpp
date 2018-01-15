@@ -150,6 +150,14 @@ static void state_MPU6050_GET_DATA_handler() {
 **************************************************************************/
 static void state_BMP280_CHECK_RDY_handler() {
 
+	static uint32_t prev_check_time = 0;
+
+	if (millis() - prev_check_time < 25) {
+		g_state = STATE_MPU6050_CHECK_RDY;
+		return;
+	}
+	prev_check_time = millis();
+
 	// Check device status
 	if (g_status & OSS::BMP280_ERROR)
 		g_state = STATE_MPU6050_CHECK_RDY;
