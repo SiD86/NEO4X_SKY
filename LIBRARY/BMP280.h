@@ -1,7 +1,7 @@
 #ifndef __BMP280_H__
 #define __BMP280_H__
 
-// LIBRARY VERSION: 0.0.4
+// LIBRARY VERSION: 0.0.5
 
 const uint32_t BMP280_DRIVER_NO_ERROR		= 0x00;
 const uint32_t BMP280_DRIVER_BUSY			= 0x01;
@@ -29,7 +29,7 @@ bool BMP280_is_data_ready();
 * @param	altitude: pointer to buffer for altitude (cm)
 * @retval	true - success, false - I2C error or calculation error
 **************************************************************************/
-void BMP280_get_data(float* pressure, int32_t* temperature, float* altitude);
+void BMP280_get_data(uint32_t* pressure, int32_t* temperature, float* altitude);
 
 /**************************************************************************
 * @brief	Functions for get and reset current driver status

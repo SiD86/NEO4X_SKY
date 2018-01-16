@@ -152,11 +152,11 @@ static void state_BMP280_CHECK_RDY_handler() {
 
 	static uint32_t prev_check_time = 0;
 
-	if (millis() - prev_check_time < 25) {
+	/*if (millis() - prev_check_time < 25) {
 		g_state = STATE_MPU6050_CHECK_RDY;
 		return;
 	}
-	prev_check_time = millis();
+	prev_check_time = millis();*/
 
 	// Check device status
 	if (g_status & OSS::BMP280_ERROR)
@@ -180,6 +180,7 @@ static void state_BMP280_GET_DATA_handler() {
 	if (g_status & OSS::BMP280_ERROR)
 		g_state = STATE_MPU6050_CHECK_RDY;
 
+	// Get data
 	BMP280_get_data(nullptr, nullptr, &g_XYZH[3]);
 	if (BMP280_get_status() != BMP280_DRIVER_BUSY)
 		g_state = STATE_MPU6050_CHECK_RDY;
@@ -194,14 +195,14 @@ static void state_BMP280_GET_DATA_handler() {
 static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_fatal_operation) {
 
 	// Check MPU6050 status
-	if (check_MPU6050 == true) {
+	/*if (check_MPU6050 == true) {
 
 		if (MPU6050_get_status() == MPU6050_DRIVER_ERROR) {
 			if (++g_MPU6050_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::MPU6050_ERROR);
 		}
 		MPU6050_reset_status();
-	}
+	}*/
 
 	// Check BMP280 status
 	if (check_BMP280 == true) {

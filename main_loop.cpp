@@ -90,8 +90,8 @@ void loop() {
 
 	// Make command for fly core
 	uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_ENABLE_CORE;
-	if (g_status & FATAL_ERROR_MASK)
-		fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE_CORE;
+	//if (g_status & FATAL_ERROR_MASK)
+		//fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE_CORE;
 
 	// Process fly core
 	FLY_CORE::process(fly_core_command, &g_cp);
