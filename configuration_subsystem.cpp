@@ -98,7 +98,7 @@ bool CONFIGSS::load_and_check_configuration() {
 
 	// Reset calibration ESC parameter
 	if (g_configuration.calibration_ESC == 0xAA) {
-		Serial.println("CALIBRATION RESET");
+		//Serial.println("CALIBRATION RESET");
 		EEPROM_write_4bytes(0x0030, 0x00, 1);
 	}
 	

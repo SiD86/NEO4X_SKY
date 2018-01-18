@@ -41,10 +41,9 @@ void I2C_initialize(uint32_t clock_speed) {
 	REG_TWI1_CR = TWI_CR_SWRST;
 	delay(10);
 
-	
+	REG_TWI1_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS; // Disable PDC channel
 	REG_TWI1_CR = TWI_CR_SVDIS | TWI_CR_MSDIS; // Disable Master mode and Slave mode
 	REG_TWI1_RHR; // Reset holding register
-	REG_TWI1_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS; // Disable PDC channel
 	REG_TWI1_CR = TWI_CR_MSEN | TWI_CR_SVDIS; // Enable Master mode, disable Slave mode
 
 	set_clock(clock_speed);
@@ -220,7 +219,7 @@ static void set_clock(uint32_t clock_speed) {
 		++CKDIV;
 	}
 
-	TWI1->TWI_CWGR = (CKDIV << 16) | (CLDIV << 8) | CLDIV;
+	REG_TWI1_CWGR = (CKDIV << 16) | (CLDIV << 8) | CLDIV;
 }
 
 static void stop_communication() {

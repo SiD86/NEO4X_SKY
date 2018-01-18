@@ -210,8 +210,6 @@ static void state_ENABLE_handling() {
 
 static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 
-
-
 	// Get current position
 	float cur_XYZH[4] = { 0 };
 	OSS::get_position(cur_XYZH);

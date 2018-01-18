@@ -1,7 +1,7 @@
 #ifndef __MPU6050_H__
 #define __MPU6050_H__
 
-// LIBRARY VERSION: 0.0.12
+// LIBRARY VERSION: 0.0.13
 
 const uint32_t MPU6050_DRIVER_NO_ERROR			= 0x00;
 const uint32_t MPU6050_DRIVER_BUSY				= 0x01;

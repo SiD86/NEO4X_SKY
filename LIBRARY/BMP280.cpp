@@ -7,7 +7,6 @@
 #define DEVICE_CHIP_ID						(0x58)
 #define CALIB_PARAM_DATA_LEN				(24)
 
-
 // Device register map
 #define REG_CALIB_PARAM						(0x88)
 #define REG_CHIP_ID							(0xD0)
@@ -16,7 +15,6 @@
 #define REG_CTRL_MEAS						(0xF4)
 #define REG_CONFIG							(0xF5)
 #define REG_MEAS_DATA						(0xF7)
-
 
 // REG_CTRL_MEAS register bits
 #define T_OVERSAMPLING_SKIP					(0x00 << 5)
@@ -53,8 +51,8 @@
 #define IIR_FILTER_X8						(0x03 << 2)
 #define IIR_FILTER_X16						(0x04 << 2)
 
-#define SPI_3_WIRE_ENABLE					(0x00)
-#define SPI_3_WIRE_DISABLE					(0x01)
+#define SPI_3_WIRE_ENABLE					(0x01)
+#define SPI_3_WIRE_DISABLE					(0x00)
 
 
 static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperature, float* altitude);
@@ -145,7 +143,7 @@ bool BMP280_is_data_ready() {
 		return false;
 
 	g_status = BMP280_DRIVER_NO_ERROR;
-	return (data & 0x01) == 0; // 0x08
+	return (data & 0x01) == 0;
 }
 
 void BMP280_get_data(uint32_t* pressure, int32_t* temperature, float* altitude) {
@@ -222,14 +220,6 @@ static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperat
 	BMP280_cur_process_time = micros() - begin;
 	if (BMP280_cur_process_time > BMP280_max_process_time)
 		BMP280_max_process_time = BMP280_cur_process_time;
-
-	Serial.print(BMP280_cur_process_time);
-	Serial.print(" ");
-	Serial.print(T);
-	Serial.print(" ");
-	Serial.print(P);
-	Serial.print(" ");
-	Serial.println(*altitude);
 }
 
 static int32_t compensate_T(int32_t adc_T, int32_t* t_fine) {

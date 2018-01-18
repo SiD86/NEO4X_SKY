@@ -15,14 +15,12 @@
 #include "I2C.h"
 #include "MPU6050.h"
 #define MPU6050_FIFO_PACKET_SIZE	18							// Размер пакета FIFO
-#define MPU6050_ADDRESS_AD0_LOW     0x68						// Адрес, если на ножке низкий уровень
-#define MPU6050_ADDRESS_AD0_HIGH    0x69						// Адрес, есии на ножке высокий уровень
-#define MPU6050_FREQUENCY_DIV		0x01						// Делитель частоты 200Hz / (1 + DIV) 
+#define MPU6050_FREQUENCY_DIV		0x00						// Делитель частоты 200Hz / (1 + DIV) 
 #define MPU6050_DATA_READY_TIMEOUT	100							// 100 ms
 #define MPU6050_DATA_RDY_PIN		5
 #define MPU6050_CHIP_ID				0x34
 
-#define ADDRESS						MPU6050_ADDRESS_AD0_LOW		// Адрес по умолчанию
+#define ADDRESS						0x68
 
 #pragma region MPU6050_DMP_BANKS
 static const uint8_t DMP_MEMORY_BINARY[] PROGMEM = {
@@ -191,7 +189,7 @@ static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 	//0x07,0x46,0x01,0x9A,                     // CFG_GYRO_SOURCE inv_send_gyro
 	//0x07,0x47,0x04,0xF1,0x28,0x30,0x38,   // CFG_9 inv_send_gyro -> inv_construct3_fifo
 	//0x07,0x6C,0x04,0xF1,0x28,0x30,0x38,   // CFG_12 inv_send_accel -> inv_construct3_fifo
-	0x02,0x16,0x02,0x00,MPU6050_FREQUENCY_DIV // (0x07 -> 16Mhz) D_0_22 inv_set_fifo_rate (0x06 for first 8mhz board) (0x09 for 8Mhz board from Binoy)
+	0x02,0x16,0x02,0x00,MPU6050_FREQUENCY_DIV // D_0_22 inv_set_fifo_rate 
 
 	// This very last 0x01 WAS a 0x09, which drops the FIFO rate down to 20 Hz. 0x07 is 25 Hz,
 	// 0x01 is 100Hz. Going faster than 100Hz (0x00=200Hz) tends to result in very noisy data.
@@ -303,6 +301,7 @@ uint8_t MPU6050_check_FIFO_size_error_count = 0;
 uint8_t MPU6050_get_data_error_count = 0;
 
 
+
 //
 // EXTERNAL INTERFACE
 //
@@ -327,6 +326,10 @@ void MPU6050_initialize() {
     // Отключение режима ожидания
 	if (!I2C_write_bits(ADDRESS, REG_PWR_MGMT_1, PWR1_SLEEP_MASK, PWR1_SLEEP_DIS))
         return;
+
+	// Set sample rate divisor
+	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x04)) // 1khz / (1 + 4) = 200Hz
+		return;
 
 	// Прошивка DMP (не документировано)
 	if (!writeMemoryBlock(DMP_MEMORY_BINARY, sizeof(DMP_MEMORY_BINARY), 0, 0, true))
