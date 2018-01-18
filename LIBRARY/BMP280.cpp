@@ -175,7 +175,6 @@ void BMP280_get_data(uint32_t* pressure, int32_t* temperature, float* altitude) 
 		}
 		else if (status == I2C_DRIVER_BUSY) {
 			g_status = BMP280_DRIVER_BUSY;
-			return;
 		}
 	}
 }
