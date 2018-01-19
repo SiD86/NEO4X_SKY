@@ -232,8 +232,9 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 			motors_power[3] = SYNTHESIS(PIDU, +1.0F, -1.0F, +1.0F);
 		//}
 
-		// Scale thrust from [0; 100] to [0; 1000]
-		thrust *= 10;
+		thrust *= 10; // Scale thrust from [0; 100] to [0; 1000]
+		if (thrust + FCS_PID_MAX_LEVEL > 1000)
+			thrust = 1000 - FCS_PID_MAX_LEVEL;
 
 		// Add thrust
 		motors_power[0] += thrust;
@@ -294,9 +295,6 @@ static void error_status_handling(uint32_t next_state) {
 
 	if (status & OSS::BMP280_ERROR)
 		g_status |= TXRX::FLY_CORE_STATUS_BMP280_ERROR;
-
-	if (status & OSS::HCSR04_ERROR)
-		g_status |= TXRX::FLY_CORE_STATUS_HCSR04_ERROR;
 
 	// Check fatal errors
 	if (g_status & FATAL_ERROR_MASK)

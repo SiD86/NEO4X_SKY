@@ -11,7 +11,8 @@
 #include "CONFIG.h"
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR |   \
-									 TXRX::MAIN_CORE_STATUS_CONN_LOST )
+									 TXRX::MAIN_CORE_STATUS_CONN_LOST | \
+									 TXRX::MAIN_CORE_STATUS_I2C_HARDWARE_ERROR)
 static void error_status_update();
 static void make_state_packet();
 
@@ -40,7 +41,9 @@ void setup() {
 	digitalWrite(13, LOW);
 
 	// Initialize I2C wire
-	I2C_initialize(400000);
+	I2C_initialize(I2C_SPEED_400KHZ);
+	if (I2C_get_status() == I2C_DRIVER_ERROR)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_I2C_HARDWARE_ERROR);
 
 	//
 	// Тут нужно ввести мониторинг пина для сброса настроек

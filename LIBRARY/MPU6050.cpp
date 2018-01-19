@@ -22,7 +22,6 @@
 
 #define ADDRESS						0x68
 
-#pragma region MPU6050_DMP_BANKS
 static const uint8_t DMP_MEMORY_BINARY[] PROGMEM = {
 	// bank 0, 256 bytes
 	0xFB,0x00,0x00,0x3E,0x00,0x0B,0x00,0x36,0x00,0x01,0x00,0x02,0x00,0x03,0x00,0x00,
@@ -154,9 +153,7 @@ static const uint8_t DMP_MEMORY_BINARY[] PROGMEM = {
 	0x98,0xF1,0xA3,0xA3,0xA3,0xA3,0x97,0xA3,0xA3,0xA3,0xA3,0xF3,0x9B,0xA3,0xA3,0xDC,
 	0xB9,0xA7,0xF1,0x26,0x26,0x26,0xD8,0xD8,0xFF
 };
-#pragma endregion 
 
-#pragma region MPU6050_DMP_CONFIG
 static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 	// BANK OFFSET LENGTH [DATA]
 	0x03,0x7B,0x03,0x4C,0xCD,0x6C,         // FCFG_1 inv_set_gyro_calibration
@@ -198,9 +195,7 @@ static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 	// It is important to make sure the host processor can keep up with reading and processing
 	// the FIFO output at the desired rate. Handling FIFO overflow cleanly is also a good idea.
 };
-#pragma endregion
 
-#pragma region MPU6050_DMP_UPDATE
 static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 	0x01,0xB2,0x02,0xFF,0xFF,
 	0x01,0x90,0x04,0x09,0x23,0xA1,0x35,
@@ -210,9 +205,7 @@ static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 	0x01,0x62,0x02,0x00,0x00,
 	0x00,0x60,0x04,0x00,0x40,0x00,0x00
 };
-#pragma endregion
 
-#pragma region MPU6050_REGISTERS
 #define REG_SMPLRT_DIV				0x19	// Регистр делителя частоты снятия показаний
 #define REG_CONFIG					0x1A
 #define REG_GYRO_CONFIG				0x1B	// Регистр конфигурации гироскопа
@@ -229,7 +222,7 @@ static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 #define REG_FIFO_COUNTH				0x72	// Регистр доступных байт в буфере
 #define REG_FIFO_R_W				0x74
 #define REG_WHO_AM_I				0x75	// Регистр идентификатора устройства
-///////////////////////////////////////////////////////////
+
 // Параметры фильтра низких частот
 #define CFG_DLPF_CFG_MASK			0x07
 #define DLPF_BW_256					0x00
@@ -239,8 +232,7 @@ static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 #define DLPF_BW_20					0x04
 #define DLPF_BW_10					0x05
 #define DLPF_BW_5					0x06
-//
-///////////////////////////////////////////////////////////
+
 // Параметры источника опорного тактового сигнала
 #define PWR1_CLKSEL_MASK			0x07
 #define CLOCK_INTERNAL				0x00
@@ -249,24 +241,21 @@ static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 #define CLOCK_PLL_ZGYRO				0x03
 #define CLOCK_PLL_EXT32K			0x04
 #define CLOCK_PLL_EXT19M			0x05
-//
-///////////////////////////////////////////////////////////
+
 // Диапазоны измерений акселерометра
 #define ACONFIG_AFS_SEL_MASK		0x18
 #define ACCEL_AFS_2					0x00
 #define ACCEL_AFS_4					0x08
 #define ACCEL_AFS_8					0x10
 #define ACCEL_AFS_16				0x18
-//
-///////////////////////////////////////////////////////////
+
 // Диапазоны измерений гироскопа
 #define GCONFIG_FS_SEL_MASK			0x18
 #define GYRO_FS_250					0x00
 #define GYRO_FS_500					0x08
 #define GYRO_FS_1000				0x10
 #define GYRO_FS_2000				0x18
-//
-///////////////////////////////////////////////////////////
+
 #define USERCTRL_DMP_EN_MASK		0x80
 #define USERCTRL_DMP_EN				0x80
 #define USERCTRL_DMP_DIS			0x00
@@ -284,8 +273,6 @@ static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 #define PWR1_SLEEP_MASK				0x40
 #define PWR1_SLEEP_EN				0x40
 #define PWR1_SLEEP_DIS				0x00
-
-#pragma endregion
 
 static void data_ready_IRQ_callback();
 static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z);

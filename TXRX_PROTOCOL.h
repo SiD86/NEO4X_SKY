@@ -45,6 +45,7 @@ namespace TXRX {
 	const uint8_t MAIN_CORE_STATUS_CONN_LOST			= 0x02;
 	const uint8_t MAIN_CORE_STATUS_COMM_DESYNC			= 0x04;
 	const uint8_t MAIN_CORE_STATUS_LOW_VOLTAGE			= 0x08;
+	const uint8_t MAIN_CORE_STATUS_I2C_HARDWARE_ERROR	= 0x80;
 
 	// Fly core mode [0-1]
 	const uint8_t FLY_CORE_STATE_FAIL					= 0x01;
@@ -58,7 +59,7 @@ namespace TXRX {
 	const uint8_t FLY_CORE_STATUS_NO_ERROR				= 0x00;
 	const uint8_t FLY_CORE_STATUS_MPU6050_ERROR			= 0x01;
 	const uint8_t FLY_CORE_STATUS_BMP280_ERROR			= 0x02;
-	const uint8_t FLY_CORE_STATUS_HCSR04_ERROR			= 0x04;
+	// 0x04
 	// 0x08
 	// 0x10
 	// 0x20

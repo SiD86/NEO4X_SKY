@@ -36,9 +36,6 @@ void OSS::initialize() {
 	// Initialize BMP280
 	BMP280_initialize();
 
-	// Initialize HCSR04
-	//
-
 	g_state = STATE_DISABLE;
 	error_status_update(true, true, true);
 }
@@ -157,13 +154,12 @@ static void state_MPU6050_GET_DATA_handler() {
 **************************************************************************/
 static void state_BMP280_CHECK_RDY_handler() {
 
-	/*static uint32_t prev_check_time = 0;
-
+	static uint32_t prev_check_time = 0;
 	if (millis() - prev_check_time < 25) {
 		g_state = STATE_MPU6050_CHECK_RDY;
 		return;
 	}
-	prev_check_time = millis();*/
+	prev_check_time = millis();
 
 	// Check device status
 	if (g_status & OSS::BMP280_ERROR)
@@ -193,12 +189,12 @@ static void state_BMP280_GET_DATA_handler() {
 	BMP280_get_data(&pressure, &temperature, &g_XYZH[3]);
 	if (BMP280_get_status() != BMP280_DRIVER_BUSY) {
 		g_state = STATE_MPU6050_CHECK_RDY; 
-		Serial.print("BMP280:\t");
+		/*Serial.print("BMP280 :\t");
 		Serial.print(pressure);
 		Serial.print("\t");
 		Serial.print(temperature);
 		Serial.print("\t");
-		Serial.println(g_XYZH[3]);
+		Serial.println(g_XYZH[3]);*/
 	}
 
 	error_status_update(false, true, false);
@@ -211,15 +207,16 @@ static void state_BMP280_GET_DATA_handler() {
 static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_fatal_operation) {
 
 	// Check MPU6050 status
-	/*if (check_MPU6050 == true && IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR)) {
+	if (check_MPU6050 == true && IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR)) {
 
 		if (MPU6050_get_status() == MPU6050_DRIVER_ERROR) {
 
 			if (++g_MPU6050_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::MPU6050_ERROR);
+			Serial.println("MPU6050 error");
 		}
 		MPU6050_reset_status();
-	}*/
+	}
 
 	// Check BMP280 status
 	if (check_BMP280 == true && IS_BIT_CLEAR(g_status, OSS::BMP280_ERROR)) {

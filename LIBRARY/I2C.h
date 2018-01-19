@@ -1,9 +1,12 @@
 #ifndef __I2C_H__
 #define __I2C_H__
 
-// LIBRARY VERSION: 0.0.11
+// LIBRARY VERSION: 0.0.12
 
 #define I2C_DRIVER_DEFAULT_TIMEOUT_US	(1000)
+
+const uint32_t I2C_SPEED_100KHZ			= 0x1D0D0;
+const uint32_t I2C_SPEED_400KHZ			= 0x6565;
 
 const uint32_t I2C_DRIVER_NO_ERROR		= 0x00;
 const uint32_t I2C_DRIVER_BUSY			= 0x01;
@@ -11,8 +14,7 @@ const uint32_t I2C_DRIVER_ERROR			= 0x02;
 
 /**************************************************************************
 * @brief	Function for initialize GPIO and I2C registers in Master Mode
-* @note		I2C clock registers not configure. Need call I2C_set_clock()
-* @param	clock_speed: I2C speed (Hz)
+* @param	clock_speed: I2C_SPEED_100KHZ or I2C_SPEED_400KHZ constants
 **************************************************************************/
 void I2C_initialize(uint32_t clock_speed);
 

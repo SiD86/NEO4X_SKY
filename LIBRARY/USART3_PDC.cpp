@@ -1,9 +1,8 @@
 #include <Arduino.h>
 #include "USART3_PDC.h"
+#define TX_PIN								(PIO_PD4)
+#define RX_PIN								(PIO_PD5)
 #define MAX_BUFFER_SIZE						(64)
-
-static void config_PMC();
-static void config_GPIO();
 
 static uint8_t g_tx_buffer[MAX_BUFFER_SIZE] = { 0 };
 static uint8_t g_rx_buffer[MAX_BUFFER_SIZE] = { 0 };
@@ -14,8 +13,13 @@ static uint8_t g_rx_buffer[MAX_BUFFER_SIZE] = { 0 };
 //
 void USART3_initialize(uint32_t speed) {
 
-	config_PMC();
-	config_GPIO();
+	// Enable clock PIOD, USART3, PDC
+	REG_PMC_PCER0 = PMC_PCER0_PID14 | PMC_PCER0_PID20 | PMC_PCER1_PID39;
+	while ( (REG_PMC_PCSR0 & (PMC_PCER0_PID14 | PMC_PCER0_PID20 | PMC_PCER1_PID39)) == 0 );
+
+	// Configure TX and RX pins
+	REG_PIOD_PDR = TX_PIN | RX_PIN;		// Disable PIO control, enable peripheral control
+	REG_PIOD_ABSR = TX_PIN | RX_PIN;	// Set peripheral B function
 
 	// Disable PDC channels and reset TX and RX
 	REG_USART3_PTCR = US_PTCR_TXTDIS | US_PTCR_RXTDIS;
@@ -115,34 +119,4 @@ bool USART3_RX_is_complete() {
 
 uint8_t* USART3_RX_get_buffer_address() {
 	return g_rx_buffer;
-}
-
-
-//
-// INTERNAL INTERFACE
-//
-static void config_PMC() {
-
-	// Enable clock PIOD 
-	REG_PMC_PCER0 |= PMC_PCER0_PID14;
-	while ((REG_PMC_PCSR0 & PMC_PCER0_PID14) == 0);
-
-	// Enable clock USART3
-	REG_PMC_PCER0 |= PMC_PCER0_PID20;
-	while ((REG_PMC_PCSR0 & PMC_PCER0_PID20) == 0);
-
-	// Enable clock PDC
-	REG_PMC_PCER1 |= PMC_PCER1_PID39;
-	while ((REG_PMC_PCSR1 & PMC_PCER1_PID39) == 0);
-}
-
-static void config_GPIO() {
-
-	// Configure RX pin (PD5)
-	REG_PIOD_PDR |= PIO_PDR_P5;		// Disable PIO control, enable peripheral control
-	REG_PIOD_ABSR |= PIO_ABSR_P5;	// Set peripheral B function
-
-	// Configure TX pin (PD4)
-	REG_PIOD_PDR |= PIO_PDR_P4;		// Disable PIO control, enable peripheral control
-	REG_PIOD_ABSR |= PIO_ABSR_P4;	// Set peripheral B function
 }
