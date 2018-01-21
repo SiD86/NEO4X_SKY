@@ -4,7 +4,7 @@
 #include "util.h"
 #define MEAS_VOLTAGE_PIN					(A0)
 #define MEAS_VOLTAGE_PERIOD					(1000)
-#define MEAS_VOLTAGE_ALPHA					(0.4)
+#define MEAS_VOLTAGE_ALPHA					(0.001)
 
 static void process_measurements_battery_voltage(uint32_t adc);
 static void error_status_update();
@@ -26,17 +26,16 @@ void ASS::initialize(uint32_t battery_low_voltage) {
 	pinMode(MEAS_VOLTAGE_PIN, INPUT);
 
 	// Enable ADC channels
-	REG_ADC_CHER = 
-		ADC_CHER_CH0 |  // Battery voltage channel
-		ADC_CHER_CH1 |  // Battery temperature channel
-		ADC_CHER_CH2 |  // Reserved
-		ADC_CHER_CH3 |  // Reserved
-		ADC_CHER_CH4 |  // Reserved
-		ADC_CHER_CH5 |  // Reserved
-		ADC_CHER_CH6 |  // Reserved
-		ADC_CHER_CH7 |  // Reserved
-		ADC_CHER_CH10 | // Reserved
-		ADC_CHER_CH11;  // Reserved
+	REG_ADC_CHER =  ADC_CHER_CH0 |  // Battery voltage channel
+					ADC_CHER_CH1 |  // Battery temperature channel
+					ADC_CHER_CH2 |  // Reserved
+					ADC_CHER_CH3 |  // Reserved
+					ADC_CHER_CH4 |  // Reserved
+					ADC_CHER_CH5 |  // Reserved
+					ADC_CHER_CH6 |  // Reserved
+					ADC_CHER_CH7 |  // Reserved
+					ADC_CHER_CH10 | // Reserved
+					ADC_CHER_CH11;  // Reserved
 
 	// Initialize parameters
 	g_battery_low_voltage = battery_low_voltage;

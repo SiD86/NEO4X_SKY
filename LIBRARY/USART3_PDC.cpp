@@ -19,7 +19,7 @@ void USART3_initialize(uint32_t speed) {
 
 	// Configure TX and RX pins
 	REG_PIOD_PDR = TX_PIN | RX_PIN;		// Disable PIO control, enable peripheral control
-	REG_PIOD_ABSR = TX_PIN | RX_PIN;	// Set peripheral B function
+	REG_PIOD_ABSR |= TX_PIN | RX_PIN;	// Set peripheral B function
 
 	// Disable PDC channels and reset TX and RX
 	REG_USART3_PTCR = US_PTCR_TXTDIS | US_PTCR_RXTDIS;

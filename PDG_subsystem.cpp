@@ -24,44 +24,43 @@ static void calibration_ESC();
 //
 void PDGSS::initialize(uint32_t ESC_frequency, uint32_t is_calibration) {
 
-	// Calculation period (PWM clock 2MHz)
-	uint32_t period = 1000000 / ESC_frequency;
-	
 	// Enable PWM clock
 	REG_PMC_PCER1 = PMC_PCER1_PID36;
 	while ((REG_PMC_PCSR1 & PMC_PCER1_PID36) == 0);
 	
 	// Setup PWM clock devider (2 MHz = 84Mhz / 42)
 	REG_PWM_CLK = PWM_CLK_PREA(0) | PWM_CLK_DIVA(42);
-	
-	REG_PIOC_PDR |= PIO_PDR_P3;										// Отключение IO от пина, включение функций переферии
-	REG_PIOC_ABSR |= PIO_ABSR_P3;									// Выбор типа переферии (B) для пина
-	REG_PWM_CMR0 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Установка источника тактового сигнала CLKA и установка выравнивания по центру
-	REG_PWM_CPRD0 = period;											// Установка периода [ REG_PWM_CLK / (2 * 20000) = 50Гц ]
-	REG_PWM_CDTY0 = 0;												// Установка ширины импульта
-	
-	REG_PIOC_PDR |= PIO_PDR_P5;										// Отключение IO от пина, включение функций переферии
-	REG_PIOC_ABSR |= PIO_ABSR_P5;									// Выбор типа переферии (B) для пина
-	REG_PWM_CMR1 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Установка источника тактового сигнала CLKA и установка выравнивания по центру
-	REG_PWM_CPRD1 = period;											// Установка периода [ REG_PWM_CLK / (2 * 20000) = 50Гц ]
-	REG_PWM_CDTY1 = 0;												// Установка ширины импульта
-	
-	REG_PIOC_PDR |= PIO_PDR_P7;										// Отключение IO от пина, включение функций перефериим
-	REG_PIOC_ABSR |= PIO_ABSR_P7;									// Выбор типа переферии (B) для пина
-	REG_PWM_CMR2 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Установка источника тактового сигнала CLKA, выравнивания по центру, инвертирования сигнала
-	REG_PWM_CPRD2 = period;											// Установка периода [ REG_PWM_CLK / (2 * 20000) = 50Гц ]
-	REG_PWM_CDTY2 = 0;												// Установка ширины импульта
-	
-	REG_PIOC_PDR |= PIO_PDR_P9;										// Отключение IO от пина, включение функций переферии
-	REG_PIOC_ABSR |= PIO_ABSR_P9;									// Выбор типа переферии (B) для пина
-	REG_PWM_CMR3 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Установка источника тактового сигнала CLKA, выравнивания по центру, инвертирования сигнала
-	REG_PWM_CPRD3 = period;											// Установка периода [ REG_PWM_CLK / (2 * 20000) = 50Гц ]
-	REG_PWM_CDTY3 = 0;												// Установка ширины импульта
-	
-	// Активация ШИМ на каналах 0,1,2,3
-	REG_PWM_ENA = PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3;
 
-	delay(100);
+	// Calculation period (PWM clock 2MHz)
+	uint32_t period = 1000000 / ESC_frequency; // ESC_frequency = 2Mhz / (2 * period)
+	
+	REG_PIOC_PDR = PIO_PDR_P3;										// Disable IO, enable peripheral function
+	REG_PIOC_ABSR |= PIO_ABSR_P3;									// Select B peripheral function
+	REG_PWM_CMR0 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
+	REG_PWM_CPRD0 = period;											// Set period
+	REG_PWM_CDTY0 = 0;												// Set pulse width 
+	
+	REG_PIOC_PDR = PIO_PDR_P5;										// Disable IO, enable peripheral function
+	REG_PIOC_ABSR |= PIO_ABSR_P5;									// Select B peripheral function
+	REG_PWM_CMR1 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
+	REG_PWM_CPRD1 = period;											// Set period
+	REG_PWM_CDTY1 = 0;												// Set pulse width 
+	
+	REG_PIOC_PDR = PIO_PDR_P7;										// Disable IO, enable peripheral function
+	REG_PIOC_ABSR |= PIO_ABSR_P7;									// Select B peripheral function
+	REG_PWM_CMR2 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
+	REG_PWM_CPRD2 = period;											// Set period
+	REG_PWM_CDTY2 = 0;												// Set pulse width 
+	
+	REG_PIOC_PDR = PIO_PDR_P9;										// Disable IO, enable peripheral function
+	REG_PIOC_ABSR |= PIO_ABSR_P9;									// Select B peripheral function
+	REG_PWM_CMR3 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
+	REG_PWM_CPRD3 = period;											// Set period
+	REG_PWM_CDTY3 = 0;												// Set pulse width 
+	
+	// Enable PWM
+	REG_PWM_ENA = PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3;
+	while ((REG_PWM_SR & (PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3)) == 0);
 
 	if (is_calibration == 0xAA)
 		calibration_ESC();
@@ -88,7 +87,7 @@ void PDGSS::set_power(int32_t* power) {
 	power[2] = constrain(power[2], MIN_PWM_DUTY, MAX_PWM_DUTY);
 	power[3] = constrain(power[3], MIN_PWM_DUTY, MAX_PWM_DUTY);
 
-	// Set PWM width
+	// Update pulse width
 	PWM_FR_MOTOR_W = power[0];
 	PWM_RR_MOTOR_W = power[1];
 	PWM_RL_MOTOR_W = power[2];
@@ -112,7 +111,7 @@ void PDGSS::get_power_in_persent(uint8_t* power) {
 //
 static void calibration_ESC() {
 
-	// Set maximum PWM width
+	// Set maximum pulse width
 	PWM_FR_MOTOR_W = MAX_PWM_DUTY;
 	PWM_RR_MOTOR_W = MAX_PWM_DUTY;
 	PWM_RL_MOTOR_W = MAX_PWM_DUTY;
@@ -121,7 +120,7 @@ static void calibration_ESC() {
 	// Wait motors
 	delay(3000);
 
-	// Set minimum PWM width
+	// Set minimum pulse width
 	PWM_FR_MOTOR_W = MIN_PWM_DUTY;
 	PWM_RR_MOTOR_W = MIN_PWM_DUTY;
 	PWM_RL_MOTOR_W = MIN_PWM_DUTY;

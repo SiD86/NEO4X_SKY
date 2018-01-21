@@ -57,9 +57,8 @@ void I2C_initialize(uint32_t clock_speed) {
 	}
 	delay(10);
 
-	// Configure SCK and SDA as peripheral function
+	// Configure SCK and SDA as A peripheral function
 	REG_PIOB_PDR = SDA_PIN | SCK_PIN;					// Disable PIO
-	REG_PIOB_ABSR &= ~(PIO_ABSR_P12 | PIO_ABSR_P13);	// Select A peripheral function
 
 	// Configure I2C controller
 	REG_TWI1_RHR; // Reset holding register

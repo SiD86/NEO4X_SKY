@@ -106,7 +106,6 @@ static void process_rx() {
 				if (++error_count >= 5) {
 					SET_STATUS_BIT(g_status, CSS::DESYNC);
 					++g_desync_count; // DEBUG
-					//Serial.println("DESYNC"); // DEBUG
 				}
 			}
 			else {
@@ -129,14 +128,12 @@ static void process_rx() {
 				USART3_reset(false, true);
 				USART3_RX_start(g_packet_size);
 				CLEAR_STATUS_BIT(g_status, CSS::DESYNC);
-				//Serial.println("RX RST"); // DEBUG
 			}
 		}
 
 		// Check communication timeout
 		if (millis() - prev_rx_state_data_time > g_connection_lost_timeout) {
 			SET_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
-			//Serial.println("CONN LOST"); // DEBUG
 		}
 	}
 }
