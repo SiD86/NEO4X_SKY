@@ -40,6 +40,6 @@ namespace CONFIGSS {
 	void enter_to_configuration_mode();
 }
 
-extern CONFIGSS::configuration_t g_configuration;
+extern CONFIGSS::configuration_t g_cfg;
 
 #endif /* __CONFIGURATION_SUBSYSTEM_H__ */

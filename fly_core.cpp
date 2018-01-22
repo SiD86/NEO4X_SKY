@@ -20,8 +20,6 @@ static uint8_t g_state = STATE_FAIL;
 static uint8_t g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 static uint8_t g_status = TXRX::FLY_CORE_STATUS_NO_ERROR;
 
-static PID XYZ_PID[3]; // FIXME
-
 static void internal_command_handling(uint32_t cmd);
 static void user_command_handling(uint32_t cmd, uint8_t* arg);
 static void state_ENABLE_handling();
@@ -39,14 +37,30 @@ static void error_status_handling(uint32_t next_state);
 void FLY_CORE::initialize() {
 
 	// Initialize subsystems
-	PDGSS::initialize(g_configuration.PWM_frequency_ESC,
-					  g_configuration.calibration_ESC);
-	OSS::initialize();
-
-
+	PDGSS::initialize(g_cfg.PWM_frequency_ESC, g_cfg.calibration_ESC);
 	PDGSS::stop();
-	g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 
+	OSS::initialize();
+	
+
+	// Initialize PID controller channel for axis X
+	PID_initialize(PID_CHANNEL_X, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
+				   -g_cfg.I_X_limit, +g_cfg.I_X_limit);
+	PID_set_tunings(PID_CHANNEL_X, g_cfg.PID_X[0], g_cfg.PID_X[1], g_cfg.PID_X[2]);
+	
+	// Initialize PID controller channel for axis X
+	PID_initialize(PID_CHANNEL_Y, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
+				   -g_cfg.I_Y_limit, +g_cfg.I_Y_limit);
+	PID_set_tunings(PID_CHANNEL_Y, g_cfg.PID_Y[0], g_cfg.PID_Y[1], g_cfg.PID_Y[2]);
+	
+	// Initialize PID controller channel for axis X
+	PID_initialize(PID_CHANNEL_Z, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
+				   -g_cfg.I_Z_limit, +g_cfg.I_Z_limit);
+	PID_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
+
+	
+	// Set default fly mode
+	g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 
 	// Check errors and request go to next state
 	error_status_handling(STATE_IDLE);
@@ -63,7 +77,7 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 	// Process OSS
 	OSS::process();
 
-	uint32_t begin = 0;
+	uint32_t begin = micros();
 
 	switch (g_state)
 	{
@@ -72,14 +86,7 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 		break;
 
 	case STATE_PROCESS:
-		begin = micros();
-
 		state_PROCESS_handling(control_data->XYZ, control_data->thrust);
-
-		FLY_cur_process_time = micros() - begin;
-		if (FLY_cur_process_time > FLY_max_process_time)
-			FLY_max_process_time = FLY_cur_process_time;
-
 		break;
 
 	case STATE_DISABLE:
@@ -94,6 +101,10 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 		state_FAIL_handling();
 		break;
 	}
+
+	FLY_cur_process_time = micros() - begin;
+	if (FLY_cur_process_time > FLY_max_process_time)
+		FLY_max_process_time = FLY_cur_process_time;
 }
 
 void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
@@ -177,21 +188,21 @@ static void user_command_handling(uint32_t cmd, uint8_t* arg) {
 		if (g_fly_mode != TXRX::FLY_CORE_MODE_WAIT)
 			return;
 		memcpy(PID, arg, sizeof(PID));
-		XYZ_PID[0].set_factors(PID[0], PID[1], PID[2]);
+		PID_set_tunings(PID_CHANNEL_X, PID[0], PID[1], PID[2]);
 		break;
 
 	case TXRX::CMD_SET_YPID_PARAMS:
 		if (g_fly_mode != TXRX::FLY_CORE_MODE_WAIT)
 			return;
 		memcpy(PID, arg, sizeof(PID));
-		XYZ_PID[1].set_factors(PID[0], PID[1], PID[2]);
+		PID_set_tunings(PID_CHANNEL_Y, PID[0], PID[1], PID[2]);
 		break;
 
 	case TXRX::CMD_SET_ZPID_PARAMS:
 		if (g_fly_mode != TXRX::FLY_CORE_MODE_WAIT)
 			return;
 		memcpy(PID, arg, sizeof(PID));
-		XYZ_PID[2].set_factors(PID[0], PID[1], PID[2]);
+		PID_set_tunings(PID_CHANNEL_Z, PID[0], PID[1], PID[2]);
 		break;
 	}
 }
@@ -219,22 +230,22 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 
 		// Calculation PID
 		float PIDU[3] = { 0 };    // X, Y, Z
-		PIDU[0] = XYZ_PID[0].calculation(cur_XYZH[0], dest_XYZ[0]);
-		PIDU[1] = XYZ_PID[1].calculation(cur_XYZH[1], dest_XYZ[1]);
-		PIDU[2] = XYZ_PID[2].calculation(cur_XYZH[2], dest_XYZ[2]);
+		PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], dest_XYZ[0]);
+		PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], dest_XYZ[1]);
+		PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], dest_XYZ[2]);
 
 		// Synthesis PIDs
 		int32_t motors_power[4] = { 0 };
-		//if (thrust >= g_configuration.PID_start) {
+		if (thrust >= g_cfg.PID_threshold) {
 			motors_power[0] = SYNTHESIS(PIDU, -1.0F, -1.0F, -1.0F);
 			motors_power[1] = SYNTHESIS(PIDU, -1.0F, +1.0F, +1.0F);
 			motors_power[2] = SYNTHESIS(PIDU, +1.0F, +1.0F, -1.0F);
 			motors_power[3] = SYNTHESIS(PIDU, +1.0F, -1.0F, +1.0F);
-		//}
+		}
 
 		thrust *= 10; // Scale thrust from [0; 100] to [0; 1000]
-		if (thrust + FCS_PID_MAX_LEVEL > 1000)
-			thrust = 1000 - FCS_PID_MAX_LEVEL;
+		if (thrust + g_cfg.PID_limit > 1000)
+			thrust = 1000 - g_cfg.PID_limit;
 
 		// Add thrust
 		motors_power[0] += thrust;
@@ -277,7 +288,7 @@ static void state_IDLE_handling() {
 static void state_FAIL_handling() {
 
 	PDGSS::stop();
-	OSS::send_command(OSS::CMD_FORCE_SHUTDOWN);
+	OSS::send_command(OSS::CMD_DISABLE);
 
 	// Check errors and switch state
 	error_status_handling(STATE_FAIL);

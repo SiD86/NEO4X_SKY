@@ -1,57 +1,93 @@
 #include "Arduino.h"
 #include "CONFIG.h"		
 #include "PID_v1.h"
+#define MAX_CHANNEL_COUNT				(3)
 
-PID::PID() {
+struct pid_param_t {
 
-	m_output = 0;
-	m_Kp = 0;
-	m_Ki = 0;
-	m_Kd = 0;
+	// Settings
+	float Kp;
+	float Ki;
+	float Kd;
+	uint32_t interval;
+	float output_min;
+	float output_max;
+	float integral_min;
+	float integral_max;
 
-	m_integral = 0;
-	m_last_error = 0;
+	// For internal
+	uint32_t prev_process_time;
+	float integral;
+	float prev_input;
+	float output;
+};
 
-	m_last_time = 0;
-	m_interval_us = 2500;
+static pid_param_t g_PID_ch[MAX_CHANNEL_COUNT];
+
+void PID_initialize(uint32_t ch, uint32_t interval, float output_min, float output_max, float I_min, float I_max) {
+	
+	g_PID_ch[ch].Kp = 0;
+	g_PID_ch[ch].Ki = 0;
+	g_PID_ch[ch].Kd = 0;
+	g_PID_ch[ch].interval = interval;
+	g_PID_ch[ch].output_min = output_min;
+	g_PID_ch[ch].output_max = output_max;
+	g_PID_ch[ch].integral_min = I_min;
+	g_PID_ch[ch].integral_max = I_max;
+	
+	PID_reset(ch);
 }
 
-void PID::set_inteval(uint32_t interval_us) {
-	m_interval_us = interval_us;
+float PID_process(uint32_t ch, float set_point, float input) {
+
+	unsigned long current_time = micros();
+	uint32_t dT = (current_time - g_PID_ch[ch].prev_process_time);
+
+	if (dT >= g_PID_ch[ch].interval) {
+
+		// Calculate error
+		double error = set_point - input; 
+
+		// Calculate I
+		g_PID_ch[ch].integral += (g_PID_ch[ch].Ki * error);
+		if (g_PID_ch[ch].integral > g_PID_ch[ch].integral_max) {
+			g_PID_ch[ch].integral = g_PID_ch[ch].integral_max;
+		}
+		else if (g_PID_ch[ch].integral < g_PID_ch[ch].integral_min) {
+			g_PID_ch[ch].integral = g_PID_ch[ch].integral_min;
+		}
+
+		double dInput = (input - g_PID_ch[ch].prev_input);
+
+		// Calculate PID output
+		g_PID_ch[ch].output = g_PID_ch[ch].Kp * error + g_PID_ch[ch].integral - g_PID_ch[ch].Kd * dInput;
+		if (g_PID_ch[ch].output > g_PID_ch[ch].output_max) {
+			g_PID_ch[ch].output = g_PID_ch[ch].output_max;
+		}
+		else if (g_PID_ch[ch].output < g_PID_ch[ch].output_min) {
+			g_PID_ch[ch].output = g_PID_ch[ch].output_min;
+		}
+
+		// Remember variables for next time
+		g_PID_ch[ch].prev_input = input;
+		g_PID_ch[ch].prev_process_time = current_time;
+	}
+
+	return g_PID_ch[ch].output;
 }
 
-float PID::calculation(float current, float dest) {
+void PID_set_tunings(uint32_t ch, float Kp, float Ki, float Kd) {
 
-   uint32_t current_time = micros();
-
-   if (current_time - m_last_time >= m_interval_us) {
-	  
-	   // Calculate error
-	   float error = dest - current;
-	   
-	   // Calculate PID
-	   float P = m_Kp * error;
-	   m_integral += m_Ki * error;
-	   float D = m_Kd * (error - m_last_error) / (m_interval_us / 1000.0);
-	  
-	   // Update variables
-	   m_last_error = error;
-	   m_last_time = current_time;
-
-	   // Check output range
-	   m_output = P + m_integral + D;
-	   m_output = constrain(m_output, FCS_PID_MIN_LEVEL, FCS_PID_MAX_LEVEL);
-   }
-
-   return m_output;
+	g_PID_ch[ch].Kp = Kp;
+	g_PID_ch[ch].Ki = Ki;
+	g_PID_ch[ch].Kd = Kd;
 }
 
-void PID::set_factors(float Kp, float Ki, float Kd) {
+void PID_reset(uint32_t ch) {
 
-	m_Kp = Kp;
-	m_Ki = Ki;
-	m_Kd = Kd;
-
-	if (m_Ki == 0)
-		m_integral = 0;
+	g_PID_ch[ch].prev_process_time = 0;
+	g_PID_ch[ch].integral = 0;
+	g_PID_ch[ch].prev_input = 0;
+	g_PID_ch[ch].output = 0;
 }
+

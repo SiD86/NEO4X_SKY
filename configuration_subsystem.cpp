@@ -5,7 +5,7 @@
 
 static bool check_configuration();
 
-CONFIGSS::configuration_t g_configuration;
+CONFIGSS::configuration_t g_cfg;
 
 
 //
@@ -55,49 +55,49 @@ bool CONFIGSS::load_and_check_configuration() {
 	if (EEPROM_read_bytes(0x0000, buffer, 256) == false)
 		return false;
 
-	memcpy(&g_configuration.memory_map_version,			&buffer[0x0000], 1);
-	memcpy(&g_configuration.firmware_version,			&buffer[0x0001], 1);
-	memcpy(&g_configuration.device_ID,					&buffer[0x0002], 4);
+	memcpy(&g_cfg.memory_map_version,			&buffer[0x0000], 1);
+	memcpy(&g_cfg.firmware_version,			&buffer[0x0001], 1);
+	memcpy(&g_cfg.device_ID,					&buffer[0x0002], 4);
 
-	memcpy(&g_configuration.calibration_ESC,			&buffer[0x0030], 1);
-	memcpy(&g_configuration.PWM_frequency_ESC,			&buffer[0x0031], 2);
+	memcpy(&g_cfg.calibration_ESC,			&buffer[0x0030], 1);
+	memcpy(&g_cfg.PWM_frequency_ESC,			&buffer[0x0031], 2);
 
-	memcpy(&g_configuration.battery_low_voltage,		&buffer[0x0033], 2);
-	memcpy(&g_configuration.connection_lost_timeout,	&buffer[0x0035], 2);
-	memcpy(&g_configuration.send_state_data_interval,	&buffer[0x0035], 2);
+	memcpy(&g_cfg.battery_low_voltage,		&buffer[0x0033], 2);
+	memcpy(&g_cfg.connection_lost_timeout,	&buffer[0x0035], 2);
+	memcpy(&g_cfg.send_state_data_interval,	&buffer[0x0035], 2);
 
-	memcpy(&g_configuration.PID_interval,				&buffer[0x0040], 2);
-	memcpy(&g_configuration.PID_limit,					&buffer[0x0042], 2);
-	memcpy(&g_configuration.PID_threshold,				&buffer[0x0044], 2);
+	memcpy(&g_cfg.PID_interval,				&buffer[0x0040], 2);
+	memcpy(&g_cfg.PID_limit,					&buffer[0x0042], 2);
+	memcpy(&g_cfg.PID_threshold,				&buffer[0x0044], 2);
 
-	memcpy(&g_configuration.PID_X,						&buffer[0x0050], 12);
-	memcpy(&g_configuration.I_X_limit,					&buffer[0x005C], 4);
+	memcpy(&g_cfg.PID_X,						&buffer[0x0050], 12);
+	memcpy(&g_cfg.I_X_limit,					&buffer[0x005C], 4);
 		
-	memcpy(&g_configuration.PID_Y,						&buffer[0x0060], 12);
-	memcpy(&g_configuration.I_Y_limit,					&buffer[0x006C], 4);
+	memcpy(&g_cfg.PID_Y,						&buffer[0x0060], 12);
+	memcpy(&g_cfg.I_Y_limit,					&buffer[0x006C], 4);
 
-	memcpy(&g_configuration.PID_Z,						&buffer[0x0070], 12);
-	memcpy(&g_configuration.I_Z_limit,					&buffer[0x007C], 4);
+	memcpy(&g_cfg.PID_Z,						&buffer[0x0070], 12);
+	memcpy(&g_cfg.I_Z_limit,					&buffer[0x007C], 4);
 
-	memcpy(&g_configuration.PID_H,						&buffer[0x0080], 12);
-	memcpy(&g_configuration.I_H_limit,					&buffer[0x008C], 4);
+	memcpy(&g_cfg.PID_H,						&buffer[0x0080], 12);
+	memcpy(&g_cfg.I_H_limit,					&buffer[0x008C], 4);
 
 	/*delay(1000);
 
-	Serial.println(g_configuration.memory_map_version);
-	Serial.println(g_configuration.firmware_version);
-	Serial.println(g_configuration.device_ID);
-	Serial.println(g_configuration.calibration_ESC);
-	Serial.println(g_configuration.PWM_frequency_ESC);
-	Serial.println(g_configuration.battery_low_voltage);
-	Serial.println(g_configuration.connection_lost_timeout);
-	Serial.println(g_configuration.send_state_data_interval);
-	Serial.println(g_configuration.PID_interval);
-	Serial.println(g_configuration.PID_limit);
-	Serial.println(g_configuration.PID_threshold);*/
+	Serial.println(g_cfg.memory_map_version);
+	Serial.println(g_cfg.firmware_version);
+	Serial.println(g_cfg.device_ID);
+	Serial.println(g_cfg.calibration_ESC);
+	Serial.println(g_cfg.PWM_frequency_ESC);
+	Serial.println(g_cfg.battery_low_voltage);
+	Serial.println(g_cfg.connection_lost_timeout);
+	Serial.println(g_cfg.send_state_data_interval);
+	Serial.println(g_cfg.PID_interval);
+	Serial.println(g_cfg.PID_limit);
+	Serial.println(g_cfg.PID_threshold);*/
 
 	// Reset calibration ESC parameter
-	if (g_configuration.calibration_ESC == 0xAA) {
+	if (g_cfg.calibration_ESC == 0xAA) {
 		//Serial.println("CALIBRATION RESET");
 		EEPROM_write_4bytes(0x0030, 0x00, 1);
 	}
@@ -169,17 +169,17 @@ void CONFIGSS::enter_to_configuration_mode() {
 //
 static bool check_configuration() {
 
-	if (g_configuration.PWM_frequency_ESC > 400) {
-		g_configuration.PWM_frequency_ESC = 50;
+	if (g_cfg.PWM_frequency_ESC > 400) {
+		g_cfg.PWM_frequency_ESC = 50;
 		return false;
 	}
-	if (g_configuration.PWM_frequency_ESC < 50) {
-		g_configuration.PWM_frequency_ESC = 50;
+	if (g_cfg.PWM_frequency_ESC < 50) {
+		g_cfg.PWM_frequency_ESC = 50;
 		return false;
 	}
 
-	if (g_configuration.PID_interval == 0) {
-		g_configuration.PID_interval = 2500;
+	if (g_cfg.PID_interval == 0) {
+		g_cfg.PID_interval = 2500;
 		return false;
 	}
 

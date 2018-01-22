@@ -63,19 +63,37 @@ void setup() {
 	pinMode(2, INPUT);
 	digitalWrite(2, HIGH);
 	if (digitalRead(2) == LOW)
-		g_configuration.calibration_ESC = 0xAA;
+		g_cfg.calibration_ESC = 0xAA;
 	else
-		g_configuration.calibration_ESC = 0x00;
+		g_cfg.calibration_ESC = 0x00;
 
-	g_configuration.PWM_frequency_ESC = 400;
-	g_configuration.send_state_data_interval = 100;
-	g_configuration.connection_lost_timeout = 1000;
-	g_configuration.battery_low_voltage = 1000;
-
+	g_cfg.PWM_frequency_ESC = 400;
+	g_cfg.send_state_data_interval = 100;
+	g_cfg.connection_lost_timeout = 1000;
+	g_cfg.battery_low_voltage = 1000;
+	g_cfg.PID_interval = 5000; // 5 ms
+	g_cfg.PID_limit = 300;
+	
+	g_cfg.PID_X[0] = 0;
+	g_cfg.PID_X[1] = 0;
+	g_cfg.PID_X[2] = 0;
+	g_cfg.I_X_limit = 0;
+	
+	g_cfg.PID_Y[0] = 0;
+	g_cfg.PID_Y[1] = 0;
+	g_cfg.PID_Y[2] = 0;
+	g_cfg.I_Y_limit = 0;
+	
+	g_cfg.PID_Z[0] = 0;
+	g_cfg.PID_Z[1] = 0;
+	g_cfg.PID_Z[2] = 0;
+	g_cfg.I_Z_limit = 0;
+	
+	
 	// Initialize subsystems and fly core
-	CSS::initialize(g_configuration.send_state_data_interval, 
-				    g_configuration.connection_lost_timeout);
-	ASS::initialize(g_configuration.battery_low_voltage);
+	CSS::initialize(g_cfg.send_state_data_interval, 
+				    g_cfg.connection_lost_timeout);
+	ASS::initialize(g_cfg.battery_low_voltage);
 
 	FLY_CORE::initialize();
 }

@@ -1,24 +1,14 @@
-#ifndef PID_v1_h
-#define PID_v1_h
+#ifndef __PID_H__
+#define __PID_H__
 
-class PID
-{
-protected:
-	float m_output;
-	float m_Kp;
-	float m_Ki;
-	float m_Kd;
+static const uint32_t PID_CHANNEL_X = 0;
+static const uint32_t PID_CHANNEL_Y = 1;
+static const uint32_t PID_CHANNEL_Z = 2;
 
-	float m_integral;
-	float m_last_error;
+void PID_initialize(uint32_t ch, uint32_t interval, float output_min, float output_max, float I_min, float I_max);
+float PID_process(uint32_t ch, float set_point, float input);
+void PID_set_tunings(uint32_t ch, float Kp, float Ki, float Kd);
+void PID_reset(uint32_t ch);
 
-	uint32_t m_last_time;
-	uint32_t m_interval_us;
-public:
-	PID();
-	void set_inteval(uint32_t interval_us);
-	float calculation(float current, float dest);
-	void set_factors(float P, float I, float D);
-};
-#endif
+#endif /* __PID_H__ */
 

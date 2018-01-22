@@ -44,17 +44,15 @@ void OSS::send_command(uint32_t cmd) {
 
 	switch (cmd) 
 	{
-	case OSS::CMD_DISABLE:
-		MPU6050_DMP_stop();
-		g_state = STATE_DISABLE;
-		break;
-
 	case OSS::CMD_ENABLE:
-		MPU6050_DMP_start();
+		if (IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR))
+			MPU6050_DMP_start();
 		g_state = STATE_MPU6050_CHECK_RDY;
 		break;
 
-	case OSS::CMD_FORCE_SHUTDOWN:
+	case OSS::CMD_DISABLE:
+		if (IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR))
+			MPU6050_DMP_stop();
 		g_state = STATE_DISABLE;
 		break;
 	}
