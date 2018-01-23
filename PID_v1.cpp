@@ -45,6 +45,8 @@ float PID_process(uint32_t ch, float set_point, float input) {
 
 	if (dT >= g_PID_ch[ch].interval) {
 
+		REG_PIOC_SODR = PIO_SODR_P24;
+
 		// Calculate error
 		double error = set_point - input; 
 
@@ -71,6 +73,8 @@ float PID_process(uint32_t ch, float set_point, float input) {
 		// Remember variables for next time
 		g_PID_ch[ch].prev_input = input;
 		g_PID_ch[ch].prev_process_time = current_time;
+
+		REG_PIOC_CODR = PIO_CODR_P24;
 	}
 
 	return g_PID_ch[ch].output;

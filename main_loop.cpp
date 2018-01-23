@@ -40,6 +40,9 @@ void setup() {
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
 
+	pinMode(6, OUTPUT);
+	pinMode(7, OUTPUT);
+
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
 	if (I2C_get_status() == I2C_DRIVER_ERROR)

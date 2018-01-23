@@ -130,10 +130,14 @@ static void state_MPU6050_GET_DATA_handler() {
 	if (g_status & OSS::MPU6050_ERROR)
 		g_state = STATE_BMP280_CHECK_RDY;
 
+	REG_PIOC_SODR = PIO_SODR_P23;
+
 	// Process state
 	MPU6050_get_data(&g_XYZH[0], &g_XYZH[1], &g_XYZH[2]);
 	if (MPU6050_get_status() != MPU6050_DRIVER_BUSY) {
 		g_state = STATE_BMP280_CHECK_RDY;
+
+		REG_PIOC_CODR = PIO_CODR_P23;
 		/*Serial.print("MPU6050:\t");
 		Serial.print(g_XYZH[0]);
 		Serial.print("\t");
