@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "CONFIG.h"		
 #include "PID_v1.h"
+#include "util.h"
 #define MAX_CHANNEL_COUNT				(3)
 
 struct pid_param_t {
@@ -43,9 +44,9 @@ float PID_process(uint32_t ch, float set_point, float input) {
 	unsigned long current_time = micros();
 	uint32_t dT = (current_time - g_PID_ch[ch].prev_process_time);
 
-	if (dT >= g_PID_ch[ch].interval) {
+	//if (dT >= g_PID_ch[ch].interval) {
 
-		REG_PIOC_SODR = PIO_SODR_P24;
+		SET_DEBUG_PIN_2;
 
 		// Calculate error
 		double error = set_point - input; 
@@ -74,9 +75,13 @@ float PID_process(uint32_t ch, float set_point, float input) {
 		g_PID_ch[ch].prev_input = input;
 		g_PID_ch[ch].prev_process_time = current_time;
 
-		REG_PIOC_CODR = PIO_CODR_P24;
-	}
+		CLR_DEBUG_PIN_2;
+	//}
 
+	return g_PID_ch[ch].output;
+}
+
+float PID_get_last_output(uint32_t ch) {
 	return g_PID_ch[ch].output;
 }
 

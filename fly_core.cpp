@@ -7,6 +7,7 @@
 #include "configuration_subsystem.h"
 #include "PID_v1.h"
 #include "CONFIG.h"
+#include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::FLY_CORE_STATUS_MPU6050_ERROR)
 #define SYNTHESIS(U,X,Y,Z)        	(U[0] * X + U[1] * Y + U[2] * Z)
 
@@ -230,9 +231,16 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 
 		// Calculation PID
 		float PIDU[3] = { 0 };    // X, Y, Z
-		PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], dest_XYZ[0]);
-		PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], dest_XYZ[1]);
-		PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], dest_XYZ[2]);
+		if (OSS::is_position_updated() == true) {
+			PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], dest_XYZ[0]) / 4.0;
+			PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], dest_XYZ[1]) / 4.0;
+			PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], dest_XYZ[2]) / 4.0;
+		}
+		else {
+			PIDU[0] = PID_get_last_output(PID_CHANNEL_X) / 4.0;
+			PIDU[1] = PID_get_last_output(PID_CHANNEL_Y) / 4.0;
+			PIDU[2] = PID_get_last_output(PID_CHANNEL_Z) / 4.0;
+		}
 
 		// Synthesis PIDs
 		int32_t motors_power[4] = { 0 };

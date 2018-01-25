@@ -40,8 +40,19 @@ void setup() {
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
 
-	pinMode(6, OUTPUT);
-	pinMode(7, OUTPUT);
+	pinMode(53, OUTPUT); // PB14
+	pinMode(50, OUTPUT); // PC13
+	pinMode(49, OUTPUT); // PC14
+	pinMode(27, OUTPUT); // PD2
+	pinMode(24, OUTPUT); // PA15
+	pinMode(23, OUTPUT); // PA14
+
+	CLR_DEBUG_PIN_1;
+	CLR_DEBUG_PIN_2;
+	CLR_DEBUG_PIN_3;
+	CLR_DEBUG_PIN_4;
+	CLR_DEBUG_PIN_5;
+	CLR_DEBUG_PIN_6;
 
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
@@ -103,13 +114,18 @@ void setup() {
 
 void loop() {
 
+	SET_DEBUG_PIN_6;
+
 	// Recieve and send data
+	SET_DEBUG_PIN_5;
 	CSS::process();
-	
+
 	// Additional subsystem process
+	CLR_DEBUG_PIN_5;
 	ASS::process();
-	
+
 	// Update error status
+	SET_DEBUG_PIN_5;
 	error_status_update();
 
 	// Make command for fly core
@@ -118,10 +134,17 @@ void loop() {
 		fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE_CORE;
 
 	// Process fly core
+	CLR_DEBUG_PIN_5;
+	g_cp.command = TXRX::CMD_SET_FLY_MODE_STABILIZE;
 	FLY_CORE::process(fly_core_command, &g_cp);
+	
 
 	// Update state data
+	SET_DEBUG_PIN_5;
 	make_state_packet();
+	CLR_DEBUG_PIN_5;
+
+	CLR_DEBUG_PIN_6;
 
 	/*Serial.print(FLY_cur_process_time);
 	Serial.print(" ");

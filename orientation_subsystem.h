@@ -20,6 +20,7 @@ namespace OSS {
 	void initialize();
 	void send_command(uint32_t cmd);
 	void process();
+	bool is_position_updated();
 	void get_position(float* XYZH);
 
 	uint32_t get_status();
