@@ -24,14 +24,6 @@ extern uint8_t MPU6050_get_data_error_count;
 extern volatile uint8_t I2C_nack_count;
 extern volatile uint8_t I2C_timeout_count;
 
-extern uint32_t FLY_max_process_time;
-extern uint32_t FLY_cur_process_time;
-extern uint32_t MPU6050_max_process_time;
-extern uint32_t MPU6050_cur_process_time;
-extern uint32_t BMP280_max_process_time;
-extern uint32_t BMP280_cur_process_time;
-
-
 void setup() {
 
 	Serial.begin(460800);	// DEBUG
@@ -114,18 +106,13 @@ void setup() {
 
 void loop() {
 
-	SET_DEBUG_PIN_6;
-
 	// Recieve and send data
-	SET_DEBUG_PIN_5;
 	CSS::process();
 
 	// Additional subsystem process
-	CLR_DEBUG_PIN_5;
 	ASS::process();
 
 	// Update error status
-	SET_DEBUG_PIN_5;
 	error_status_update();
 
 	// Make command for fly core
@@ -134,29 +121,10 @@ void loop() {
 		fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE_CORE;
 
 	// Process fly core
-	CLR_DEBUG_PIN_5;
-	g_cp.command = TXRX::CMD_SET_FLY_MODE_STABILIZE;
 	FLY_CORE::process(fly_core_command, &g_cp);
 	
-
 	// Update state data
-	SET_DEBUG_PIN_5;
 	make_state_packet();
-	CLR_DEBUG_PIN_5;
-
-	CLR_DEBUG_PIN_6;
-
-	/*Serial.print(FLY_cur_process_time);
-	Serial.print(" ");
-	Serial.print(FLY_max_process_time);
-	Serial.print(" ");
-	Serial.print(MPU6050_cur_process_time);
-	Serial.print(" ");
-	Serial.print(MPU6050_max_process_time);
-	Serial.print(" ");
-	Serial.print(BMP280_cur_process_time);
-	Serial.print(" ");
-	Serial.println(BMP280_max_process_time);*/
 }
 
 

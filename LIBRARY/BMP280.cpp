@@ -190,11 +190,7 @@ void BMP280_reset_status() {
 //
 // INTERNAL INTERFACE
 //
-uint32_t BMP280_max_process_time = 0;
-uint32_t BMP280_cur_process_time = 0;
 static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperature, float* altitude) {
-
-	uint32_t begin = micros();
 
 	// Make values
 	int32_t adc_P = MAKE_INT32(0, data[0], data[1], data[2]) >> 4;
@@ -215,10 +211,6 @@ static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperat
 
 	if (temperature != nullptr)
 		*temperature = T;
-
-	BMP280_cur_process_time = micros() - begin;
-	if (BMP280_cur_process_time > BMP280_max_process_time)
-		BMP280_max_process_time = BMP280_cur_process_time;
 }
 
 static int32_t compensate_T(int32_t adc_T, int32_t* t_fine) {

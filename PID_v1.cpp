@@ -17,9 +17,9 @@ struct pid_param_t {
 	float integral_max;
 
 	// For internal
-	uint32_t prev_process_time;
 	float integral;
-	float prev_input;
+	float prev_error;
+	uint32_t prev_process_time;
 	float output;
 };
 
@@ -39,44 +39,40 @@ void PID_initialize(uint32_t ch, uint32_t interval, float output_min, float outp
 	PID_reset(ch);
 }
 
-float PID_process(uint32_t ch, float set_point, float input) {
+float PID_process(uint32_t ch, float input, float set_point) {
 
-	unsigned long current_time = micros();
-	uint32_t dT = (current_time - g_PID_ch[ch].prev_process_time);
+	// Calculate error and time
+	double error = set_point - input; 
+	uint32_t time = micros();
 
-	//if (dT >= g_PID_ch[ch].interval) {
+	// Calculate P
+	float P = g_PID_ch[ch].Kp * error;
 
-		SET_DEBUG_PIN_2;
+	// Calculate I
+	g_PID_ch[ch].integral += (g_PID_ch[ch].Ki * error);
+	if (g_PID_ch[ch].integral > g_PID_ch[ch].integral_max) {
+		g_PID_ch[ch].integral = g_PID_ch[ch].integral_max;
+	}
+	else if (g_PID_ch[ch].integral < g_PID_ch[ch].integral_min) {
+		g_PID_ch[ch].integral = g_PID_ch[ch].integral_min;
+	}
 
-		// Calculate error
-		double error = set_point - input; 
+	// Calculate D
+	uint32_t dt = time - g_PID_ch[ch].prev_process_time;
+	float D = g_PID_ch[ch].Kd * (error - g_PID_ch[ch].prev_error) / (dt / 1000000.0);
 
-		// Calculate I
-		g_PID_ch[ch].integral += (g_PID_ch[ch].Ki * error);
-		if (g_PID_ch[ch].integral > g_PID_ch[ch].integral_max) {
-			g_PID_ch[ch].integral = g_PID_ch[ch].integral_max;
-		}
-		else if (g_PID_ch[ch].integral < g_PID_ch[ch].integral_min) {
-			g_PID_ch[ch].integral = g_PID_ch[ch].integral_min;
-		}
+	// Calculate PID output
+	g_PID_ch[ch].output = P + g_PID_ch[ch].integral + D;
+	if (g_PID_ch[ch].output > g_PID_ch[ch].output_max) {
+		g_PID_ch[ch].output = g_PID_ch[ch].output_max;
+	}
+	else if (g_PID_ch[ch].output < g_PID_ch[ch].output_min) {
+		g_PID_ch[ch].output = g_PID_ch[ch].output_min;
+	}
 
-		double dInput = (input - g_PID_ch[ch].prev_input);
-
-		// Calculate PID output
-		g_PID_ch[ch].output = g_PID_ch[ch].Kp * error + g_PID_ch[ch].integral - g_PID_ch[ch].Kd * dInput;
-		if (g_PID_ch[ch].output > g_PID_ch[ch].output_max) {
-			g_PID_ch[ch].output = g_PID_ch[ch].output_max;
-		}
-		else if (g_PID_ch[ch].output < g_PID_ch[ch].output_min) {
-			g_PID_ch[ch].output = g_PID_ch[ch].output_min;
-		}
-
-		// Remember variables for next time
-		g_PID_ch[ch].prev_input = input;
-		g_PID_ch[ch].prev_process_time = current_time;
-
-		CLR_DEBUG_PIN_2;
-	//}
+	// Remember variables
+	g_PID_ch[ch].prev_error = error;
+	g_PID_ch[ch].prev_process_time = time;
 
 	return g_PID_ch[ch].output;
 }
@@ -86,17 +82,15 @@ float PID_get_last_output(uint32_t ch) {
 }
 
 void PID_set_tunings(uint32_t ch, float Kp, float Ki, float Kd) {
-
 	g_PID_ch[ch].Kp = Kp;
 	g_PID_ch[ch].Ki = Ki;
 	g_PID_ch[ch].Kd = Kd;
 }
 
 void PID_reset(uint32_t ch) {
-
-	g_PID_ch[ch].prev_process_time = 0;
 	g_PID_ch[ch].integral = 0;
-	g_PID_ch[ch].prev_input = 0;
+	g_PID_ch[ch].prev_error = 0;
+	g_PID_ch[ch].prev_process_time = 0;
 	g_PID_ch[ch].output = 0;
 }
 

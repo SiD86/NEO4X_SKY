@@ -78,34 +78,33 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 	// Process OSS
 	OSS::process();
 
-	uint32_t begin = micros();
-
 	switch (g_state)
 	{
 	case STATE_ENABLE:
 		state_ENABLE_handling();
+		error_status_handling(STATE_PROCESS);
 		break;
 
 	case STATE_PROCESS:
 		state_PROCESS_handling(control_data->XYZ, control_data->thrust);
+		error_status_handling(STATE_PROCESS);
 		break;
 
 	case STATE_DISABLE:
 		state_DISABLE_handling();
+		error_status_handling(STATE_IDLE);
 		break;
 
 	case STATE_IDLE:
 		state_IDLE_handling();
+		error_status_handling(STATE_IDLE);
 		break;
 
 	case STATE_FAIL:
 		state_FAIL_handling();
+		error_status_handling(STATE_FAIL);
 		break;
 	}
-
-	FLY_cur_process_time = micros() - begin;
-	if (FLY_cur_process_time > FLY_max_process_time)
-		FLY_max_process_time = FLY_cur_process_time;
 }
 
 void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
@@ -215,9 +214,6 @@ static void state_ENABLE_handling() {
 
 	// Set default current fly mode
 	g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
-
-	// Check errors and switch state
-	error_status_handling(STATE_PROCESS);
 }
 
 static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
@@ -232,14 +228,14 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 		// Calculation PID
 		float PIDU[3] = { 0 };    // X, Y, Z
 		if (OSS::is_position_updated() == true) {
-			PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], dest_XYZ[0]) / 4.0;
-			PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], dest_XYZ[1]) / 4.0;
-			PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], dest_XYZ[2]) / 4.0;
+			PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], dest_XYZ[0]);
+			PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], dest_XYZ[1]);
+			PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], dest_XYZ[2]);
 		}
 		else {
-			PIDU[0] = PID_get_last_output(PID_CHANNEL_X) / 4.0;
-			PIDU[1] = PID_get_last_output(PID_CHANNEL_Y) / 4.0;
-			PIDU[2] = PID_get_last_output(PID_CHANNEL_Z) / 4.0;
+			PIDU[0] = PID_get_last_output(PID_CHANNEL_X);
+			PIDU[1] = PID_get_last_output(PID_CHANNEL_Y);
+			PIDU[2] = PID_get_last_output(PID_CHANNEL_Z);
 		}
 
 		// Synthesis PIDs
@@ -268,9 +264,6 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 
 		PDGSS::stop();
 	}
-
-	// Check errors and switch state
-	error_status_handling(STATE_PROCESS);
 }
 
 static void state_DISABLE_handling() {
@@ -280,26 +273,17 @@ static void state_DISABLE_handling() {
 
 	// Set default current fly mode
 	g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
-
-	// Check errors and switch state
-	error_status_handling(STATE_IDLE);
 }
 
 static void state_IDLE_handling() {
 
 	PDGSS::stop();
-
-	// Check errors and switch state
-	error_status_handling(STATE_IDLE);
 }
 
 static void state_FAIL_handling() {
 
 	PDGSS::stop();
 	OSS::send_command(OSS::CMD_DISABLE);
-
-	// Check errors and switch state
-	error_status_handling(STATE_FAIL);
 }
 
 

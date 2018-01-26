@@ -91,7 +91,6 @@ void OSS::process() {
 }
 
 bool OSS::is_position_updated() {
-	
 	bool temp = g_is_position_updated;
 	g_is_position_updated = false;
 	return temp;
@@ -121,13 +120,9 @@ static void state_MPU6050_CHECK_RDY_handler() {
 	if (g_status & OSS::MPU6050_ERROR)
 		g_state = STATE_BMP280_CHECK_RDY;
 
-	SET_DEBUG_PIN_1;
-
 	// Check data ready
 	if (MPU6050_is_data_ready() == true)
 		g_state = STATE_MPU6050_GET_DATA;
-
-	CLR_DEBUG_PIN_1;
 
 	error_status_update(true, false, false);
 }
@@ -142,15 +137,11 @@ static void state_MPU6050_GET_DATA_handler() {
 	if (g_status & OSS::MPU6050_ERROR)
 		g_state = STATE_BMP280_CHECK_RDY;
 
-	SET_DEBUG_PIN_1;
-
 	// Process state
 	MPU6050_get_data(&g_XYZH[0], &g_XYZH[1], &g_XYZH[2]);
 	if (MPU6050_get_status() != MPU6050_DRIVER_BUSY) {
 		g_state = STATE_BMP280_CHECK_RDY;
 		g_is_position_updated = true;
-		
-		CLR_DEBUG_PIN_1;
 		/*Serial.print("MPU6050:\t");
 		Serial.print(g_XYZH[0]);
 		Serial.print("\t");
@@ -181,14 +172,10 @@ static void state_BMP280_CHECK_RDY_handler() {
 	}
 	prev_check_time = millis();
 
-	SET_DEBUG_PIN_3;
-
 	if (BMP280_is_data_ready() == true)
 		g_state = STATE_BMP280_GET_DATA;
 	else
 		g_state = STATE_MPU6050_CHECK_RDY;
-
-	CLR_DEBUG_PIN_3;
 
 	error_status_update(false, true, false);
 }
@@ -203,16 +190,12 @@ static void state_BMP280_GET_DATA_handler() {
 	if (g_status & OSS::BMP280_ERROR)
 		g_state = STATE_MPU6050_CHECK_RDY;
 
-	SET_DEBUG_PIN_3;
-
 	// Get data
 	uint32_t pressure = 0;
 	int32_t temperature = 0;
 	BMP280_get_data(&pressure, &temperature, &g_XYZH[3]);
 	if (BMP280_get_status() != BMP280_DRIVER_BUSY) {
 		g_state = STATE_MPU6050_CHECK_RDY; 
-
-		CLR_DEBUG_PIN_3;
 		/*Serial.print("BMP280 :\t");
 		Serial.print(pressure);
 		Serial.print("\t");
