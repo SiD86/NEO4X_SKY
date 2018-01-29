@@ -43,7 +43,7 @@ float PID_process(uint32_t ch, float input, float set_point) {
 
 	// Calculate error and time
 	double error = set_point - input; 
-	uint32_t time = micros();
+	uint32_t current_time = micros();
 
 	// Calculate P
 	float P = g_PID_ch[ch].Kp * error;
@@ -58,7 +58,9 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	}
 
 	// Calculate D
-	uint32_t dt = time - g_PID_ch[ch].prev_process_time;
+	uint32_t dt = current_time - g_PID_ch[ch].prev_process_time;
+	if (dt > 5500) // For delete peaks after reset
+		dt = 5500;
 	float D = g_PID_ch[ch].Kd * (error - g_PID_ch[ch].prev_error) / (dt / 1000000.0);
 
 	// Calculate PID output
@@ -72,7 +74,7 @@ float PID_process(uint32_t ch, float input, float set_point) {
 
 	// Remember variables
 	g_PID_ch[ch].prev_error = error;
-	g_PID_ch[ch].prev_process_time = time;
+	g_PID_ch[ch].prev_process_time = current_time;
 
 	return g_PID_ch[ch].output;
 }

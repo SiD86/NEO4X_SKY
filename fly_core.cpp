@@ -181,6 +181,9 @@ static void user_command_handling(uint32_t cmd, uint8_t* arg) {
 
 	case TXRX::CMD_SET_FLY_MODE_STABILIZE:
 		g_fly_mode = TXRX::FLY_CORE_MODE_STABILIZE;
+		PID_reset(PID_CHANNEL_X);
+		PID_reset(PID_CHANNEL_Y);
+		PID_reset(PID_CHANNEL_Z);
 		break;
 
 	// Available only in wait fly mode (long operations)
@@ -221,6 +224,13 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 	// Get current position
 	float cur_XYZH[4] = { 0 };
 	OSS::get_position(cur_XYZH);
+
+	// ====================================================
+	// Debug angle protection
+	if (cur_XYZH[0] > 60 || cur_XYZH[0] < -60 || cur_XYZH[1] > 60 || cur_XYZH[1] < -60)
+		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
+	// 
+	// ====================================================
 	
 	// Process current fly mode
 	if (g_fly_mode == TXRX::FLY_CORE_MODE_STABILIZE) {
