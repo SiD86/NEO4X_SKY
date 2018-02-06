@@ -40,23 +40,38 @@ extern "C" {
 		// Initialize C library
 		__libc_init_array();
 
+
+		// Enable PIOA and PIOB clocks 
+		REG_PMC_PCER0 = PMC_PCER0_PID11 | PMC_PCER0_PID12;
+		while ((REG_PMC_PCSR0 & (PMC_PCER0_PID11 | PMC_PCER0_PID12)) == 0);
+
+		// Enable PIOC and PIOD clocks 
+		REG_PMC_PCER0 = PMC_PCER0_PID13 | PMC_PCER0_PID14;
+		while ((REG_PMC_PCSR0 & (PMC_PCER0_PID13 | PMC_PCER0_PID14)) == 0);
+
+
 		// Disable pull-up on every pin
-		for (unsigned i = 0; i < PINS_COUNT; i++)
-			digitalWrite(i, LOW);
+		REG_PIOA_PUDR = 0xFFFFFFFF;
+		REG_PIOB_PUDR = 0xFFFFFFFF;
+		REG_PIOC_PUDR = 0xFFFFFFFF;
+		REG_PIOD_PUDR = 0xFFFFFFFF;
+
+		//for (unsigned i = 0; i < PINS_COUNT; i++)
+			//digitalWrite(i, LOW);
 
 		// Enable parallel access on PIO output data registers
-		PIOA->PIO_OWER = 0xFFFFFFFF;
-		PIOB->PIO_OWER = 0xFFFFFFFF;
-		PIOC->PIO_OWER = 0xFFFFFFFF;
-		PIOD->PIO_OWER = 0xFFFFFFFF;
+		REG_PIOA_OWER = 0xFFFFFFFF;
+		REG_PIOB_OWER = 0xFFFFFFFF;
+		REG_PIOC_OWER = 0xFFFFFFFF;
+		REG_PIOD_OWER = 0xFFFFFFFF;
 
 		// Initialize Serial port U(S)ART pins
-		PIO_Configure(
+		/*PIO_Configure(
 			g_APinDescription[PINS_UART].pPort,
 			g_APinDescription[PINS_UART].ulPinType,
 			g_APinDescription[PINS_UART].ulPin,
 			g_APinDescription[PINS_UART].ulPinConfiguration);
-		digitalWrite(0, HIGH); // Enable pullup for RX0
+		digitalWrite(0, HIGH);*/ // Enable pullup for RX0
 		/*PIO_Configure(
 			g_APinDescription[PINS_USART0].pPort,
 			g_APinDescription[PINS_USART0].ulPinType,

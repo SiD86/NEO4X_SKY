@@ -19,43 +19,18 @@ static volatile uint32_t g_status = I2C_DRIVER_NO_ERROR;
 //
 void I2C_initialize(uint32_t clock_speed) {
 
-	// Enable PIOB, I2C and watch timeout timer clock
-	REG_PMC_PCER0 = PMC_PCER0_PID12 | PMC_PCER0_PID23 | PMC_PCER0_PID30;
-	while (	(REG_PMC_PCSR0 & (PMC_PCER0_PID12 | PMC_PCER0_PID23 | PMC_PCER0_PID27)) == 0 );
+	// Enable I2C and watch timeout timer clock
+	REG_PMC_PCER0 = PMC_PCER0_PID23 | PMC_PCER0_PID30;
+	while (	(REG_PMC_PCSR0 & (PMC_PCER0_PID23 | PMC_PCER0_PID27)) == 0 );
 
 	// Configure watch timeout timer
 	REG_TC1_CMR0 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;
 	REG_TC1_RC0 = I2C_DRIVER_DEFAULT_TIMEOUT_US * (VARIANT_MCK / 8 / 1000 / 1000);
 	NVIC_EnableIRQ(TC3_IRQn);
 
-
 	// Disable and reset I2C controller
 	REG_TWI1_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS; // Disable PDC
 	REG_TWI1_CR = TWI_CR_SWRST | TWI_CR_SVDIS | TWI_CR_MSDIS;
-
-	// Check lockup I2C bus
-	REG_PIOB_PER = SDA_PIN; // PIO enable
-	REG_PIOB_ODR = SDA_PIN; // Configure SCK pin as input
-	if (IS_BIT_SET(REG_PIOB_PDSR, SDA_PIN) == false) { // SDA pin in low state
-
-		// Send 16 pulses
-		REG_PIOB_PER = SCK_PIN; // PIO enable
-		REG_PIOB_OER = SCK_PIN; // Configure SCK pin as output
-		for (uint32_t i = 0; i < 16; ++i) {
-			REG_PIOB_CODR = SCK_PIN;
-			delayMicroseconds(5); // ~100 kHz
-			REG_PIOB_SODR = SCK_PIN;
-			delayMicroseconds(5); // ~100 kHz
-		}
-
-		// Configure SCK and SDA as inputs
-		REG_PIOB_ODR = SCK_PIN;
-		if (IS_BIT_SET(REG_PIOB_PDSR, SDA_PIN) == false) { // SDA pin in low state
-			g_status = I2C_DRIVER_ERROR;
-			return;
-		}
-	}
-	delay(10);
 
 	// Configure SCK and SDA as A peripheral function
 	REG_PIOB_PDR = SDA_PIN | SCK_PIN;					// Disable PIO
@@ -65,7 +40,6 @@ void I2C_initialize(uint32_t clock_speed) {
 	REG_TWI1_CWGR = clock_speed; // SCL speed
 	REG_TWI1_CR = TWI_CR_MSEN | TWI_CR_SVDIS; 
 	
-
 	REG_TWI1_IDR = 0xFFFFFFFF;
 	NVIC_EnableIRQ(TWI1_IRQn);
 }

@@ -13,9 +13,9 @@ static uint8_t g_rx_buffer[MAX_BUFFER_SIZE] = { 0 };
 //
 void USART3_initialize(uint32_t speed) {
 
-	// Enable clock PIOD, USART3, PDC
-	REG_PMC_PCER0 = PMC_PCER0_PID14 | PMC_PCER0_PID20 | PMC_PCER1_PID39;
-	while ( (REG_PMC_PCSR0 & (PMC_PCER0_PID14 | PMC_PCER0_PID20 | PMC_PCER1_PID39)) == 0 );
+	// Enable USART3 and PDC clocks
+	REG_PMC_PCER0 = PMC_PCER0_PID20 | PMC_PCER1_PID39;
+	while ( (REG_PMC_PCSR0 & (PMC_PCER0_PID20 | PMC_PCER1_PID39)) == 0 );
 
 	// Configure TX and RX pins
 	REG_PIOD_PDR = TX_PIN | RX_PIN;		// Disable PIO control, enable peripheral control

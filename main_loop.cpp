@@ -27,10 +27,10 @@ extern volatile uint8_t I2C_timeout_count;
 void setup() {
 
 	Serial.begin(460800);	// DEBUG
-	delay(1000);
-
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
+
+	delay(1000);
 
 	pinMode(53, OUTPUT); // PB14
 	pinMode(50, OUTPUT); // PC13

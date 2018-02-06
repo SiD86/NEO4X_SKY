@@ -1,11 +1,11 @@
 #pragma once
 
-// LIBRARY VERSION: 0.0.5
+// LIBRARY VERSION: 0.0.6
 
 /*******************************************************************************
 * @brief	Initialize USART
 * @note		Mode 8N1
-* @param	speed: USART baudrate or SPI speed
+* @param	speed: USART baudrate speed
 *******************************************************************************/
 void USART3_initialize(uint32_t speed);
 
@@ -35,7 +35,7 @@ uint8_t* USART3_RX_get_buffer_address();
 
 /*******************************************************************************
 * @brief	Check USART errors
-* @note		Cehck overrun error, framing error, parity error. Need reset USART
+* @note		Check overrun error, framing error, parity error. Need reset USART
 * @retval	true - error, false - no errors
 *******************************************************************************/
 bool USART3_is_error();

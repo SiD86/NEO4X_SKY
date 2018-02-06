@@ -107,7 +107,7 @@ bool CONFIGSS::load_and_check_configuration() {
 
 void CONFIGSS::enter_to_configuration_mode() {
 
-	bool is_need_reset_UART = false;
+	/*bool is_need_reset_UART = false;
 	uint8_t memory_image[256] = { 0 };
 
 	EEPROM_read_bytes(0x0000, memory_image, 256);
@@ -160,7 +160,7 @@ void CONFIGSS::enter_to_configuration_mode() {
 			is_need_reset_UART = true;
 			break;
 		}
-	}
+	}*/
 }
 
 
