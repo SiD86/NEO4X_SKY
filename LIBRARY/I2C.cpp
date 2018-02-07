@@ -32,30 +32,6 @@ void I2C_initialize(uint32_t clock_speed) {
 	REG_TWI1_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS; // Disable PDC
 	REG_TWI1_CR = TWI_CR_SWRST | TWI_CR_SVDIS | TWI_CR_MSDIS;
 
-	// Check lockup I2C bus
-	REG_PIOB_PER = SDA_PIN; // PIO enable
-	REG_PIOB_ODR = SDA_PIN; // Configure SCK pin as input
-	if (IS_BIT_SET(REG_PIOB_PDSR, SDA_PIN) == false) { // SDA pin in low state
-
-		// Send 16 pulses
-		REG_PIOB_PER = SCK_PIN; // PIO enable
-		REG_PIOB_OER = SCK_PIN; // Configure SCK pin as output
-		for (uint32_t i = 0; i < 9; ++i) {
-			REG_PIOB_CODR = SCK_PIN;
-			delayMicroseconds(5); // ~100 kHz
-			REG_PIOB_SODR = SCK_PIN;
-			delayMicroseconds(5); // ~100 kHz
-		}
-
-		// Configure SCK and SDA as inputs
-		REG_PIOB_ODR = SCK_PIN;
-		if (IS_BIT_SET(REG_PIOB_PDSR, SDA_PIN) == false) { // SDA pin in low state
-			g_status = I2C_DRIVER_ERROR;
-			return;
-		}
-	}
-	delay(10);
-
 	// Configure SCK and SDA as A peripheral function
 	REG_PIOB_PDR = SDA_PIN | SCK_PIN;					// Disable PIO
 
