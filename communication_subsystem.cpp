@@ -97,7 +97,7 @@ static void process_rx() {
 		prev_rx_any_data_time = millis();
 
 		// Process data
-		if ((g_status & CSS::DESYNC) == 0) {
+		if (IS_BIT_CLEAR(g_status, CSS::DESYNC)) {
 
 			static uint32_t error_count = 0;
 			if (process_rx_data() == false) {
@@ -121,7 +121,7 @@ static void process_rx() {
 	else {
 
 		// Check desync communication
-		if (g_status & CSS::DESYNC) {
+		if (IS_BIT_SET(g_status, CSS::DESYNC)) {
 
 			// Wait silence window and reset receiver
 			if (millis() - prev_rx_any_data_time > g_send_state_data_interval * 2) {
@@ -143,20 +143,28 @@ static bool process_rx_data() {
 	// Get RX buffer address
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_RX_get_buffer_address();
 
-	// Verify packet
+	// Verify packet step 1 (check service information)
 	uint8_t CRC = calculate_CRC8(packet->data);
 	bool is_valid = (packet->dev_addr == DEVICE_ADDRESS_DEFAULT) && (packet->CRC == CRC);
 	if (is_valid == true) {
 		memcpy(&g_cp, packet->data, g_data_size); // Copy data
 		return true;
 	}
+
+	// Verify packet step 2 (check data)
+	if (g_cp.thrust > 100)						// [0; 100]
+		return false;
+	if (g_cp.XYZ[0] < -30 || g_cp.XYZ[0] > 30)	// [-30; 30]
+		return false;
+	if (g_cp.XYZ[1] < -30 || g_cp.XYZ[1] > 30)	// [-30; 30]
+		return false;
+
 	return false;
 }
 
 static uint8_t calculate_CRC8(const uint8_t* data) {
 
 	uint8_t CRC = data[0];
-
 	for (uint32_t i = 1; i < g_data_size; ++i)
 		CRC += data[i];
 

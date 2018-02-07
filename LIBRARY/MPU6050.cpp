@@ -274,13 +274,11 @@ static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 #define PWR1_SLEEP_EN				0x40
 #define PWR1_SLEEP_DIS				0x00
 
-static void data_ready_IRQ_callback();
 static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z);
 static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Bank, uint8_t Addr, bool IsUseProgMem);
 static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize);
 
 static uint32_t g_status = MPU6050_DRIVER_NO_ERROR;
-static volatile bool g_is_data_ready = false;
 static volatile bool g_is_data_ready_timeout = false;
 
 uint8_t MPU6050_get_FIFO_size_error_count = 0;
@@ -360,7 +358,7 @@ void MPU6050_initialize() {
 	}
 
 	// IRQ pin configuration
-	if (I2C_write_byte(ADDRESS, REG_INT_CONFIG, 0x00) == false)
+	if (I2C_write_byte(ADDRESS, REG_INT_CONFIG, 0xB0) == false)
 		return;
 
 	// Disable FIFO and DMP
@@ -371,11 +369,10 @@ void MPU6050_initialize() {
 	if (I2C_write_byte(ADDRESS, REG_INT_ENABLE, 0x00) == false)
 		return;
 
-	// Configure data ready IRQ
-	pinMode(MPU6050_DATA_RDY_PIN, INPUT);
-	digitalWrite(MPU6050_DATA_RDY_PIN, LOW);
-	detachInterrupt(MPU6050_DATA_RDY_PIN);
-	attachInterrupt(MPU6050_DATA_RDY_PIN, data_ready_IRQ_callback, RISING);
+	// Configure data ready pin
+	REG_PIOC_PER = PIO_PER_P25;
+	REG_PIOC_ODR = PIO_ODR_P25;
+	REG_PIOC_PUER = PIO_PUER_P25;
 
 	// Configure watch data ready timeout timer clock
 	REG_PMC_PCER0 = PMC_PCER0_PID31;
@@ -409,6 +406,7 @@ void MPU6050_DMP_start() {
 	if (I2C_write_byte(ADDRESS, REG_USER_CTRL, 0xC0) == false)
 		return;
 
+	g_is_data_ready_timeout = false;
 	g_status = MPU6050_DRIVER_NO_ERROR;
 }
 
@@ -433,28 +431,29 @@ void MPU6050_DMP_stop() {
 	if (I2C_write_byte(ADDRESS, REG_INT_ENABLE, 0x00) == false)
 		return;
 
+	g_is_data_ready_timeout = false;
 	g_status = MPU6050_DRIVER_NO_ERROR;
 }
 
 bool MPU6050_is_data_ready() {
 
-	// Check IQR data ready flag
-	if (g_is_data_ready == false) {
-		if (g_is_data_ready_timeout == true)
-			g_status = MPU6050_DRIVER_ERROR;
-		return false;
-	}
-	g_is_data_ready_timeout = false;
-	g_is_data_ready = false;
-
-
-	I2C_set_internal_address_length(1);
 	g_status = MPU6050_DRIVER_ERROR;
 
-	// Get current FIFO data size
+	// Check IQR data ready pin (HIGH - data not ready, LOW - data ready)
+	if (REG_PIOC_PDSR & PIO_PDSR_P25) {
+		if (g_is_data_ready_timeout == false)
+			g_status = MPU6050_DRIVER_NO_ERROR;
+		return false;
+	}
+
+	// Reset data ready timeout timer
+	REG_TC1_CCR1 = TC_CCR_SWTRG | TC_CCR_CLKEN;
+	
+	I2C_set_internal_address_length(1);
+
+	// Get FIFO buffer size
 	uint8_t buffer[2] = { 0 };
 	if (I2C_read_bytes(ADDRESS, REG_FIFO_COUNTH, buffer, 2) == false) {
-		I2C_write_bits(ADDRESS, REG_USER_CTRL, USERCTRL_FIFO_RESET_MASK, USERCTRL_FIFO_RESET);
 		++MPU6050_get_FIFO_size_error_count;
 		return false;
 	}
@@ -467,6 +466,7 @@ bool MPU6050_is_data_ready() {
 		return false;
 	}
 
+	g_is_data_ready_timeout = false;
 	g_status = MPU6050_DRIVER_NO_ERROR;
 	return true;
 }
@@ -510,10 +510,6 @@ void MPU6050_get_data(float* X, float* Y, float* Z) {
 
 uint32_t MPU6050_get_status() {
 	return g_status;
-}
-
-void MPU6050_reset_status() {
-	g_status = MPU6050_DRIVER_NO_ERROR;
 }
 
 //
@@ -679,14 +675,6 @@ static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
 //
 // IRQ handlers
 //
-static void data_ready_IRQ_callback() {
-
-	g_is_data_ready = true;
-
-	// Reset data ready timeout timer
-	REG_TC1_CCR1 = TC_CCR_SWTRG | TC_CCR_CLKEN;
-}
-
 void TC4_Handler() {
 
 	uint32_t status = REG_TC1_SR1;

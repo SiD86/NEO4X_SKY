@@ -1,7 +1,7 @@
 #ifndef __MPU6050_H__
 #define __MPU6050_H__
 
-// LIBRARY VERSION: 0.0.14
+// LIBRARY VERSION: 0.0.16
 
 const uint32_t MPU6050_DRIVER_NO_ERROR			= 0x00;
 const uint32_t MPU6050_DRIVER_BUSY				= 0x01;
@@ -44,6 +44,5 @@ void MPU6050_get_data(float* X, float* Y, float* Z);
 * @retval	Current driver status
 **************************************************************************/
 uint32_t MPU6050_get_status();
-void MPU6050_reset_status();
 
 #endif /* __MPU6050_H__ */

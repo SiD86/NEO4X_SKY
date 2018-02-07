@@ -66,12 +66,12 @@ extern "C" {
 		REG_PIOD_OWER = 0xFFFFFFFF;
 
 		// Initialize Serial port U(S)ART pins
-		/*PIO_Configure(
+		PIO_Configure(
 			g_APinDescription[PINS_UART].pPort,
 			g_APinDescription[PINS_UART].ulPinType,
 			g_APinDescription[PINS_UART].ulPin,
 			g_APinDescription[PINS_UART].ulPinConfiguration);
-		digitalWrite(0, HIGH);*/ // Enable pullup for RX0
+		digitalWrite(0, HIGH); // Enable pullup for RX0
 		/*PIO_Configure(
 			g_APinDescription[PINS_USART0].pPort,
 			g_APinDescription[PINS_USART0].ulPinType,

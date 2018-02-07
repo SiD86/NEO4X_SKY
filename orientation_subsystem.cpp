@@ -147,7 +147,9 @@ static void state_MPU6050_GET_DATA_handler() {
 		Serial.print("\t");
 		Serial.print(g_XYZH[1]);
 		Serial.print("\t");
-		Serial.println(g_XYZH[2]);*/
+		Serial.print(g_XYZH[2]);
+		Serial.print("\t");
+		Serial.println(g_MPU6050_error_count);*/
 	}
 
 	error_status_update(true, false, false);
@@ -216,41 +218,30 @@ static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_f
 	// Check MPU6050 status
 	if (check_MPU6050 == true && IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR)) {
 
-		if (MPU6050_get_status() == MPU6050_DRIVER_ERROR) {
+		uint32_t status = MPU6050_get_status();
+		if (status == MPU6050_DRIVER_ERROR) {
 
 			if (++g_MPU6050_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::MPU6050_ERROR);
 			//Serial.println("MPU6050 error");
 		}
-		MPU6050_reset_status();
+		else if (status == MPU6050_DRIVER_NO_ERROR) {
+			g_MPU6050_error_count = 0;
+		}
 	}
 
 	// Check BMP280 status
 	if (check_BMP280 == true && IS_BIT_CLEAR(g_status, OSS::BMP280_ERROR)) {
 
-		if (BMP280_get_status() == BMP280_DRIVER_ERROR) {
+		uint32_t status = BMP280_get_status();
+		if (status == BMP280_DRIVER_ERROR) {
 
 			if (++g_BMP280_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::BMP280_ERROR);
 			//Serial.println("BMP280 error");
 		}
-		BMP280_reset_status();
-	}
-
-	// Reset error counters
-	static uint32_t prev_check_time = 0;
-	if (millis() - prev_check_time > 1000) {
-
-		static uint32_t prev_MPU6050_error_count = 0;
-		if (IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR) && prev_MPU6050_error_count == g_MPU6050_error_count)
-			g_MPU6050_error_count = 0;
-
-		static uint32_t prev_BMP280_error_count = 0;
-		if (IS_BIT_CLEAR(g_status, OSS::BMP280_ERROR) && prev_BMP280_error_count == g_BMP280_error_count)
+		else if (status == BMP280_DRIVER_NO_ERROR) {
 			g_BMP280_error_count = 0;
-
-		prev_check_time = millis();
-		prev_MPU6050_error_count = g_MPU6050_error_count;
-		prev_BMP280_error_count = g_BMP280_error_count;
+		}
 	}
 }
