@@ -522,12 +522,7 @@ uint32_t MPU6050_get_status() {
 * @param	Y: angle on axis Y
 * @param	Z: angle on axis Z
 **************************************************************************/
-
-uint32_t MPU6050_max_process_time = 0;
-uint32_t MPU6050_cur_process_time = 0;
 static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
-
-	uint32_t begin = micros();
 
 	// Получение кватернионов из пакета
 	int16_t RawQ[4] = { 0 };
@@ -555,10 +550,6 @@ static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
 	*X = tmp_x;
 	*Y = tmp_y;
 	*Z = tmp_z;
-
-	MPU6050_cur_process_time = micros() - begin;
-	if (MPU6050_cur_process_time > MPU6050_max_process_time)
-		MPU6050_max_process_time = MPU6050_cur_process_time;
 }
 
 static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Bank, uint8_t Addr, bool IsUseProgMem)  {

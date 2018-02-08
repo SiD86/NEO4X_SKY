@@ -49,12 +49,12 @@ void FLY_CORE::initialize() {
 				   -g_cfg.I_X_limit, +g_cfg.I_X_limit);
 	PID_set_tunings(PID_CHANNEL_X, g_cfg.PID_X[0], g_cfg.PID_X[1], g_cfg.PID_X[2]);
 	
-	// Initialize PID controller channel for axis X
+	// Initialize PID controller channel for axis Y
 	PID_initialize(PID_CHANNEL_Y, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
 				   -g_cfg.I_Y_limit, +g_cfg.I_Y_limit);
 	PID_set_tunings(PID_CHANNEL_Y, g_cfg.PID_Y[0], g_cfg.PID_Y[1], g_cfg.PID_Y[2]);
 	
-	// Initialize PID controller channel for axis X
+	// Initialize PID controller channel for axis Z
 	PID_initialize(PID_CHANNEL_Z, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
 				   -g_cfg.I_Z_limit, +g_cfg.I_Z_limit);
 	PID_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
