@@ -38,25 +38,22 @@ static void error_status_handling(uint32_t next_state);
 void FLY_CORE::initialize() {
 
 	// Initialize subsystems
-	PDGSS::initialize(g_cfg.PWM_frequency_ESC, g_cfg.calibration_ESC);
+	PDGSS::initialize(g_cfg.ESC_PWM_frequency);
 	PDGSS::stop();
 
 	OSS::initialize();
 	
 
 	// Initialize PID controller channel for axis X
-	PID_initialize(PID_CHANNEL_X, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
-				   -g_cfg.I_X_limit, +g_cfg.I_X_limit);
+	PID_initialize(PID_CHANNEL_X, g_cfg.PID_output_limit, g_cfg.I_X_limit);
 	PID_set_tunings(PID_CHANNEL_X, g_cfg.PID_X[0], g_cfg.PID_X[1], g_cfg.PID_X[2]);
 	
 	// Initialize PID controller channel for axis Y
-	PID_initialize(PID_CHANNEL_Y, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
-				   -g_cfg.I_Y_limit, +g_cfg.I_Y_limit);
+	PID_initialize(PID_CHANNEL_Y, g_cfg.PID_output_limit, g_cfg.I_Y_limit);
 	PID_set_tunings(PID_CHANNEL_Y, g_cfg.PID_Y[0], g_cfg.PID_Y[1], g_cfg.PID_Y[2]);
 	
 	// Initialize PID controller channel for axis Z
-	PID_initialize(PID_CHANNEL_Z, g_cfg.PID_interval, -g_cfg.PID_limit, +g_cfg.PID_limit,
-				   -g_cfg.I_Z_limit, +g_cfg.I_Z_limit);
+	PID_initialize(PID_CHANNEL_Z, g_cfg.PID_output_limit, g_cfg.I_Z_limit);
 	PID_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
 
 	
@@ -67,8 +64,6 @@ void FLY_CORE::initialize() {
 	error_status_handling(STATE_IDLE);
 }
 
-uint32_t FLY_max_process_time = 0;
-uint32_t FLY_cur_process_time = 0;
 void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data) {
 
 	// Process commands
@@ -250,7 +245,7 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 
 		// Synthesis PIDs
 		int32_t motors_power[4] = { 0 };
-		if (thrust >= g_cfg.PID_threshold) {
+		if (thrust >= g_cfg.PID_enable_threshold) {
 			motors_power[0] = SYNTHESIS(PIDU, -1.0F, -1.0F, -1.0F);
 			motors_power[1] = SYNTHESIS(PIDU, -1.0F, +1.0F, +1.0F);
 			motors_power[2] = SYNTHESIS(PIDU, +1.0F, +1.0F, -1.0F);
@@ -258,8 +253,8 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 		}
 
 		thrust *= 10; // Scale thrust from [0; 100] to [0; 1000]
-		if (thrust + g_cfg.PID_limit > 1000)
-			thrust = 1000 - g_cfg.PID_limit;
+		if (thrust + g_cfg.PID_output_limit > 1000)
+			thrust = 1000 - g_cfg.PID_output_limit;
 
 		// Add thrust
 		motors_power[0] += thrust;

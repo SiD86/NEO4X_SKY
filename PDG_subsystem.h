@@ -6,7 +6,7 @@ namespace PDGSS {
 	/**************************************************************************
 	* @brief	Function for initialize PWM and calibration ESC
 	**************************************************************************/
-	void initialize(uint32_t ESC_frequency, uint32_t is_calibration);
+	void initialize(uint32_t ESC_frequency);
 
 	/**************************************************************************
 	* @brief	Function for send signal to ESC for stop motors

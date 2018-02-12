@@ -6,20 +6,20 @@
 namespace CONFIGSS {
 
 	typedef struct {
-		uint8_t memory_map_version;
-		uint8_t firmware_version;
-		uint32_t device_ID;
 
-		uint8_t calibration_ESC;
-		uint16_t PWM_frequency_ESC;
+		uint16_t memory_map_version;
+		uint16_t FW_version;
+		uint16_t device_ID;
+
+		uint16_t connection_lost_timeout;
+		uint16_t send_state_interval;
+
+		uint16_t ESC_PWM_frequency;
 
 		uint16_t battery_low_voltage;
-		uint16_t connection_lost_timeout;
-		uint16_t send_state_data_interval;
 
-		uint16_t PID_interval;
-		uint16_t PID_limit;
-		uint16_t PID_threshold;
+		uint16_t PID_output_limit;
+		uint16_t PID_enable_threshold;
 		float PID_X[3];
 		float I_X_limit;
 		float PID_Y[3];

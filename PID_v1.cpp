@@ -10,7 +10,6 @@ struct pid_param_t {
 	float Kp;
 	float Ki;
 	float Kd;
-	uint32_t interval;
 	float output_min;
 	float output_max;
 	float integral_min;
@@ -25,16 +24,15 @@ struct pid_param_t {
 
 static pid_param_t g_PID_ch[MAX_CHANNEL_COUNT];
 
-void PID_initialize(uint32_t ch, uint32_t interval, float output_min, float output_max, float I_min, float I_max) {
+void PID_initialize(uint32_t ch, float output_limit, float I_limit) {
 	
 	g_PID_ch[ch].Kp = 0;
 	g_PID_ch[ch].Ki = 0;
 	g_PID_ch[ch].Kd = 0;
-	g_PID_ch[ch].interval = interval;
-	g_PID_ch[ch].output_min = output_min;
-	g_PID_ch[ch].output_max = output_max;
-	g_PID_ch[ch].integral_min = I_min;
-	g_PID_ch[ch].integral_max = I_max;
+	g_PID_ch[ch].output_min = -output_limit;
+	g_PID_ch[ch].output_max = +output_limit;
+	g_PID_ch[ch].integral_min = -I_limit;
+	g_PID_ch[ch].integral_max = +I_limit;
 	
 	PID_reset(ch);
 }

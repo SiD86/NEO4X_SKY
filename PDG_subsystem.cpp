@@ -22,7 +22,7 @@ static void calibration_ESC();
 //
 // EXTERNAL INTERFACE
 //
-void PDGSS::initialize(uint32_t ESC_frequency, uint32_t is_calibration) {
+void PDGSS::initialize(uint32_t ESC_frequency) {
 
 	// Enable PWM clock
 	REG_PMC_PCER1 = PMC_PCER1_PID36;
@@ -62,7 +62,10 @@ void PDGSS::initialize(uint32_t ESC_frequency, uint32_t is_calibration) {
 	REG_PWM_ENA = PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3;
 	while ((REG_PWM_SR & (PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3)) == 0);
 
-	if (is_calibration == 0xAA)
+	// Check calibration ESC pin
+	pinMode(2, INPUT_PULLUP);
+	delay(10);
+	if (digitalRead(2) == LOW)
 		calibration_ESC();
 }
 

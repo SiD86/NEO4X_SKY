@@ -11,7 +11,7 @@ namespace ASS {
 // External interface
 namespace ASS {
 
-	void initialize(uint32_t battery_low_voltage);
+	void initialize();
 	void process();
 	void make_state_data(TXRX::state_data_t* state_data);
 	uint32_t get_status();

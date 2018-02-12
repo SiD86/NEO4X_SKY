@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <variant.h>
 #include "additional_subsystem.h"
+#include "configuration_subsystem.h"
 #include "util.h"
 #define MEAS_VOLTAGE_PIN					(A0)
 #define MEAS_VOLTAGE_PERIOD					(1000)
@@ -8,9 +9,6 @@
 
 static void process_measurements_battery_voltage(uint32_t adc);
 static void error_status_update();
-
-// Configuration
-static uint32_t g_battery_low_voltage = 1000; // Default 10.00V
 
 // Current state
 static uint32_t g_battery_voltage = 0;
@@ -20,7 +18,7 @@ static uint16_t g_ADC_buffer[10] = { 0 };
 //
 // EXTERNAL INTERFACE
 //
-void ASS::initialize(uint32_t battery_low_voltage) {
+void ASS::initialize() {
 
 	// Initialize periphery
 	pinMode(MEAS_VOLTAGE_PIN, INPUT);
@@ -39,9 +37,6 @@ void ASS::initialize(uint32_t battery_low_voltage) {
 					ADC_CHER_CH10 | // Reserved
 					ADC_CHER_CH11;  // Reserved
 
-	// Initialize parameters
-	g_battery_low_voltage = battery_low_voltage;
-
 	// Reset status
 	g_status = ASS::NO_ERROR;
 }
@@ -49,7 +44,9 @@ void ASS::initialize(uint32_t battery_low_voltage) {
 void ASS::process() {
 
 	static uint16_t ADC_channels_data[10] = { 0 };
+
 	if (REG_ADC_RCR == 0) {
+
 		memcpy(ADC_channels_data, g_ADC_buffer, sizeof(g_ADC_buffer));
 
 		// Initialize PDC channel
@@ -117,7 +114,7 @@ static void process_measurements_battery_voltage(uint32_t adc) {
 static void error_status_update() {
 
 	// Check battery voltage
-	if (g_battery_voltage < g_battery_low_voltage)
+	if (g_battery_voltage < g_cfg.battery_low_voltage)
 		SET_STATUS_BIT(g_status, ASS::BATTERY_LOW_VOLTAGE);
 	else
 		CLEAR_STATUS_BIT(g_status, ASS::BATTERY_LOW_VOLTAGE);

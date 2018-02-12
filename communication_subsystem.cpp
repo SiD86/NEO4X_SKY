@@ -2,6 +2,7 @@
 #include "LIBRARY\USART3_PDC.h"
 #include "TXRX_PROTOCOL.h"
 #include "communication_subsystem.h"
+#include "configuration_subsystem.h"
 #include "util.h"
 #define USART_BAUDRATE						(175000)
 #define DEVICE_ADDRESS_DEFAULT				(255)
@@ -13,10 +14,6 @@ static void process_rx();
 static void process_tx();
 static bool process_rx_data();
 static uint8_t calculate_CRC8(const uint8_t* data);
-
-// Configurable parameters
-static uint32_t g_send_state_data_interval = 100;  // [ms]
-static uint32_t g_connection_lost_timeout = 1000;  // [ms]
 
 static uint32_t g_status = CSS::NO_ERROR;
 
@@ -31,11 +28,7 @@ uint32_t g_desync_count = 0; // DEBUG
 //
 // EXTERNAL INTERFACE
 //
-void CSS::initialize(uint32_t send_state_data_interval, uint32_t conn_lost_timeout) {
-	
-	g_send_state_data_interval = send_state_data_interval;
-	g_connection_lost_timeout = conn_lost_timeout;
-	
+void CSS::initialize() {
 	USART3_initialize(USART_BAUDRATE);
 	USART3_RX_start(g_packet_size);
 }
@@ -44,8 +37,6 @@ void CSS::process() {
 
 	if (USART3_is_error() == true) {
 		USART3_reset(true, true);
-
-		//Serial.println("USART_ERROR");
 		++g_hardware_error_count;
 	}
 
@@ -66,7 +57,7 @@ static void process_tx() {
 	static uint32_t prev_tx_time = 0;
 
 	// Check TX interval
-	if (millis() - prev_tx_time < g_send_state_data_interval)
+	if (millis() - prev_tx_time < g_cfg.send_state_interval)
 		return;
 
 	// Check complite TX previus data
@@ -124,7 +115,7 @@ static void process_rx() {
 		if (IS_BIT_SET(g_status, CSS::DESYNC)) {
 
 			// Wait silence window and reset receiver
-			if (millis() - prev_rx_any_data_time > g_send_state_data_interval * 2) {
+			if (millis() - prev_rx_any_data_time > g_cfg.send_state_interval * 2) {
 				USART3_reset(false, true);
 				USART3_RX_start(g_packet_size);
 				CLEAR_STATUS_BIT(g_status, CSS::DESYNC);
@@ -132,7 +123,7 @@ static void process_rx() {
 		}
 
 		// Check communication timeout
-		if (millis() - prev_rx_state_data_time > g_connection_lost_timeout) {
+		if (millis() - prev_rx_state_data_time > g_cfg.connection_lost_timeout) {
 			SET_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
 		}
 	}

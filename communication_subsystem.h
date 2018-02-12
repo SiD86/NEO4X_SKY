@@ -14,7 +14,7 @@ namespace CSS {
 // External interface
 namespace CSS {
 
-	void initialize(uint32_t send_state_data_interval, uint32_t conn_lost_timeout);
+	void initialize();
 	void process();
 	uint32_t get_status();
 }

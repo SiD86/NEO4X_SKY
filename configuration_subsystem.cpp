@@ -3,6 +3,26 @@
 #include "LIBRARY\EEPROM.h"
 #include "configuration_subsystem.h"
 
+#define EE_MEMORY_MAP_VERSION				(0x0000)
+#define EE_FW_VERSION						(0x0002)
+#define EE_DEVICE_ID						(0x0004)
+#define EE_CONNECTION_TIMEOUT				(0x0020)
+#define EE_SEND_STATE_PACKET_INTERVAL		(0x0022)
+#define EE_ESC_FREQUENCY					(0x0030)
+#define EE_BATTERY_LOW_VOLTAGE				(0x0034)
+
+#define EE_PID_OUTPUT_LIMIT					(0x0040)
+#define EE_PID_ENABLE_THRESHOLD				(0x0042)
+#define	EE_AXIS_X_BASE						(0x0050)
+#define	EE_AXIS_Y_BASE						(0x0060)
+#define	EE_AXIS_Z_BASE						(0x0070)
+#define	EE_AXIS_H_BASE						(0x0080)
+#define PID_P_OFFSET						(0x0000)
+#define PID_I_OFFSET						(0x0004)
+#define PID_D_OFFSET						(0x0008)
+#define PID_I_LIMIT_OFFSET					(0x000C)
+
+
 static bool check_configuration();
 
 CONFIGSS::configuration_t g_cfg;
@@ -13,7 +33,7 @@ CONFIGSS::configuration_t g_cfg;
 //
 bool CONFIGSS::reset_configuration() {
 	
-	if (EEPROM_write_4bytes(0x0000, 0x01, 1) == false)	// Memory map version
+	/*if (EEPROM_write_4bytes(0x0000, 0x01, 1) == false)	// Memory map version
 		return false;
 	
 	if (EEPROM_write_4bytes(0x0001, 0x00, 1) == false)	// FW version
@@ -45,30 +65,29 @@ bool CONFIGSS::reset_configuration() {
 	
 	if (EEPROM_write_4bytes(0x0044, 0, 2) == false)		// PID threshold
 		return false;
-
+	*/
 	return true;
 }
 
 bool CONFIGSS::load_and_check_configuration() {
 
-	uint8_t buffer[256] = { 0 };
-	if (EEPROM_read_bytes(0x0000, buffer, 256) == false)
-		return false;
+	//uint8_t buffer[256] = { 0 };
+	/*if (EEPROM_read_bytes(0x0000, buffer, 256) == false)
+		return false;*/
 
-	memcpy(&g_cfg.memory_map_version,			&buffer[0x0000], 1);
-	memcpy(&g_cfg.firmware_version,			&buffer[0x0001], 1);
+	/*memcpy(&g_cfg.memory_map_version,			&buffer[0x0000], 1);
+	memcpy(&g_cfg.FW_version,					&buffer[0x0001], 1);
 	memcpy(&g_cfg.device_ID,					&buffer[0x0002], 4);
 
-	memcpy(&g_cfg.calibration_ESC,			&buffer[0x0030], 1);
-	memcpy(&g_cfg.PWM_frequency_ESC,			&buffer[0x0031], 2);
+	memcpy(&g_cfg.ESC_PWM_frequency,			&buffer[0x0031], 2);
 
-	memcpy(&g_cfg.battery_low_voltage,		&buffer[0x0033], 2);
-	memcpy(&g_cfg.connection_lost_timeout,	&buffer[0x0035], 2);
-	memcpy(&g_cfg.send_state_data_interval,	&buffer[0x0035], 2);
+	memcpy(&g_cfg.connection_lost_timeout,		&buffer[0x0035], 2);
+	memcpy(&g_cfg.send_state_packet_interval,	&buffer[0x0035], 2);
 
-	memcpy(&g_cfg.PID_interval,				&buffer[0x0040], 2);
-	memcpy(&g_cfg.PID_limit,					&buffer[0x0042], 2);
-	memcpy(&g_cfg.PID_threshold,				&buffer[0x0044], 2);
+	memcpy(&g_cfg.battery_low_voltage,			&buffer[0x0033], 2);
+
+	memcpy(&g_cfg.PID_output_limit,				&buffer[0x0042], 2);
+	memcpy(&g_cfg.PID_enable_threshold,			&buffer[0x0044], 2);
 
 	memcpy(&g_cfg.PID_X,						&buffer[0x0050], 12);
 	memcpy(&g_cfg.I_X_limit,					&buffer[0x005C], 4);
@@ -80,27 +99,7 @@ bool CONFIGSS::load_and_check_configuration() {
 	memcpy(&g_cfg.I_Z_limit,					&buffer[0x007C], 4);
 
 	memcpy(&g_cfg.PID_H,						&buffer[0x0080], 12);
-	memcpy(&g_cfg.I_H_limit,					&buffer[0x008C], 4);
-
-	/*delay(1000);
-
-	Serial.println(g_cfg.memory_map_version);
-	Serial.println(g_cfg.firmware_version);
-	Serial.println(g_cfg.device_ID);
-	Serial.println(g_cfg.calibration_ESC);
-	Serial.println(g_cfg.PWM_frequency_ESC);
-	Serial.println(g_cfg.battery_low_voltage);
-	Serial.println(g_cfg.connection_lost_timeout);
-	Serial.println(g_cfg.send_state_data_interval);
-	Serial.println(g_cfg.PID_interval);
-	Serial.println(g_cfg.PID_limit);
-	Serial.println(g_cfg.PID_threshold);*/
-
-	// Reset calibration ESC parameter
-	if (g_cfg.calibration_ESC == 0xAA) {
-		//Serial.println("CALIBRATION RESET");
-		EEPROM_write_4bytes(0x0030, 0x00, 1);
-	}
+	memcpy(&g_cfg.I_H_limit,					&buffer[0x008C], 4);*/
 	
 	return check_configuration();
 }
@@ -169,7 +168,7 @@ void CONFIGSS::enter_to_configuration_mode() {
 //
 static bool check_configuration() {
 
-	if (g_cfg.PWM_frequency_ESC > 400) {
+	/*if (g_cfg.PWM_frequency_ESC > 400) {
 		g_cfg.PWM_frequency_ESC = 50;
 		return false;
 	}
@@ -181,7 +180,7 @@ static bool check_configuration() {
 	if (g_cfg.PID_interval == 0) {
 		g_cfg.PID_interval = 2500;
 		return false;
-	}
+	}*/
 
 	return true;
 }
