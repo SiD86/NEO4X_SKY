@@ -2,6 +2,7 @@
 #include "TXRX_PROTOCOL.h"
 #include "PDG_subsystem.h"
 #include "CONFIG.h"
+#define ESC_CALIBRATION_PIN				(PIO_PB25)
 #define MIN_PWM_DUTY					(1000)
 #define MAX_PWM_DUTY					(2000)
 
@@ -63,10 +64,14 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 	while ((REG_PWM_SR & (PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3)) == 0);
 
 	// Check calibration ESC pin
-	pinMode(2, INPUT_PULLUP);
-	delay(10);
-	if (digitalRead(2) == LOW)
+	REG_PIOB_PER = ESC_CALIBRATION_PIN;
+	REG_PIOB_ODR = ESC_CALIBRATION_PIN;
+	REG_PIOB_PUER = ESC_CALIBRATION_PIN;
+	delay(5); // Wait pull-up time
+	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) {// LOW level
+		Serial.println("CALIBRATION");
 		calibration_ESC();
+	}
 }
 
 void PDGSS::stop() {
