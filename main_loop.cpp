@@ -18,13 +18,6 @@ static void make_state_packet();
 
 static uint8_t g_status = TXRX::MAIN_CORE_STATUS_NO_ERROR;
 
-extern uint8_t MPU6050_get_FIFO_size_error_count;
-extern uint8_t MPU6050_check_FIFO_size_error_count;
-extern uint8_t MPU6050_get_data_error_count;
-extern volatile uint8_t I2C_nack_count;
-extern volatile uint8_t I2C_timeout_count;
-extern uint32_t g_PID_OOR_count;
-
 void setup() {
 
 	Serial.begin(460800);	// DEBUG
@@ -67,9 +60,10 @@ void setup() {
 	if (CONFIGSS::load_and_check_configuration() == false)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);*/
 
-	g_cfg.send_state_interval = 100;		// 100 ms
+	g_cfg.send_state_interval = 50;		// 100 ms
 	g_cfg.connection_lost_timeout = 1000;	// 1000 ms
 
+	g_cfg.angle_protect = 60; // [-60; 60]
 	g_cfg.ESC_PWM_frequency = 400;			// 400 Hz
 	
 	g_cfg.battery_low_voltage = 1000;		// 10.00V
@@ -151,6 +145,13 @@ static void error_status_update() {
 }
 
 
+
+extern uint8_t MPU6050_get_FIFO_size_error_count;
+extern uint8_t MPU6050_check_FIFO_size_error_count;
+extern uint8_t MPU6050_get_data_error_count;
+extern volatile uint8_t I2C_nack_count;
+extern volatile uint8_t I2C_timeout_count;
+extern uint32_t g_PID_OOR_count;
 extern uint32_t g_hardware_error_count;
 extern uint32_t g_software_error_count;
 extern uint32_t g_desync_count;

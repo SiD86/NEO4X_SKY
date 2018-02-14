@@ -14,6 +14,7 @@ namespace CONFIGSS {
 		uint16_t connection_lost_timeout;
 		uint16_t send_state_interval;
 
+		uint8_t angle_protect;
 		uint16_t ESC_PWM_frequency;
 
 		uint16_t battery_low_voltage;

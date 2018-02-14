@@ -222,7 +222,9 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 
 	// ====================================================
 	// Debug angle protection
-	if (cur_XYZH[0] > 60 || cur_XYZH[0] < -60 || cur_XYZH[1] > 60 || cur_XYZH[1] < -60)
+	if (cur_XYZH[0] > g_cfg.angle_protect || cur_XYZH[0] < -g_cfg.angle_protect) // Axis X
+		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
+	if (cur_XYZH[1] > g_cfg.angle_protect || cur_XYZH[1] < -g_cfg.angle_protect) // Axis Y
 		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 	// 
 	// ====================================================
