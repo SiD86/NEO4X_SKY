@@ -58,7 +58,7 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	}
 
 	// Calculate D
-	uint32_t dt = (current_time - g_PID_ch[ch].prev_process_time) / 1000000.0; // is seconds
+	float dt = (current_time - g_PID_ch[ch].prev_process_time) / 1000000.0; // is seconds
 	float D = g_PID_ch[ch].Kd * ((error - g_PID_ch[ch].prev_error) / dt);
 
 	// Calculate PID output

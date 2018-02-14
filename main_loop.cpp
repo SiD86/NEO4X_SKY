@@ -24,7 +24,9 @@ void setup() {
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
 
-	delay(1000);
+	delay(5000);
+
+	digitalWrite(13, HIGH);
 
 	pinMode(53, OUTPUT); // PB14
 	pinMode(50, OUTPUT); // PC13
@@ -60,7 +62,7 @@ void setup() {
 	if (CONFIGSS::load_and_check_configuration() == false)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);*/
 
-	g_cfg.send_state_interval = 50;		// 100 ms
+	g_cfg.send_state_interval = 50;		// 50 ms
 	g_cfg.connection_lost_timeout = 1000;	// 1000 ms
 
 	g_cfg.angle_protect = 60; // [-60; 60]
