@@ -23,6 +23,7 @@ extern uint8_t MPU6050_check_FIFO_size_error_count;
 extern uint8_t MPU6050_get_data_error_count;
 extern volatile uint8_t I2C_nack_count;
 extern volatile uint8_t I2C_timeout_count;
+extern uint32_t g_PID_OOR_count;
 
 void setup() {
 
@@ -173,6 +174,7 @@ static void make_state_packet() {
 	g_sp.I2C_nack_count = I2C_nack_count;
 	g_sp.I2C_timeout_count = I2C_timeout_count;
 
+	g_sp.PID_OOR_count = g_PID_OOR_count;
 
 	FLY_CORE::make_state_data(&g_sp);
 	ASS::make_state_data(&g_sp);

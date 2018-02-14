@@ -24,6 +24,8 @@ struct pid_param_t {
 
 static pid_param_t g_PID_ch[MAX_CHANNEL_COUNT];
 
+uint32_t g_PID_OOR_count = 0;
+
 void PID_initialize(uint32_t ch, float output_limit, float I_limit) {
 	
 	g_PID_ch[ch].Kp = 0;
@@ -40,7 +42,7 @@ void PID_initialize(uint32_t ch, float output_limit, float I_limit) {
 float PID_process(uint32_t ch, float input, float set_point) {
 
 	// Calculate error and time
-	double error = set_point - input; 
+	float error = set_point - input; 
 	uint32_t current_time = micros();
 
 	// Calculate P
@@ -56,18 +58,18 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	}
 
 	// Calculate D
-	uint32_t dt = current_time - g_PID_ch[ch].prev_process_time;
-	if (dt > 5500) // For delete peaks after reset
-		dt = 5500;
-	float D = g_PID_ch[ch].Kd * (error - g_PID_ch[ch].prev_error) / (dt / 1000000.0);
+	uint32_t dt = (current_time - g_PID_ch[ch].prev_process_time) / 1000000.0; // is seconds
+	float D = g_PID_ch[ch].Kd * ((error - g_PID_ch[ch].prev_error) / dt);
 
 	// Calculate PID output
 	g_PID_ch[ch].output = P + g_PID_ch[ch].integral + D;
 	if (g_PID_ch[ch].output > g_PID_ch[ch].output_max) {
 		g_PID_ch[ch].output = g_PID_ch[ch].output_max;
+		++g_PID_OOR_count; // DEBUG
 	}
 	else if (g_PID_ch[ch].output < g_PID_ch[ch].output_min) {
 		g_PID_ch[ch].output = g_PID_ch[ch].output_min;
+		++g_PID_OOR_count; // DEBUG
 	}
 
 	// Remember variables
@@ -90,7 +92,7 @@ void PID_set_tunings(uint32_t ch, float Kp, float Ki, float Kd) {
 void PID_reset(uint32_t ch) {
 	g_PID_ch[ch].integral = 0;
 	g_PID_ch[ch].prev_error = 0;
-	g_PID_ch[ch].prev_process_time = 0;
+	g_PID_ch[ch].prev_process_time = micros();
 	g_PID_ch[ch].output = 0;
 }
 
