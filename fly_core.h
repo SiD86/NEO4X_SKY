@@ -5,8 +5,8 @@
 
 namespace FLY_CORE {
 
-	const uint8_t INTERNAL_CMD_ENABLE_CORE = 0;
-	const uint8_t INTERNAL_CMD_DISABLE_CORE = 1;
+	const uint8_t INTERNAL_CMD_PROCESS = 0;
+	const uint8_t INTERNAL_CMD_DISABLE = 1;
 
 	struct CONFIGURATION {
 

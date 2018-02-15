@@ -90,14 +90,13 @@ void OSS::process() {
 	}
 }
 
-bool OSS::is_position_updated() {
+bool OSS::get_position(float* XYZH) {
+
+	memcpy(XYZH, g_XYZH, sizeof(g_XYZH));
+
 	bool temp = g_is_position_updated;
 	g_is_position_updated = false;
 	return temp;
-}
-
-void OSS::get_position(float* XYZH) {
-	memcpy(XYZH, g_XYZH, sizeof(g_XYZH));
 }
 
 uint32_t OSS::get_status() {

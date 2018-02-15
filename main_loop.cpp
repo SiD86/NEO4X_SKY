@@ -10,9 +10,8 @@
 #include "configuration_subsystem.h"
 #include "CONFIG.h"
 #include "util.h"
-#define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR |   \
-									 TXRX::MAIN_CORE_STATUS_CONN_LOST | \
-									 TXRX::MAIN_CORE_STATUS_I2C_HARDWARE_ERROR)
+#define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
+
 static void error_status_update();
 static void make_state_packet();
 
@@ -44,8 +43,6 @@ void setup() {
 
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
-	if (I2C_get_status() == I2C_DRIVER_ERROR)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_I2C_HARDWARE_ERROR);
 
 	//
 	// Тут нужно ввести мониторинг пина для сброса настроек
@@ -108,9 +105,9 @@ void loop() {
 	error_status_update();
 
 	// Make command for fly core
-	uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_ENABLE_CORE;
+	uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_PROCESS;
 	if (g_status & FATAL_ERROR_MASK)
-		fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE_CORE;
+		fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE;
 
 	// Process fly core
 	FLY_CORE::process(fly_core_command, &g_cp);
@@ -128,9 +125,9 @@ static void error_status_update() {
 	// Check communication subsystem status
 	uint32_t status = CSS::get_status();
 	if (status & CSS::CONNECTION_LOST)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONN_LOST);
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
 	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONN_LOST);
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
 
 	if (status & CSS::DESYNC)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_DESYNC);

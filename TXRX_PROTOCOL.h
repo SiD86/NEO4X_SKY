@@ -43,29 +43,19 @@ namespace TXRX {
 	// Main core status (bitfield)
 	const uint8_t MAIN_CORE_STATUS_NO_ERROR				= 0x00;
 	const uint8_t MAIN_CORE_STATUS_CONFIG_ERROR			= 0x01;
-	const uint8_t MAIN_CORE_STATUS_CONN_LOST			= 0x02;
+	const uint8_t MAIN_CORE_STATUS_COMM_LOST			= 0x02;
 	const uint8_t MAIN_CORE_STATUS_COMM_DESYNC			= 0x04;
 	const uint8_t MAIN_CORE_STATUS_LOW_VOLTAGE			= 0x08;
-	const uint8_t MAIN_CORE_STATUS_I2C_HARDWARE_ERROR	= 0x80;
 
-	// Fly core mode [0-1]
-	const uint8_t FLY_CORE_STATE_FAIL					= 0x01;
-	const uint8_t FLY_CORE_STATE_DISABLE				= 0x02;
-	const uint8_t FLY_CORE_STATE_ENABLE					= 0x03;
-	// Fly core mode [3-7]
-	const uint8_t FLY_CORE_MODE_WAIT					= 0x04;
-	const uint8_t FLY_CORE_MODE_STABILIZE				= 0x08;
+	// Fly core mode
+	const uint8_t FLY_CORE_MODE_WAIT					= 0x01;
+	const uint8_t FLY_CORE_MODE_STABILIZE				= 0x02;
 
 	// Fly core status (bitfield)
 	const uint8_t FLY_CORE_STATUS_NO_ERROR				= 0x00;
-	const uint8_t FLY_CORE_STATUS_MPU6050_ERROR			= 0x01;
-	const uint8_t FLY_CORE_STATUS_BMP280_ERROR			= 0x02;
-	// 0x04
-	// 0x08
-	// 0x10
-	// 0x20
-	// 0x40
-	// 0x80
+	const uint8_t FLY_CORE_STATUS_FATAL_ERROR			= 0x01;
+	const uint8_t FLY_CORE_STATUS_MPU6050_ERROR			= 0x02;
+	const uint8_t FLY_CORE_STATUS_BMP280_ERROR			= 0x04;
 }
 
 namespace TXRX {
@@ -82,10 +72,7 @@ namespace TXRX {
 	};
 	#pragma pack (pop)
 
-	// Main core commands [4 - 7] (using only system)
-	const uint8_t CMD_COMMUNICATION_SILENCE		= 0x10;
-
-	// Fly core commands [0 - 3]
+	// Fly core commands
 	const uint8_t CMD_NO_COMMAND				= 0x00;
 	const uint8_t CMD_SET_FLY_MODE_WAIT			= 0x01;
 	const uint8_t CMD_SET_FLY_MODE_STABILIZE 	= 0x02;
