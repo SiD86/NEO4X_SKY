@@ -214,6 +214,9 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 		// Update ESC singal
 		PDGSS::set_power(motors_power);
 	}
+	else if (g_fly_mode == TXRX::FLY_CORE_MODE_WAIT) {
+		PDGSS::stop();
+	}
 }
 
 static void state_FAIL_handling() {
