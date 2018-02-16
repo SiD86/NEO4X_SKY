@@ -1,7 +1,7 @@
 #ifndef __BMP280_H__
 #define __BMP280_H__
 
-// LIBRARY VERSION: 0.0.7
+// LIBRARY VERSION: 0.0.8
 
 const uint32_t BMP280_DRIVER_NO_ERROR		= 0x00;
 const uint32_t BMP280_DRIVER_BUSY			= 0x01;
