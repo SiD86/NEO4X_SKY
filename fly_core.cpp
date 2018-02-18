@@ -238,8 +238,10 @@ static void error_status_handling(uint32_t next_state) {
 		g_status |= TXRX::FLY_CORE_STATUS_BMP280_ERROR;
 
 	// Check fly core fatal errors
-	if (g_status & FATAL_ERROR_MASK)
+	if (g_status & FATAL_ERROR_MASK) {
+		g_status |= TXRX::FLY_CORE_STATUS_FATAL_ERROR;
 		g_state = STATE_FAIL;
+	}
 	else
 		g_state = next_state;
 }
