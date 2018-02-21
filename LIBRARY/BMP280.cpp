@@ -188,8 +188,6 @@ uint32_t BMP280_get_status() {
 //
 static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperature, float* altitude) {
 
-	static float P0 = 0; // P0 for altitude calculation
-
 	// Make values
 	int32_t adc_P = MAKE_INT32(0, data[0], data[1], data[2]) >> 4;
 	int32_t adc_T = MAKE_INT32(0, data[3], data[4], data[5]) >> 4;
@@ -199,13 +197,13 @@ static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperat
 	int32_t T = compensate_T(adc_T, &T_fine);
 	float P = compensate_P(adc_P, T_fine);
 
-	// Save first pressure as P0
-	if (P0 == 0)
-		P0 = P;
-	
 	// Calculate altitude
-	if (altitude != nullptr && P0 != 0)
-		*altitude = 44330.0 * (1.0 - pow(P / 133.322 / P0, 1.0 / 5.255)) * 100.0;
+	if (altitude != nullptr) {
+		//static float P0 = P;
+		//if (P0 == 0)
+			//P0 = P;
+		*altitude = 44330.0 * (1.0 - pow(P / 101325/*P0*/, 1.0 / 5.255)) * 100.0;
+	}
 
 	// Write result
 	if (pressure != nullptr)

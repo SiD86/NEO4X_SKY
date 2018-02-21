@@ -96,7 +96,7 @@ void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
 	state_data->XYZH[0] = cur_XYZH[0] * 100; // to 0.01*
 	state_data->XYZH[1] = cur_XYZH[1] * 100; // to 0.01*
 	state_data->XYZH[2] = cur_XYZH[2] * 100; // to 0.01*
-	state_data->XYZH[3] = cur_XYZH[3] * 100; // to 0.01*
+	state_data->XYZH[3] = cur_XYZH[3] / 10; // to 0.1 meters
 
 	PDGSS::get_power_in_persent(state_data->motors_power);
 }
