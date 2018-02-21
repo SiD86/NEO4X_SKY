@@ -12,6 +12,7 @@ namespace CONFIGSS {
 		uint16_t device_ID;
 
 		uint16_t connection_lost_timeout;
+		uint16_t desync_silence_window_time;
 		uint16_t send_state_interval;
 
 		uint8_t angle_protect;

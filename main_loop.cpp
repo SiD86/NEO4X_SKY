@@ -59,7 +59,8 @@ void setup() {
 	if (CONFIGSS::load_and_check_configuration() == false)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);*/
 
-	g_cfg.send_state_interval = 50;		// 50 ms
+	g_cfg.send_state_interval = 50;			// 50 ms
+	g_cfg.desync_silence_window_time = 200; // 200 ms (!!! < connection_lost_timeout !!!)
 	g_cfg.connection_lost_timeout = 1000;	// 1000 ms
 
 	g_cfg.angle_protect = 60; // [-60; 60]

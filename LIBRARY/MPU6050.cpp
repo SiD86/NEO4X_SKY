@@ -497,13 +497,13 @@ void MPU6050_get_data(float* X, float* Y, float* Z) {
 			g_status = MPU6050_DRIVER_NO_ERROR;
 			is_start_communication = false;
 		}
+		else if (status == I2C_DRIVER_BUSY) {
+			g_status = MPU6050_DRIVER_BUSY;
+		}
 		else if (status == I2C_DRIVER_ERROR) {
 			g_status = MPU6050_DRIVER_ERROR;
 			is_start_communication = false;
 			++MPU6050_get_data_error_count;
-		}
-		else if (status == I2C_DRIVER_BUSY) {
-			g_status = MPU6050_DRIVER_BUSY;
 		}
 	}
 }

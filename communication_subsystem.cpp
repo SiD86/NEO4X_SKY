@@ -79,30 +79,30 @@ static void process_tx() {
 
 static void process_rx() {
 
-	static uint32_t prev_rx_any_data_time = 0;
-	static uint32_t prev_rx_state_data_time = 0;
+	static uint32_t prev_rx_data_time = 0;
+
+	uint32_t current_time = millis();
 
 	if (USART3_RX_is_complete() == true) {
 
 		// Update time
-		prev_rx_any_data_time = millis();
+		prev_rx_data_time = current_time;
 
 		// Process data
 		if (IS_BIT_CLEAR(g_status, CSS::DESYNC)) {
 
 			static uint32_t error_count = 0;
-			if (process_rx_data() == false) {
+			if (process_rx_data() == true) {
+				error_count = 0;
+				CLEAR_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
+			}
+			else {
 
-				++g_software_error_count; // DEBUG
 				if (++error_count >= 5) {
 					SET_STATUS_BIT(g_status, CSS::DESYNC);
 					++g_desync_count; // DEBUG
 				}
-			}
-			else {
-				error_count = 0;
-				CLEAR_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
-				prev_rx_state_data_time = prev_rx_any_data_time;
+				++g_software_error_count; // DEBUG
 			}
 		}
 
@@ -115,15 +115,15 @@ static void process_rx() {
 		if (IS_BIT_SET(g_status, CSS::DESYNC)) {
 
 			// Wait silence window and reset receiver
-			if (millis() - prev_rx_any_data_time > g_cfg.send_state_interval * 2) {
+			if (current_time - prev_rx_data_time > g_cfg.desync_silence_window_time) {
 				USART3_reset(false, true);
 				USART3_RX_start(g_packet_size);
 				CLEAR_STATUS_BIT(g_status, CSS::DESYNC);
 			}
 		}
 
-		// Check communication timeout
-		if (millis() - prev_rx_state_data_time > g_cfg.connection_lost_timeout) {
+		// Check communication lost
+		if (current_time - prev_rx_data_time > g_cfg.connection_lost_timeout) {
 			SET_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
 		}
 	}
@@ -131,26 +131,17 @@ static void process_rx() {
 
 static bool process_rx_data() {
 
-	// Get RX buffer address
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_RX_get_buffer_address();
 
 	// Verify packet step 1 (check service information)
 	uint8_t CRC = calculate_CRC8(packet->data);
 	bool is_valid = (packet->dev_addr == DEVICE_ADDRESS_DEFAULT) && (packet->CRC == CRC);
-	if (is_valid == true) {
-		memcpy(&g_cp, packet->data, g_data_size); // Copy data
-		return true;
-	}
-
-	// Verify packet step 2 (check data)
-	if (g_cp.thrust > 100)						// [0; 100]
-		return false;
-	if (g_cp.XYZ[0] < -30 || g_cp.XYZ[0] > 30)	// [-30; 30]
-		return false;
-	if (g_cp.XYZ[1] < -30 || g_cp.XYZ[1] > 30)	// [-30; 30]
+	if (is_valid == false)
 		return false;
 
-	return false;
+	// Copy data
+	memcpy(&g_cp, packet->data, g_data_size); 
+	return true;
 }
 
 static uint8_t calculate_CRC8(const uint8_t* data) {
