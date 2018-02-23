@@ -9,6 +9,8 @@ namespace TXRX {
 		uint8_t dev_addr;
 		uint8_t data[30];
 		uint8_t CRC;
+
+		uint8_t reserved[32];
 	};
 	#pragma pack (pop)
 }
@@ -36,7 +38,7 @@ namespace TXRX {
 		uint8_t I2C_timeout_count;
 		uint8_t PID_OOR_count;
 		
-		uint8_t reserve[4];
+		uint8_t reserved[4];
 	};
 	#pragma pack (pop)
 
@@ -50,6 +52,7 @@ namespace TXRX {
 	// Fly core mode
 	const uint8_t FLY_CORE_MODE_WAIT					= 0x01;
 	const uint8_t FLY_CORE_MODE_STABILIZE				= 0x02;
+	const uint8_t FLY_CORE_MODE_PID_SETUP				= 0x03;
 
 	// Fly core status (bitfield)
 	const uint8_t FLY_CORE_STATUS_NO_ERROR				= 0x00;
@@ -64,33 +67,23 @@ namespace TXRX {
 	#pragma pack (push, 1)
 	struct control_data_t {
 		uint8_t command;					// Fly controller command
-		uint8_t arg[12];					// Fly controller command argument
+
+		uint16_t PIDX[3];					// PID for axis X
+		uint16_t PIDY[3];					// PID for axis Y
+		uint16_t PIDZ[3];					// PID for axis Z
+
 		uint8_t thrust;			        	// Thrust [0; 100], %
 		int16_t	XYZ[3];		            	// Destination XYZ
 
-		uint8_t reserve[10];
+		uint8_t reserved[4];
 	};
 	#pragma pack (pop)
 
 	// Fly core commands
-	const uint8_t CMD_NO_COMMAND				= 0x00;
-	const uint8_t CMD_SET_FLY_MODE_WAIT			= 0x01;
-	const uint8_t CMD_SET_FLY_MODE_STABILIZE 	= 0x02;
-	const uint8_t CMD_SET_XPID_PARAMS 			= 0x03;
-	const uint8_t CMD_SET_YPID_PARAMS 			= 0x04;
-	const uint8_t CMD_SET_ZPID_PARAMS			= 0x05;
-}
-
-namespace TXRX {
-
-	const uint8_t UART_CMD_NO_COMMAND			= 0x00;
-	const uint8_t UART_CMD_WHO_I_AM				= 0x01;
-	const uint8_t UART_CMD_GET_MEMORY_BLOCK		= 0x02;
-	const uint8_t UART_CMD_WRITE_CELL			= 0x03;
-
-	const uint8_t UART_ACK_FAIL					= 0x00;
-	const uint8_t UART_ACK_SUCCESS				= 0x01;
-	const uint8_t UART_ACK_QUADCOPTER			= 0x02;
+	const uint8_t CMD_NO_COMMAND					= 0x00;
+	const uint8_t CMD_SET_FLY_MODE_WAIT				= 0x01;
+	const uint8_t CMD_SET_FLY_MODE_STABILIZE		= 0x02;
+	const uint8_t CMD_SET_FLY_MODE_PID_SETUP		= 0x03;
 }
 
 #endif // _TXRX_PROTOCOL_H_

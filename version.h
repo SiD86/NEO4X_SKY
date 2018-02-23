@@ -2,4 +2,4 @@
 
 #define MAIN_VERSION			0
 #define SUB_VERSION				0
-#define AUX_VERSION				36
+#define AUX_VERSION				37

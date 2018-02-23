@@ -198,12 +198,8 @@ static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperat
 	float P = compensate_P(adc_P, T_fine);
 
 	// Calculate altitude
-	if (altitude != nullptr) {
-		//static float P0 = P;
-		//if (P0 == 0)
-			//P0 = P;
-		*altitude = 44330.0 * (1.0 - pow(P / 101325/*P0*/, 1.0 / 5.255)) * 100.0;
-	}
+	if (altitude != nullptr)
+		*altitude = 44330.0 * (1.0 - pow(P / 101325.0, 1.0 / 5.255)) * 100.0;
 
 	// Write result
 	if (pressure != nullptr)

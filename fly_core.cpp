@@ -19,9 +19,9 @@ static uint8_t g_state = STATE_FAIL;
 static uint8_t g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 static uint8_t g_status = TXRX::FLY_CORE_STATUS_NO_ERROR;
 
-static void user_command_handling(uint32_t cmd, uint8_t* arg);
+static void user_command_handling(uint32_t cmd);
 static void state_ENABLE_handling();
-static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust);
+static void state_PROCESS_handling(TXRX::control_data_t* control_data);
 static void state_FAIL_handling();
 
 static void error_status_handling(uint32_t next_state);
@@ -60,7 +60,7 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 
 	// Process commands
 	if (internal_cmd == FLY_CORE::INTERNAL_CMD_PROCESS)
-		user_command_handling(control_data->command, control_data->arg);
+		user_command_handling(control_data->command);
 	else	// FLY_CORE::INTERNAL_CMD_DISABLE
 		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 	
@@ -75,7 +75,7 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 		break;
 
 	case STATE_PROCESS:
-		state_PROCESS_handling(control_data->XYZ, control_data->thrust);
+		state_PROCESS_handling(control_data);
 		error_status_handling(STATE_PROCESS);
 		break;
 
@@ -105,7 +105,7 @@ void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
 //
 // INTERNAL INTERFACE
 //
-static void user_command_handling(uint32_t cmd, uint8_t* arg) {
+static void user_command_handling(uint32_t cmd) {
 
 	// Ignore user command if current state not PROCESS
 	if (g_state != STATE_PROCESS)
@@ -128,34 +128,16 @@ static void user_command_handling(uint32_t cmd, uint8_t* arg) {
 		PID_reset(PID_CHANNEL_Y);
 		PID_reset(PID_CHANNEL_Z);
 		break;
+
+	case TXRX::CMD_SET_FLY_MODE_PID_SETUP:
+		if (g_fly_mode == TXRX::CMD_SET_FLY_MODE_PID_SETUP)
+			break;
+		g_fly_mode = TXRX::CMD_SET_FLY_MODE_PID_SETUP;
+		PID_reset(PID_CHANNEL_X);
+		PID_reset(PID_CHANNEL_Y);
+		PID_reset(PID_CHANNEL_Z);
+		break;
 	}
-
-	// ======================================
-	// TEMP SECTION (only for debug)
-	if (g_fly_mode == TXRX::FLY_CORE_MODE_WAIT) {
-
-		float PID[3] = { 0 };
-		
-		switch (cmd)
-		{
-		case TXRX::CMD_SET_XPID_PARAMS:
-			memcpy(PID, arg, sizeof(PID));
-			PID_set_tunings(PID_CHANNEL_X, PID[0], PID[1], PID[2]);
-			break;
-
-		case TXRX::CMD_SET_YPID_PARAMS:
-			memcpy(PID, arg, sizeof(PID));
-			PID_set_tunings(PID_CHANNEL_Y, PID[0], PID[1], PID[2]);
-			break;
-
-		case TXRX::CMD_SET_ZPID_PARAMS:
-			memcpy(PID, arg, sizeof(PID));
-			PID_set_tunings(PID_CHANNEL_Z, PID[0], PID[1], PID[2]);
-			break;
-		}
-	}
-	// TEMP SECTION (only for debug)
-	// ======================================
 }
 
 static void state_ENABLE_handling() {
@@ -166,7 +148,7 @@ static void state_ENABLE_handling() {
 	OSS::send_command(OSS::CMD_ENABLE);
 }
 
-static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
+static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 
 	// Get current position
 	float cur_XYZH[4] = { 0 };
@@ -182,14 +164,21 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 	// ====================================================
 	
 	// Process current fly mode
-	if (g_fly_mode == TXRX::FLY_CORE_MODE_STABILIZE) {
+	if (g_fly_mode == TXRX::FLY_CORE_MODE_STABILIZE || g_fly_mode == TXRX::FLY_CORE_MODE_PID_SETUP) {
+
+		// Runtime PID setup
+		if (g_fly_mode == TXRX::FLY_CORE_MODE_PID_SETUP) {
+			PID_set_tunings(PID_CHANNEL_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
+			PID_set_tunings(PID_CHANNEL_Y, control_data->PIDY[0] / 100.0, control_data->PIDY[1] / 100.0, control_data->PIDY[2] / 100.0);
+			PID_set_tunings(PID_CHANNEL_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
+		}
 
 		// Calculation PID
 		float PIDU[3] = { 0 };    // X, Y, Z
 		if (is_position_updated == true) {
-			PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], dest_XYZ[0]);
-			PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], dest_XYZ[1]);
-			PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], dest_XYZ[2]);
+			PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], control_data->XYZ[0]);
+			PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], control_data->XYZ[1]);
+			PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], control_data->XYZ[2]);
 		}
 		else {
 			PIDU[0] = PID_get_last_output(PID_CHANNEL_X);
@@ -198,7 +187,7 @@ static void state_PROCESS_handling(int16_t* dest_XYZ, int32_t thrust) {
 		}
 
 		// Constrain thrust [0; 1000 - PID_output_limit]
-		thrust *= 10; // Scale thrust [0; 100] -> [0; 1000]
+		int32_t thrust = control_data->thrust * 10; // Scale thrust [0; 100] -> [0; 1000]
 		if (thrust + g_cfg.PID_output_limit > 1000)
 			thrust = 1000 - g_cfg.PID_output_limit;
 

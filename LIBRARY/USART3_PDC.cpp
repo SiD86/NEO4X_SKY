@@ -2,7 +2,7 @@
 #include "USART3_PDC.h"
 #define TX_PIN								(PIO_PD4)
 #define RX_PIN								(PIO_PD5)
-#define MAX_BUFFER_SIZE						(64)
+#define MAX_BUFFER_SIZE						(128)
 
 static uint8_t g_tx_buffer[MAX_BUFFER_SIZE] = { 0 };
 static uint8_t g_rx_buffer[MAX_BUFFER_SIZE] = { 0 };
