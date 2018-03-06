@@ -35,10 +35,8 @@ void FLY_CORE::initialize() {
 	// Initialize subsystems
 	PDGSS::initialize(g_cfg.ESC_PWM_frequency);
 	PDGSS::stop();
-
 	OSS::initialize();
 	
-
 	// Initialize PID controller channel for axis X
 	PID_initialize(PID_CHANNEL_X, g_cfg.PID_output_limit, g_cfg.I_X_limit);
 	PID_set_tunings(PID_CHANNEL_X, g_cfg.PID_X[0], g_cfg.PID_X[1], g_cfg.PID_X[2]);
@@ -51,7 +49,6 @@ void FLY_CORE::initialize() {
 	PID_initialize(PID_CHANNEL_Z, g_cfg.PID_output_limit, g_cfg.I_Z_limit);
 	PID_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
 
-
 	// Check errors and request go to next state
 	error_status_handling(STATE_ENABLE);
 }
@@ -59,9 +56,8 @@ void FLY_CORE::initialize() {
 void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data) {
 
 	// Process commands
-	if (internal_cmd == FLY_CORE::INTERNAL_CMD_PROCESS)
-		user_command_handling(control_data->command);
-	else	// FLY_CORE::INTERNAL_CMD_DISABLE
+	user_command_handling(control_data->command);
+	if (internal_cmd == FLY_CORE::INTERNAL_CMD_DISABLE)
 		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 	
 	// Process OSS
@@ -106,10 +102,6 @@ void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
 // INTERNAL INTERFACE
 //
 static void user_command_handling(uint32_t cmd) {
-
-	// Ignore user command if current state not PROCESS
-	if (g_state != STATE_PROCESS)
-		return;
 
 	switch (cmd)
 	{
@@ -216,21 +208,20 @@ static void state_FAIL_handling() {
 
 static void error_status_handling(uint32_t next_state) {
 
-	// Get OSS errors
+	// Check orientation subsystem error status
 	uint8_t status = OSS::get_status();
-
-	// Orientation subsystem error status
 	if (status & OSS::MPU6050_ERROR)
 		g_status |= TXRX::FLY_CORE_STATUS_MPU6050_ERROR;
-
 	if (status & OSS::BMP280_ERROR)
 		g_status |= TXRX::FLY_CORE_STATUS_BMP280_ERROR;
 
 	// Check fly core fatal errors
-	if (g_status & FATAL_ERROR_MASK) {
-		g_status |= TXRX::FLY_CORE_STATUS_FATAL_ERROR;
+	if (g_status & FATAL_ERROR_MASK)
 		g_state = STATE_FAIL;
-	}
 	else
 		g_state = next_state;
+
+	// Check FAIL mode
+	if (g_state == STATE_FAIL)
+		g_status |= TXRX::FLY_CORE_STATUS_FATAL_ERROR;
 }

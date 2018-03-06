@@ -4,7 +4,7 @@
 #include "orientation_subsystem.h"
 #include "CONFIG.h"
 #include "util.h"
-#define MAX_ERROR_COUNT									(10)
+#define MAX_ERROR_COUNT							(10)
 
 static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_fatal_operation);
 static void state_MPU6050_CHECK_RDY_handler();
@@ -12,11 +12,11 @@ static void state_MPU6050_GET_DATA_handler();
 static void state_BMP280_CHECK_RDY_handler();
 static void state_BMP280_GET_DATA_handler();
 
-static const uint32_t STATE_DISABLE						= 0x00;
-static const uint32_t STATE_MPU6050_CHECK_RDY			= 0x01;
-static const uint32_t STATE_MPU6050_GET_DATA			= 0x02;
-static const uint32_t STATE_BMP280_CHECK_RDY			= 0x03;
-static const uint32_t STATE_BMP280_GET_DATA				= 0x04;
+static const uint32_t STATE_DISABLE				= 0x00;
+static const uint32_t STATE_MPU6050_CHECK_RDY	= 0x01;
+static const uint32_t STATE_MPU6050_GET_DATA	= 0x02;
+static const uint32_t STATE_BMP280_CHECK_RDY	= 0x03;
+static const uint32_t STATE_BMP280_GET_DATA		= 0x04;
 
 static uint32_t g_state = STATE_DISABLE;
 static uint32_t g_status = OSS::NO_ERROR;
@@ -43,21 +43,19 @@ void OSS::initialize() {
 
 void OSS::send_command(uint32_t cmd) {
 
-	switch (cmd) 
-	{
-	case OSS::CMD_ENABLE:
+	if (cmd == OSS::CMD_ENABLE && g_state != STATE_DISABLE) {
+
 		if (IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR))
 			MPU6050_DMP_start();
 		g_state = STATE_MPU6050_CHECK_RDY;
 		g_is_position_updated = false;
-		break;
+	}
+	else if (cmd == OSS::CMD_DISABLE && g_state == STATE_DISABLE) {
 
-	case OSS::CMD_DISABLE:
 		if (IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR))
 			MPU6050_DMP_stop();
 		g_state = STATE_DISABLE;
 		g_is_position_updated = false;
-		break;
 	}
 
 	g_MPU6050_error_count = 0;

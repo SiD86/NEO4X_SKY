@@ -27,7 +27,7 @@ void ASS::initialize() {
 	//adc_set_resolution(ADC, ADC_);
 	REG_ADC_MR &= ~(ADC_MR_LOWRES_BITS_10); // 10 bit resolution
 	REG_ADC_CHER =  ADC_CHER_CH0 |  // Battery voltage channel
-					ADC_CHER_CH1 |  // Battery temperature channel
+					ADC_CHER_CH1 |  // Reserved
 					ADC_CHER_CH2 |  // Reserved
 					ADC_CHER_CH3 |  // Reserved
 					ADC_CHER_CH4 |  // Reserved

@@ -96,6 +96,10 @@ void setup() {
 
 void loop() {
 
+	//
+	// MAIN CORE PROCESS
+	//
+
 	// Recieve and send data
 	CSS::process();
 
@@ -104,6 +108,12 @@ void loop() {
 
 	// Update error status
 	error_status_update();
+
+
+
+	//
+	// FLY CORE PROCESS
+	//
 
 	// Make command for fly core
 	uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_PROCESS;
@@ -140,8 +150,6 @@ static void error_status_update() {
 	status = ASS::get_status();
 	if (status & ASS::BATTERY_LOW_VOLTAGE)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
 }
 
 

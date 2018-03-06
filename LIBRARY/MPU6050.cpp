@@ -358,6 +358,10 @@ void MPU6050_initialize() {
 	}
 
 	// IRQ pin configuration
+	// Active state: low
+	// Push-pull mode
+	// Reset pin state after clear interrupt status
+	// Interrupt status reset after any read operation
 	if (I2C_write_byte(ADDRESS, REG_INT_CONFIG, 0xB0) == false)
 		return;
 
@@ -372,7 +376,7 @@ void MPU6050_initialize() {
 	// Configure data ready pin
 	REG_PIOC_PER = PIO_PER_P25;
 	REG_PIOC_ODR = PIO_ODR_P25;
-	REG_PIOC_PUER = PIO_PUER_P25;
+	REG_PIOC_PUDR = PIO_PUDR_P25;
 
 	// Configure watch data ready timeout timer clock
 	REG_PMC_PCER0 = PMC_PCER0_PID31;
