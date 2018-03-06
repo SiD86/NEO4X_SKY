@@ -117,8 +117,8 @@ void BMP280_initialize() {
 	g_calib_param.dig_P5 = (int16_t)buffer[7];
 	g_calib_param.dig_P6 = (int16_t)buffer[8];
 	g_calib_param.dig_P7 = (int16_t)buffer[9];
-	g_calib_param.dig_P6 = (int16_t)buffer[10];
-	g_calib_param.dig_P7 = (int16_t)buffer[11];
+	g_calib_param.dig_P8 = (int16_t)buffer[10];
+	g_calib_param.dig_P9 = (int16_t)buffer[11];
 	
 	// Configure device: normal mode, P x16, T x2, IIR filter x16, T_standby = 0.5 ms
     // Noise: 0.2 Pa, 0.004 *C

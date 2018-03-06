@@ -9,7 +9,7 @@
 #include "CONFIG.h"
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::FLY_CORE_STATUS_MPU6050_ERROR)
-#define SYNTHESIS(U,X,Y,Z)        	(U[0] * X + U[1] * Y + U[2] * Z)
+#define SYNTHESIS(U,X,Y,Z)        	(U[0] * (X) + U[1] * (Y) + U[2] * (Z))
 
 #define STATE_ENABLE				(0x01)
 #define STATE_PROCESS				(0x02)
