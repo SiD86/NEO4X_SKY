@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
 /* ================================================================================================ *
 | Default FIFO packet structure:                                           |                                                                                              |
 | [QUAT W][      ][QUAT X][      ][QUAT Y][      ][QUAT Z][      ][GYRO X][      ][GYRO Y][      ]  |
@@ -558,23 +561,20 @@ static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
 
 static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Bank, uint8_t Addr, bool IsUseProgMem)  {
 	
-	const int MemoryChunkSize = 16;
-	uint8_t* pVerifyBuffer = nullptr;
-	uint8_t* pProgBuffer = nullptr;
-    if (IsUseProgMem == true) 
-		pProgBuffer = (uint8_t*)malloc(MemoryChunkSize);
-
 	if (I2C_write_byte(ADDRESS, REG_BANK_SEL, Bank & 0x1F) == false)	// Установка хранилища данных
 		return false;
 	if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, Addr) == false)	// Установка начального адреса
 		return false;
 
+
 	// Allocate memory
-	pVerifyBuffer = (uint8_t*)malloc(MemoryChunkSize);
+	const int MemoryChunkSize = 16;
+	uint8_t* pVerifyBuffer = (uint8_t*)malloc(MemoryChunkSize);
+	uint8_t* pProgBuffer = nullptr;
 	if (IsUseProgMem == true)
 		pProgBuffer = (uint8_t*)malloc(MemoryChunkSize);
 
-	
+
 	for (uint16_t i = 0; i < DataSize; /* NONE */) {
 
         uint8_t ChunkSize = MemoryChunkSize;
