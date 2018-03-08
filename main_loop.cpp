@@ -150,6 +150,8 @@ static void error_status_update() {
 	status = ASS::get_status();
 	if (status & ASS::BATTERY_LOW_VOLTAGE)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
 }
 
 

@@ -43,14 +43,14 @@ void OSS::initialize() {
 
 void OSS::send_command(uint32_t cmd) {
 
-	if (cmd == OSS::CMD_ENABLE && g_state != STATE_DISABLE) {
+	if (cmd == OSS::CMD_ENABLE && g_state == STATE_DISABLE) {
 
 		if (IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR))
 			MPU6050_DMP_start();
 		g_state = STATE_MPU6050_CHECK_RDY;
 		g_is_position_updated = false;
 	}
-	else if (cmd == OSS::CMD_DISABLE && g_state == STATE_DISABLE) {
+	else if (cmd == OSS::CMD_DISABLE && g_state != STATE_DISABLE) {
 
 		if (IS_BIT_CLEAR(g_status, OSS::MPU6050_ERROR))
 			MPU6050_DMP_stop();

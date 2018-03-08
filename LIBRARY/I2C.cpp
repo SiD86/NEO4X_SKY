@@ -3,7 +3,7 @@
 #define IS_BIT_SET(_status, _bit)		(((_status) & (_bit)) == (_bit))
 #define SDA_PIN							(PIO_PB12)
 #define SCK_PIN							(PIO_PB13)
-#define MAX_PDC_BUFFER_SIZE				(128)
+#define MAX_PDC_BUFFER_SIZE				(64)
 
 static void stop_communication();
 

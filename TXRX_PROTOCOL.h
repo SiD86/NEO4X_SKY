@@ -25,7 +25,8 @@ namespace TXRX {
 		uint8_t fly_core_status;
 
 		uint8_t motors_power[4];		// Motors power [0 - 100], %
-		int16_t	XYZH[4];				// X, Y, Z and alttitude
+		int16_t	XYZ[3];					// X, Y, Z
+		int32_t alttitude;
 		uint16_t battery_voltage;		// Current battery voltage [0 - 65535], 0.01V
 
 		uint8_t hardware_error_count;
@@ -38,7 +39,7 @@ namespace TXRX {
 		uint8_t I2C_timeout_count;
 		uint8_t PID_OOR_count;
 		
-		uint8_t reserved[4];
+		uint8_t reserved[2];
 	};
 	#pragma pack (pop)
 

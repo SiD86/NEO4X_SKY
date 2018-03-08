@@ -1,16 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-
 /* ================================================================================================ *
-| Default FIFO packet structure:                                           |                                                                                              |
-| [QUAT W][      ][QUAT X][      ][QUAT Y][      ][QUAT Z][      ][GYRO X][      ][GYRO Y][      ]  |
-|   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23   |
-|                                                                                                   |
-| [GYRO Z][      ][ACC X ][      ][ACC Y ][      ][ACC Z ][      ][      ]                          |
-|  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38  39  40  41                           |
-* ================================================================================================ */
-/* ================================================================================================ *
-| Current FIFO packet structure:                                                                    |                                                                                               |
+| FIFO packet structure:                                                                    |                                                                                               |
 | [QUAT W][      ][QUAT X][      ][QUAT Y][      ][QUAT Z][      ][      ]                          |
 |   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17                           |
 * ================================================================================================ */
@@ -159,54 +148,26 @@ static const uint8_t DMP_MEMORY_BINARY[] PROGMEM = {
 
 static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 	// BANK OFFSET LENGTH [DATA]
-	0x03,0x7B,0x03,0x4C,0xCD,0x6C,         // FCFG_1 inv_set_gyro_calibration
-	0x03,0xAB,0x03,0x36,0x56,0x76,         // FCFG_3 inv_set_gyro_calibration
-	0x00,0x68,0x04,0x02,0xCB,0x47,0xA2,   // D_0_104 inv_set_gyro_calibration
-	0x02,0x18,0x04,0x00,0x05,0x8B,0xC1,   // D_0_24 inv_set_gyro_calibration
-	0x01,0x0C,0x04,0x00,0x00,0x00,0x00,   // D_1_152 inv_set_accel_calibration
-	0x03,0x7F,0x06,0x0C,0xC9,0x2C,0x97,0x97,0x97, // FCFG_2 inv_set_accel_calibration
-	0x03,0x89,0x03,0x26,0x46,0x66,         // FCFG_7 inv_set_accel_calibration
-	0x00,0x6C,0x02,0x20,0x00,               // D_0_108 inv_set_accel_calibration
-	0x02,0x40,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_00 inv_set_compass_calibration
-	0x02,0x44,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_01
-	0x02,0x48,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_02
-	0x02,0x4C,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_10
-	0x02,0x50,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_11
-	0x02,0x54,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_12
-	0x02,0x58,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_20
-	0x02,0x5C,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_21
-	0x02,0xBC,0x04,0x00,0x00,0x00,0x00,   // CPASS_MTX_22
-	0x01,0xEC,0x04,0x00,0x00,0x40,0x00,   // D_1_236 inv_apply_endian_accel
-	0x03,0x7F,0x06,0x0C,0xC9,0x2C,0x97,0x97,0x97, // FCFG_2 inv_set_mpu_sensors
-	0x04,0x02,0x03,0x0D,0x35,0x5D,         // CFG_MOTION_BIAS inv_turn_on_bias_from_no_motion
-	0x04,0x09,0x04,0x87,0x2D,0x35,0x3D,   // FCFG_5 inv_set_bias_update
-	0x00,0xA3,0x01,0x00,                     // D_0_163 inv_set_dead_zone
-	// SPECIAL 0x01 = enable interrupts
-	0x00,0x00,0x00,0x01, // SET INT_ENABLE at i=22, SPECIAL INSTRUCTION
-	0x07,0x86,0x01,0xFE,                     // CFG_6 inv_set_fifo_interupt
-	0x07,0x41,0x05,0xF1,0x20,0x28,0x30,0x38, // CFG_8 inv_send_quaternion
-	0x07,0x7E,0x01,0x30,                     // CFG_16 inv_set_footer
-	//0x07,0x46,0x01,0x9A,                     // CFG_GYRO_SOURCE inv_send_gyro
-	//0x07,0x47,0x04,0xF1,0x28,0x30,0x38,   // CFG_9 inv_send_gyro -> inv_construct3_fifo
-	//0x07,0x6C,0x04,0xF1,0x28,0x30,0x38,   // CFG_12 inv_send_accel -> inv_construct3_fifo
-	0x02,0x16,0x02,0x00,MPU6050_FREQUENCY_DIV // D_0_22 inv_set_fifo_rate 
+	0x03,0x7B,0x03,0x4C,0xCD,0x6C,					// FCFG_1  inv_set_gyro_calibration
+	0x03,0xAB,0x03,0x36,0x56,0x76,					// FCFG_3  inv_set_gyro_calibration
+	0x00,0x68,0x04,0x02,0xCB,0x47,0xA2,				// D_0_104 inv_set_gyro_calibration
+	0x02,0x18,0x04,0x00,0x05,0x8B,0xC1,				// D_0_24  inv_set_gyro_calibration
+	0x01,0x0C,0x04,0x00,0x00,0x00,0x00,				// D_1_152 inv_set_accel_calibration
+	0x03,0x7F,0x06,0x0C,0xC9,0x2C,0x97,0x97,0x97,	// FCFG_2  inv_set_accel_calibration
+	0x03,0x89,0x03,0x26,0x46,0x66,					// FCFG_7  inv_set_accel_calibration
+	0x00,0x6C,0x02,0x20,0x00,						// D_0_108 inv_set_accel_calibration
+	0x01,0xEC,0x04,0x00,0x00,0x40,0x00,				// D_1_236 inv_apply_endian_accel
+	0x03,0x7F,0x06,0x0C,0xC9,0x2C,0x97,0x97,0x97,	// FCFG_2  inv_set_mpu_sensors
+	0x04,0x09,0x04,0x87,0x2D,0x35,0x3D,				// FCFG_5  inv_set_bias_update
+	0x00,0xA3,0x01,0x00,							// D_0_163 inv_set_dead_zone
+	0x07,0x86,0x01,0xFE,							// CFG_6   inv_set_fifo_interupt
+	0x07,0x41,0x05,0xF1,0x20,0x28,0x30,0x38,		// CFG_8   inv_send_quaternion
+	0x07,0x7E,0x01,0x30,							// CFG_16  inv_set_footer
+	0x02,0x16,0x02,0x00,MPU6050_FREQUENCY_DIV		// D_0_22  inv_set_fifo_rate 
 
 	// This very last 0x01 WAS a 0x09, which drops the FIFO rate down to 20 Hz. 0x07 is 25 Hz,
 	// 0x01 is 100Hz. Going faster than 100Hz (0x00=200Hz) tends to result in very noisy data.
 	// DMP output frequency is calculated easily using this equation: (200Hz / (1 + value))
-
-	// It is important to make sure the host processor can keep up with reading and processing
-	// the FIFO output at the desired rate. Handling FIFO overflow cleanly is also a good idea.
-};
-
-static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
-	0x01,0xB2,0x02,0xFF,0xFF,
-	0x01,0x90,0x04,0x09,0x23,0xA1,0x35,
-	0x01,0x6A,0x02,0x06,0x00,
-	0x01,0x60,0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-	0x00,0x60,0x04,0x40,0x00,0x00,0x00,
-	0x01,0x62,0x02,0x00,0x00,
-	0x00,0x60,0x04,0x00,0x40,0x00,0x00
 };
 
 #define REG_SMPLRT_DIV				0x19	// Регистр делителя частоты снятия показаний
@@ -278,8 +239,8 @@ static const uint8_t DMP_UPDATE_BINARY[] PROGMEM = {
 #define PWR1_SLEEP_DIS				0x00
 
 static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z);
-static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Bank, uint8_t Addr, bool IsUseProgMem);
-static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize);
+static bool writeMemoryBlock(const uint8_t* data, uint32_t address, uint32_t bank, uint32_t data_size);
+static bool writeDMPConfig();
 
 static uint32_t g_status = MPU6050_DRIVER_NO_ERROR;
 static volatile bool g_is_data_ready_timeout = false;
@@ -298,7 +259,7 @@ void MPU6050_initialize() {
 	I2C_set_internal_address_length(1);
 	g_status = MPU6050_DRIVER_ERROR;
 
-	// Проверка подключения устройства
+	// Check device ID
     uint8_t reg = 0;
 	if (!I2C_read_byte(ADDRESS, REG_WHO_AM_I, &reg))
 		return;
@@ -306,12 +267,12 @@ void MPU6050_initialize() {
 	if ( (reg >> 1) != MPU6050_CHIP_ID)
         return;
 
-	// Перезагрузка устройства
+	// Software reset
 	if (!I2C_write_bits(ADDRESS, REG_PWR_MGMT_1, PWR1_DEVICE_RESET_MASK, PWR1_DEVICE_RESET))
 		return;
     delay(30);
 
-    // Отключение режима ожидания
+    // Disable sleep mode
 	if (!I2C_write_bits(ADDRESS, REG_PWR_MGMT_1, PWR1_SLEEP_MASK, PWR1_SLEEP_DIS))
         return;
 
@@ -319,46 +280,35 @@ void MPU6050_initialize() {
 	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x04)) // 1khz / (1 + 4) = 200Hz
 		return;
 
-	// Прошивка DMP (не документировано)
-	if (!writeMemoryBlock(DMP_MEMORY_BINARY, sizeof(DMP_MEMORY_BINARY), 0, 0, true))
+	// Load DMP firmware (reverse engineering)
+	if (!writeMemoryBlock(DMP_MEMORY_BINARY, 0, 0, sizeof(DMP_MEMORY_BINARY)))
         return;
 
-	// Загрузка конфигурации в DMP (не документировано)
-	if (!writeDMPConfig(DMP_CONFIG_BINARY, sizeof(DMP_CONFIG_BINARY)))
+	// Load DMP configuration (reverse engineering)
+	if (!writeDMPConfig())
         return;
 
-	// Установка источника опорного тактового сигнала
+	// Set clock source
 	if (!I2C_write_bits(ADDRESS, REG_PWR_MGMT_1, PWR1_CLKSEL_MASK, CLOCK_PLL_XGYRO))
         return;
 
-	// Настройка встроенного фильтра низких частот
+	// Setup internal low pass filter
 	if (!I2C_write_bits(ADDRESS, REG_CONFIG, CFG_DLPF_CFG_MASK, DLPF_BW_42))
         return;
 
-	// Установка диапазона измерений акселерометра +/- 2g
+	// Set accel range +/- 2g
 	if (!I2C_write_bits(ADDRESS, REG_ACCEL_CONFIG, ACONFIG_AFS_SEL_MASK, ACCEL_AFS_2))
         return;
 
-	// Установка диапазона измерений гироскопа +/- 2000
+	// Set gyro range +/- 2000
 	if (!I2C_write_bits(ADDRESS, REG_GYRO_CONFIG, GCONFIG_FS_SEL_MASK, GYRO_FS_2000))
         return;
 
-	// Установка конфигурации DMP (не документировано)
+	// Set DMP configuration registers (reverse engineering)
 	if (!I2C_write_byte(ADDRESS, REG_DMP_CFG_1, 0x03))
         return;
 	if (!I2C_write_byte(ADDRESS, REG_DMP_CFG_2, 0x00))
         return;
-
-	// Загрузка обновлений в DMP (не документировано)
-	uint8_t Buffer[48] = {0};
-	for (int i = 0,pos = 0; i < 7; ++i)
-	{
-		for (int j = 0; j < 4 || j < Buffer[2] + 3; ++j,++pos) 
-			Buffer[j] = pgm_read_byte(&DMP_UPDATE_BINARY[pos]);
-		
-		if (!writeMemoryBlock(Buffer + 3, Buffer[2], Buffer[0], Buffer[1], false))
-            return;
-	}
 
 	// IRQ pin configuration
 	// Active state: low
@@ -393,7 +343,6 @@ void MPU6050_initialize() {
 
 void MPU6050_DMP_start() {
 
-	// Initialize success
 	I2C_set_internal_address_length(1);
 	g_status = MPU6050_DRIVER_ERROR;
 
@@ -559,117 +508,84 @@ static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
 	*Z = tmp_z;
 }
 
-static bool writeMemoryBlock(const uint8_t* pData, int16_t DataSize, uint8_t Bank, uint8_t Addr, bool IsUseProgMem)  {
+static bool writeMemoryBlock(const uint8_t* data, uint32_t address, uint32_t bank, uint32_t data_size)  {
 	
-	if (I2C_write_byte(ADDRESS, REG_BANK_SEL, Bank & 0x1F) == false)	// Установка хранилища данных
-		return false;
-	if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, Addr) == false)	// Установка начального адреса
-		return false;
+	const uint32_t max_block_size = 64;
+	for (uint32_t i = 0; i < data_size; i += max_block_size) {
 
+		// Calculate block size for write
+        uint32_t block_size = max_block_size;
+        if (i + block_size > data_size)
+			block_size = data_size - i;
+		if (block_size > 256 - address)
+			block_size = 256 - address;
 
-	// Allocate memory
-	const int MemoryChunkSize = 16;
-	uint8_t* pVerifyBuffer = (uint8_t*)malloc(MemoryChunkSize);
-	uint8_t* pProgBuffer = nullptr;
-	if (IsUseProgMem == true)
-		pProgBuffer = (uint8_t*)malloc(MemoryChunkSize);
+		// Read block from FLASH
+		uint8_t prog_buffer[max_block_size] = { 0 };
+		for (uint32_t j = 0; j < block_size; ++j)
+			prog_buffer[j] = pgm_read_byte(data + i + j);
 
-
-	for (uint16_t i = 0; i < DataSize; /* NONE */) {
-
-        uint8_t ChunkSize = MemoryChunkSize;
-        if (i + ChunkSize > DataSize) 
-			ChunkSize = DataSize - i;
-		
-		if (ChunkSize > 256 - Addr) 
-			ChunkSize = 256 - Addr;
-        
-        if (IsUseProgMem == true) {
-            for (uint8_t j = 0; j < ChunkSize; ++j) 
-				pProgBuffer[j] = pgm_read_byte(pData + i + j);
-        } 
-		else {
-			pProgBuffer = (uint8_t*)pData + i;
-		}
-		
-        if (I2C_write_bytes(ADDRESS, REG_MEM_R_W, pProgBuffer, ChunkSize) == false)
-			return false;
-		///////////////////////////////////////////////////////////
-		// Проверка записанных данных
-		if (I2C_write_byte(ADDRESS, REG_BANK_SEL, Bank & 0x1F) == false)	// Установка хранилища данных
-			return false;
-		if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, Addr) == false)	// Установка начального адреса
-			return false;
 		//
-		I2C_read_bytes(ADDRESS, REG_MEM_R_W, pVerifyBuffer, ChunkSize);
-		if (memcmp(pProgBuffer, pVerifyBuffer, ChunkSize) != 0)  {
-			free(pVerifyBuffer);
-			if (IsUseProgMem == true) 
-				free(pProgBuffer);
-			return false;
-		}
+		// Write data
 		//
-		///////////////////////////////////////////////////////////
-        i += ChunkSize;
-        Addr += ChunkSize;
-		if (i < DataSize) 
-		{
-			if (Addr == 0) 
-				Bank++;
-			if (I2C_write_byte(ADDRESS, REG_BANK_SEL, Bank & 0x1F) == false)	// Установка хранилища данных
-				return false;
-			if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, Addr) == false)	// Установка начального адреса
-				return false;
+
+		// Set data bank 
+		if (I2C_write_byte(ADDRESS, REG_BANK_SEL, bank & 0x1F) == false)
+			return false;
+
+		// Set start address
+		if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, address) == false)
+			return false;
+ 
+		// Write block to MPU6050
+        if (I2C_write_bytes(ADDRESS, REG_MEM_R_W, prog_buffer, block_size) == false)
+			return false;
+
+
+		//
+		// Verify data
+		//
+
+		// Set data bank 
+		if (I2C_write_byte(ADDRESS, REG_BANK_SEL, bank & 0x1F) == false)
+			return false;
+
+		// Set start address
+		if (I2C_write_byte(ADDRESS, REG_MEM_START_ADDR, address) == false)
+			return false;
+		
+		// Check writed block
+		uint8_t verify_buffer[max_block_size] = { 0 };
+		I2C_read_bytes(ADDRESS, REG_MEM_R_W, verify_buffer, block_size);
+		if (memcmp(prog_buffer, verify_buffer, block_size) != 0)
+			return false;
+
+		// Address offset
+		address += max_block_size;
+		if (address == 256) {
+			bank++;
+			address = 0;
 		}
     }
-	free(pVerifyBuffer);
-    if (IsUseProgMem == true) 
-		free(pProgBuffer);
     return true;
 }
 
-static bool writeDMPConfig(const uint8_t* pData, uint16_t DataSize)  {
+static bool writeDMPConfig() {
 
-	uint8_t BufferSize = 64;
-    uint8_t* pProgBuffer = new uint8_t[BufferSize];
     // [bank] [offset] [length] [byte[0], byte[1], ..., byte[length]]
-    for (int i = 0; i < DataSize; /* NONE */) 
-	{
-		uint8_t Bank = pgm_read_byte(pData + i++);
-		uint8_t Offset = pgm_read_byte(pData + i++);
-		uint8_t Len = pgm_read_byte(pData + i++);
-        // Запись данных в DMP или выполнение специальных действий
-        if (Len > 0) {
-			
-			if (BufferSize < Len)  {
-				BufferSize = Len;
-				delete[] pProgBuffer;
-				pProgBuffer = new uint8_t[BufferSize];
-			}
-			for (int j = 0; j < Len; ++j) 
-				pProgBuffer[j] = pgm_read_byte(pData + i + j);
-			//
-			if (writeMemoryBlock(pProgBuffer, Len, Bank, Offset, false) == false) {
-				delete[] pProgBuffer;
-				return false;
-			}
-            i += Len;
-        } 
-		else  {
+	const uint8_t* data = DMP_CONFIG_BINARY;
+    for (uint32_t i = 0; i < sizeof(DMP_CONFIG_BINARY); /* NONE */) {
 
-			if (pgm_read_byte(pData + i++) == 0x01)  {
-				if (!I2C_write_byte(ADDRESS, REG_INT_ENABLE, 0x32)) {
-					delete[] pProgBuffer;
-					return false;
-				}
-            } 
-			else  {
-				delete[] pProgBuffer;
-				return false;
-			}
-        }
+		uint8_t bank = pgm_read_byte(data + i++);
+		uint8_t offset = pgm_read_byte(data + i++);
+		uint8_t length = pgm_read_byte(data + i++);
+
+        // Write data to DMP
+		if (writeMemoryBlock(data + i, offset, bank, length) == false)
+			return false;
+
+        i += length;
 	}
-	delete[] pProgBuffer;
 	return true;
 }
 

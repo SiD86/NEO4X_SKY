@@ -99,16 +99,9 @@ static void process_measurements_battery_voltage(uint32_t adc) {
 	// Calculation battery voltage
 	// 3.3 - Max GPIO voltage
 	// 4095 - 12 bit ADC max value
-	// 656 - Voltage devisor coefficient (6.56)
+	// 656 - Voltage divisor coefficient (6.56)
 	// Output: (V * 100)
 	g_battery_voltage = flt_value * (3.3 / 4095.0) * 656;
-
-	/*Serial.print("RAW: ");
-	Serial.print(adc);
-	Serial.print("\tFLT: ");
-	Serial.print(flt_value);
-	Serial.print("\tVOLTAGE: ");
-	Serial.println(g_battery_voltage);*/
 }
 
 static void error_status_update() {
