@@ -3,14 +3,11 @@
 
 namespace TXRX {
 	
-	// Packet size - 32
+	// Packet size - 36
 	#pragma pack (push, 1)
 	struct fly_controller_packet_t {
-		uint8_t dev_addr;
-		uint8_t data[30];
-		uint8_t CRC;
-
-		uint8_t reserved[32];
+		uint8_t data[32];
+		uint32_t CRC;
 	};
 	#pragma pack (pop)
 }
@@ -39,7 +36,7 @@ namespace TXRX {
 		uint8_t I2C_timeout_count;
 		uint8_t PID_OOR_count;
 		
-		uint8_t reserved[2];
+		uint8_t reserved[4];
 	};
 	#pragma pack (pop)
 
@@ -76,7 +73,7 @@ namespace TXRX {
 		uint8_t thrust;			        	// Thrust [0; 100], %
 		int16_t	XYZ[3];		            	// Destination XYZ
 
-		uint8_t reserved[4];
+		uint8_t reserved[6];
 	};
 	#pragma pack (pop)
 

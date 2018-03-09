@@ -5,7 +5,6 @@
 #include "configuration_subsystem.h"
 #include "util.h"
 #define USART_BAUDRATE						(175000)
-#define DEVICE_ADDRESS_DEFAULT				(255)
 
 static const uint32_t g_packet_size = sizeof(TXRX::fly_controller_packet_t);
 static const uint32_t g_data_size = sizeof(TXRX::fly_controller_packet_t::data);
@@ -13,7 +12,7 @@ static const uint32_t g_data_size = sizeof(TXRX::fly_controller_packet_t::data);
 static void process_rx();
 static void process_tx();
 static bool process_rx_data();
-static uint8_t calculate_CRC8(const uint8_t* data);
+static uint32_t calculate_CRC(const uint8_t* data);
 
 static uint32_t g_status = CSS::NO_ERROR;
 
@@ -66,9 +65,8 @@ static void process_tx() {
 
 	// Build new packet
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_TX_get_buffer_address();
-	packet->dev_addr = DEVICE_ADDRESS_DEFAULT;
 	memcpy(packet->data, &g_sp, g_data_size);
-	packet->CRC = calculate_CRC8(packet->data);
+	packet->CRC = calculate_CRC(packet->data);
 
 	// Start transmit
 	USART3_TX_start(g_packet_size);
@@ -133,10 +131,9 @@ static bool process_rx_data() {
 
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_RX_get_buffer_address();
 
-	// Verify packet step 1 (check service information)
-	uint8_t CRC = calculate_CRC8(packet->data);
-	bool is_valid = (packet->dev_addr == DEVICE_ADDRESS_DEFAULT) && (packet->CRC == CRC);
-	if (is_valid == false)
+	// Check CRC
+	uint32_t CRC = calculate_CRC(packet->data);
+	if (packet->CRC != CRC)
 		return false;
 
 	// Copy data
@@ -144,11 +141,27 @@ static bool process_rx_data() {
 	return true;
 }
 
-static uint8_t calculate_CRC8(const uint8_t* data) {
+/*static uint8_t calculate_CRC8(const uint8_t* data) {
 
 	uint8_t CRC = data[0];
 	for (uint32_t i = 1; i < g_data_size; ++i)
 		CRC += data[i];
+
+	return CRC;
+}*/
+static uint32_t calculate_CRC(const uint8_t* data) {
+
+	uint32_t CRC = 0;
+
+	for (uint32_t i = 0; i < 32; i += 2) {
+
+		uint16_t value = (data[i] << 8) | data[i + 1];
+		if (value % 3 == 0)
+			CRC |= 1 << (i + 0);
+
+		if (value % 2 == 0)
+			CRC |= 1 << (i + 1);
+	}
 
 	return CRC;
 }
