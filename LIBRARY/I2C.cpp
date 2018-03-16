@@ -216,8 +216,8 @@ static void stop_communication() {
 //
 // IRQ handlers
 //
-volatile uint8_t I2C_nack_count = 0;
-volatile uint8_t I2C_timeout_count = 0;
+volatile uint8_t I2C_nack_count = 0;		// __DEBUG
+volatile uint8_t I2C_timeout_count = 0;		// __DEBUG
 void TWI1_Handler() {
 
 	uint32_t status = REG_TWI1_SR;
@@ -227,7 +227,7 @@ void TWI1_Handler() {
 	if (IS_BIT_SET(status, TWI_SR_NACK) && IS_BIT_SET(irq_mask, TWI_IMR_NACK)) {
 		stop_communication();
 		g_status = I2C_DRIVER_ERROR;
-		++I2C_nack_count;
+		++I2C_nack_count;	// __DEBUG
 	}
 	
 	// Send STOP complite
@@ -285,6 +285,6 @@ void TC3_Handler() {
 	if (IS_BIT_SET(irq_mask, TC_IMR_CPCS) && IS_BIT_SET(status, TC_SR_CPCS)) {
 		stop_communication();
 		g_status = I2C_DRIVER_ERROR;
-		++I2C_timeout_count;
+		++I2C_timeout_count;	// __DEBUG
 	}
 }

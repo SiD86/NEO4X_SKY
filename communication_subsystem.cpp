@@ -19,10 +19,9 @@ static uint32_t g_status = CSS::NO_ERROR;
 TXRX::control_data_t g_cp = {0};
 TXRX::state_data_t g_sp = {0};
 
-uint32_t g_hardware_error_count = 0; // DEBUG
-uint32_t g_software_error_count = 0; // DEBUG
-uint32_t g_desync_count = 0; // DEBUG
-
+uint32_t g_desync_count = 0;			// __DEBUG
+uint32_t g_hardware_error_count = 0;	// __DEBUG
+uint32_t g_software_error_count = 0;	// __DEBUG
 
 //
 // EXTERNAL INTERFACE
@@ -78,13 +77,9 @@ static void process_tx() {
 static void process_rx() {
 
 	static uint32_t prev_rx_data_time = 0;
-
 	uint32_t current_time = millis();
 
 	if (USART3_RX_is_complete() == true) {
-
-		// Update time
-		prev_rx_data_time = current_time;
 
 		// Process data
 		if (IS_BIT_CLEAR(g_status, CSS::DESYNC)) {
@@ -96,15 +91,16 @@ static void process_rx() {
 			}
 			else {
 
+				++g_software_error_count;
 				if (++error_count >= 5) {
 					SET_STATUS_BIT(g_status, CSS::DESYNC);
-					++g_desync_count; // DEBUG
+					++g_desync_count; // __DEBUG
 				}
-				++g_software_error_count; // DEBUG
 			}
 		}
 
-		// Initialize start receive next data
+		// Update time and initialize start receive next data
+		prev_rx_data_time = current_time;
 		USART3_RX_start(g_packet_size);
 	}
 	else {
@@ -141,14 +137,6 @@ static bool process_rx_data() {
 	return true;
 }
 
-/*static uint8_t calculate_CRC8(const uint8_t* data) {
-
-	uint8_t CRC = data[0];
-	for (uint32_t i = 1; i < g_data_size; ++i)
-		CRC += data[i];
-
-	return CRC;
-}*/
 static uint32_t calculate_CRC(const uint8_t* data) {
 
 	uint32_t CRC = 0;

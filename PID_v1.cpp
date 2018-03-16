@@ -24,7 +24,7 @@ struct pid_param_t {
 
 static pid_param_t g_PID_ch[MAX_CHANNEL_COUNT];
 
-uint32_t g_PID_OOR_count = 0;
+uint32_t g_PID_OOR_count = 0; // __DEBUG
 
 void PID_initialize(uint32_t ch, float output_limit, float I_limit) {
 	
@@ -65,11 +65,11 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	g_PID_ch[ch].output = P + g_PID_ch[ch].integral + D;
 	if (g_PID_ch[ch].output > g_PID_ch[ch].output_max) {
 		g_PID_ch[ch].output = g_PID_ch[ch].output_max;
-		++g_PID_OOR_count; // DEBUG
+		++g_PID_OOR_count; // __DEBUG
 	}
 	else if (g_PID_ch[ch].output < g_PID_ch[ch].output_min) {
 		g_PID_ch[ch].output = g_PID_ch[ch].output_min;
-		++g_PID_OOR_count; // DEBUG
+		++g_PID_OOR_count; // __DEBUG
 	}
 
 	// Remember variables
