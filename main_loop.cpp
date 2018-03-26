@@ -63,28 +63,28 @@ void setup() {
 	g_cfg.desync_silence_window_time = 200; // 200 ms (!!! < connection_lost_timeout !!!)
 	g_cfg.connection_lost_timeout = 1000;	// 1000 ms
 
-	g_cfg.angle_protect = 60; // [-60; 60]
+	g_cfg.angle_protect = 60;				// [-60; 60]
 	g_cfg.ESC_PWM_frequency = 400;			// 400 Hz
 	
 	g_cfg.battery_low_voltage = 1000;		// 10.00V
 	
-	g_cfg.PID_output_limit = 300;			// 30%
+	g_cfg.PID_output_limit = 400;			// 40%
 	g_cfg.PID_enable_threshold = 0;			// 0% (enable always)
 	
 	g_cfg.PID_X[0] = 0;
 	g_cfg.PID_X[1] = 0;
 	g_cfg.PID_X[2] = 0;
-	g_cfg.I_X_limit = 0;
+	g_cfg.I_X_limit = 300;
 	
 	g_cfg.PID_Y[0] = 0;
 	g_cfg.PID_Y[1] = 0;
 	g_cfg.PID_Y[2] = 0;
-	g_cfg.I_Y_limit = 0;
+	g_cfg.I_Y_limit = 300;
 	
 	g_cfg.PID_Z[0] = 0;
 	g_cfg.PID_Z[1] = 0;
 	g_cfg.PID_Z[2] = 0;
-	g_cfg.I_Z_limit = 0;
+	g_cfg.I_Z_limit = 300;
 	
 	
 	// Initialize subsystems and fly core
@@ -122,6 +122,12 @@ void loop() {
 
 	// Process fly core
 	FLY_CORE::process(fly_core_command, &g_cp);
+
+
+
+	//
+	// CONSTRUCT STATE PACKET
+	//
 	
 	// Update state data
 	make_state_packet();
@@ -161,7 +167,8 @@ extern uint8_t MPU6050_check_FIFO_size_error_count;
 extern uint8_t MPU6050_get_data_error_count;
 extern volatile uint8_t I2C_nack_count;
 extern volatile uint8_t I2C_timeout_count;
-extern uint32_t g_PID_OOR_count;
+extern uint32_t g_PID_OOR_diff;
+extern uint32_t g_PID_I_OOR_diff;
 extern uint32_t g_hardware_error_count;
 extern uint32_t g_software_error_count;
 extern uint32_t g_desync_count;
@@ -172,6 +179,9 @@ static void make_state_packet() {
 	memset(&g_sp, 0, sizeof(g_sp));
 
 	g_sp.main_core_status = g_status;
+
+	FLY_CORE::make_state_data(&g_sp);
+	ASS::make_state_data(&g_sp);
 
 	// Debug info
 	g_sp.hardware_error_count = g_hardware_error_count;
@@ -185,8 +195,6 @@ static void make_state_packet() {
 	g_sp.I2C_nack_count = I2C_nack_count;
 	g_sp.I2C_timeout_count = I2C_timeout_count;
 
-	g_sp.PID_OOR_count = g_PID_OOR_count;
-
-	FLY_CORE::make_state_data(&g_sp);
-	ASS::make_state_data(&g_sp);
+	g_sp.PID_OOR_diff = g_PID_OOR_diff;
+	g_sp.PID_I_OOR_diff = g_PID_I_OOR_diff;
 }

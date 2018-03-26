@@ -4,7 +4,6 @@
 #include "configuration_subsystem.h"
 #include "util.h"
 #define MEAS_VOLTAGE_PIN					(A0)
-#define MEAS_VOLTAGE_PERIOD					(1000)
 #define MEAS_VOLTAGE_ALPHA					(0.001)
 
 static void process_measurements_battery_voltage(uint32_t adc);
@@ -21,21 +20,21 @@ static uint16_t g_ADC_buffer[10] = { 0 };
 void ASS::initialize() {
 
 	// Initialize periphery
-	pinMode(MEAS_VOLTAGE_PIN, INPUT);
+	pinMode(MEAS_VOLTAGE_PIN, INPUT);	// Battery voltage
 
 	// Initialize ADC channels
 	//adc_set_resolution(ADC, ADC_);
 	REG_ADC_MR &= ~(ADC_MR_LOWRES_BITS_10); // 10 bit resolution
 	REG_ADC_CHER =  ADC_CHER_CH0 |  // Battery voltage channel
-					ADC_CHER_CH1 |  // Reserved
-					ADC_CHER_CH2 |  // Reserved
-					ADC_CHER_CH3 |  // Reserved
-					ADC_CHER_CH4 |  // Reserved
-					ADC_CHER_CH5 |  // Reserved
-					ADC_CHER_CH6 |  // Reserved
-					ADC_CHER_CH7 |  // Reserved
-					ADC_CHER_CH10 | // Reserved
-					ADC_CHER_CH11;  // Reserved
+					ADC_CHER_CH1 |  // Reserved for ESC temperature
+					ADC_CHER_CH2 |  // Reserved for ESC temperature
+					ADC_CHER_CH3 |  // Reserved for ESC temperature
+					ADC_CHER_CH4 |  // Reserved for ESC temperature
+					ADC_CHER_CH5 |  // Reserved for motor temperature
+					ADC_CHER_CH6 |  // Reserved for motor temperature
+					ADC_CHER_CH7 |  // Reserved for motor temperature
+					ADC_CHER_CH10 | // Reserved for motor temperature
+					ADC_CHER_CH11;  // Reserved for vibration level
 
 	// Reset status
 	g_status = ASS::NO_ERROR;

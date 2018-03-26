@@ -34,9 +34,10 @@ namespace TXRX {
 		uint8_t MPU6050_get_data_error_count;
 		uint8_t I2C_nack_count;
 		uint8_t I2C_timeout_count;
-		uint8_t PID_OOR_count;
+		uint8_t PID_OOR_diff;
+		uint8_t PID_I_OOR_diff;
 		
-		uint8_t reserved[4];
+		uint8_t reserved[3];
 	};
 	#pragma pack (pop)
 

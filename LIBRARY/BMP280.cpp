@@ -55,7 +55,7 @@
 #define SPI_3_WIRE_DISABLE					(0x00)
 
 
-static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperature, float* altitude);
+static void calculation_altitude(uint8_t* data, float* altitude);
 static int32_t compensate_T(int32_t adc_T, int32_t* t_fine);
 static float compensate_P(int32_t adc_P, int32_t t_fine);
 
@@ -146,7 +146,7 @@ bool BMP280_is_data_ready() {
 	return (data & 0x01) == 0;
 }
 
-void BMP280_get_data(uint32_t* pressure, int32_t* temperature, float* altitude) {
+void BMP280_get_data(float* altitude) {
 
 	static bool is_start_communication = false;
 	if (is_start_communication == false) { // Start communication
@@ -165,7 +165,7 @@ void BMP280_get_data(uint32_t* pressure, int32_t* temperature, float* altitude) 
 		uint32_t status = I2C_get_status();
 		if (status == I2C_DRIVER_NO_ERROR) {
 			uint8_t* data = I2C_async_get_rx_buffer_address();
-			calculation_PTA(data, pressure, temperature, altitude);
+			calculation_altitude(data, altitude);
 			is_start_communication = false;
 			g_status = BMP280_DRIVER_NO_ERROR;
 		}
@@ -186,7 +186,7 @@ uint32_t BMP280_get_status() {
 //
 // INTERNAL INTERFACE
 //
-static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperature, float* altitude) {
+static void calculation_altitude(uint8_t* data, float* altitude) {
 
 	// Make values
 	int32_t adc_P = MAKE_INT32(0, data[0], data[1], data[2]) >> 4;
@@ -194,20 +194,24 @@ static void calculation_PTA(uint8_t* data, uint32_t* pressure, int32_t* temperat
 
 	// Calculate pressure and temperature
 	int32_t T_fine = 0;
-	int32_t T = compensate_T(adc_T, &T_fine);
+	compensate_T(adc_T, &T_fine);
 	float P = compensate_P(adc_P, T_fine);
 
-	// Calculate altitude
-	if (altitude != nullptr) {
-		float uflt_altitude = 44330.0 * (1.0 - pow(P / 101325.0, 1.0 / 5.255)) * 100.0;
-		*altitude = uflt_altitude;
+	// Calculate unfiltered altitude
+	static float flt_altitude = 0;
+	float uflt_altitude = 44330.0 * (1.0 - pow(P / 101325.0, 1.0 / 5.255)) * 100.0;
+
+	// Filtering
+	static uint32_t calculation_counter = 0;
+	if (calculation_counter >= 10) { 
+		flt_altitude = uflt_altitude * 0.3 + flt_altitude * 0.7;
+	}
+	else {  // Wait stable value from sensor
+		++calculation_counter;
+		flt_altitude = uflt_altitude;
 	}
 
-	if (pressure != nullptr)
-		*pressure = P;
-
-	if (temperature != nullptr)
-		*temperature = T;
+	*altitude = flt_altitude;
 }
 
 static int32_t compensate_T(int32_t adc_T, int32_t* t_fine) {

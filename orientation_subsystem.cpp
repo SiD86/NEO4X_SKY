@@ -190,9 +190,7 @@ static void state_BMP280_GET_DATA_handler() {
 		g_state = STATE_MPU6050_CHECK_RDY;
 
 	// Get data
-	uint32_t pressure = 0;
-	int32_t temperature = 0;
-	BMP280_get_data(&pressure, &temperature, &g_XYZH[3]);
+	BMP280_get_data(&g_XYZH[3]);
 	if (BMP280_get_status() != BMP280_DRIVER_BUSY) {
 		g_state = STATE_MPU6050_CHECK_RDY; 
 		/*Serial.print("BMP280 :\t");
