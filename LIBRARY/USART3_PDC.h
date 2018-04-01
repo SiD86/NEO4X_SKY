@@ -1,13 +1,10 @@
 #pragma once
 
-// LIBRARY VERSION: 0.0.6
-
 /*******************************************************************************
 * @brief	Initialize USART
 * @note		Mode 8N1
-* @param	speed: USART baudrate speed
 *******************************************************************************/
-void USART3_initialize(uint32_t speed);
+void USART3_initialize();
 
 /*******************************************************************************
 * @brief	Reset USART

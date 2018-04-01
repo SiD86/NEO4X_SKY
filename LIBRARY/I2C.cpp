@@ -21,7 +21,7 @@ void I2C_initialize(uint32_t clock_speed) {
 
 	// Enable I2C and watch timeout timer clock
 	REG_PMC_PCER0 = PMC_PCER0_PID23 | PMC_PCER0_PID30;
-	while (	(REG_PMC_PCSR0 & (PMC_PCER0_PID23 | PMC_PCER0_PID27)) == 0 );
+	while (	(REG_PMC_PCSR0 & (PMC_PCER0_PID23 | PMC_PCER0_PID30)) == 0 );
 
 	// Configure watch timeout timer
 	REG_TC1_CMR0 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;

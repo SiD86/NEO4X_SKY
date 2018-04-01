@@ -139,14 +139,6 @@ static void state_MPU6050_GET_DATA_handler() {
 	if (MPU6050_get_status() != MPU6050_DRIVER_BUSY) {
 		g_state = STATE_BMP280_CHECK_RDY;
 		g_is_position_updated = true;
-		/*Serial.print("MPU6050:\t");
-		Serial.print(g_XYZH[0]);
-		Serial.print("\t");
-		Serial.print(g_XYZH[1]);
-		Serial.print("\t");
-		Serial.print(g_XYZH[2]);
-		Serial.print("\t");
-		Serial.println(g_MPU6050_error_count);*/
 	}
 
 	error_status_update(true, false, false);
@@ -191,15 +183,8 @@ static void state_BMP280_GET_DATA_handler() {
 
 	// Get data
 	BMP280_get_data(&g_XYZH[3]);
-	if (BMP280_get_status() != BMP280_DRIVER_BUSY) {
+	if (BMP280_get_status() != BMP280_DRIVER_BUSY)
 		g_state = STATE_MPU6050_CHECK_RDY; 
-		/*Serial.print("BMP280 :\t");
-		Serial.print(pressure);
-		Serial.print("\t");
-		Serial.print(temperature);
-		Serial.print("\t");
-		Serial.println(g_XYZH[3]);*/
-	}
 
 	error_status_update(false, true, false);
 }

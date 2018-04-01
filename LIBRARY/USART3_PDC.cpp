@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "USART3_PDC.h"
+#define USART_BAUDRATE						(175000)
 #define TX_PIN								(PIO_PD4)
 #define RX_PIN								(PIO_PD5)
 #define MAX_BUFFER_SIZE						(128)
@@ -11,15 +12,33 @@ static uint8_t g_rx_buffer[MAX_BUFFER_SIZE] = { 0 };
 //
 // EXTERNAL INTERFACE
 //
-void USART3_initialize(uint32_t speed) {
+void USART3_initialize() {
 
-	// Enable USART3 and PDC clocks
-	REG_PMC_PCER0 = PMC_PCER0_PID20 | PMC_PCER1_PID39;
-	while ( (REG_PMC_PCSR0 & (PMC_PCER0_PID20 | PMC_PCER1_PID39)) == 0 );
+	// Enable USART3 clock 
+	REG_PMC_PCER0 = PMC_PCER0_PID20;
+	while ((REG_PMC_PCSR0 & PMC_PCER0_PID20) == 0);
+
+	// Enable PDC clock
+	REG_PMC_PCER1 = PMC_PCER1_PID39;
+	while ( (REG_PMC_PCSR1 & PMC_PCER1_PID39) == 0 );
+	
+	// Configure TX as output (B peripheral function) without pull-up
+	REG_PIOD_PER   = TX_PIN;
+	REG_PIOD_OER   = TX_PIN;
+	REG_PIOD_PUDR  = TX_PIN;
+	REG_PIOD_PDR   = TX_PIN;
+	REG_PIOD_ABSR |= TX_PIN;
+
+	// Configure RX as input (B peripheral function) with pull-up
+	REG_PIOD_PER   = RX_PIN;
+	REG_PIOD_ODR   = RX_PIN;
+	REG_PIOD_PUER  = RX_PIN;
+	REG_PIOD_PDR   = RX_PIN;
+	REG_PIOD_ABSR |= RX_PIN;
 
 	// Configure TX and RX pins
-	REG_PIOD_PDR = TX_PIN | RX_PIN;		// Disable PIO control, enable peripheral control
-	REG_PIOD_ABSR |= TX_PIN | RX_PIN;	// Set peripheral B function
+	//REG_PIOD_PDR = TX_PIN | RX_PIN;		// Disable PIO control, enable peripheral control
+	//REG_PIOD_ABSR |= TX_PIN | RX_PIN;	// Set peripheral B function
 
 	// Disable PDC channels and reset TX and RX
 	REG_USART3_PTCR = US_PTCR_TXTDIS | US_PTCR_RXTDIS;
@@ -29,7 +48,7 @@ void USART3_initialize(uint32_t speed) {
 	REG_USART3_MR = US_MR_CHRL_8_BIT | US_MR_PAR_NO | US_MR_NBSTOP_1_BIT | US_MR_USART_MODE_NORMAL | US_MR_USCLKS_MCK | US_MR_CHMODE_NORMAL;
 
 	// Configure baudrate
-	REG_USART3_BRGR = (SystemCoreClock / speed) / 16;
+	REG_USART3_BRGR = (SystemCoreClock / USART_BAUDRATE) >> 4;
 
 	// Disable all interrupts
 	REG_USART3_IDR = 0xFFFFFFFF;
@@ -45,7 +64,7 @@ void USART3_initialize(uint32_t speed) {
 }
 
 bool USART3_is_error() {
-	uint32_t reg = USART3->US_CSR;
+	uint32_t reg = REG_USART3_CSR;
 	return (reg & (US_CSR_OVRE | US_CSR_FRAME | US_CSR_PARE));
 }
 

@@ -68,8 +68,7 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 	REG_PIOB_ODR = ESC_CALIBRATION_PIN;
 	REG_PIOB_PUER = ESC_CALIBRATION_PIN;
 	delay(5); // Wait pull-up time
-	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) {// LOW level
-		Serial.println("CALIBRATION");
+	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) { // Check LOW level
 		calibration_ESC();
 	}
 }

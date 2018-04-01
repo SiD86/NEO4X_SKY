@@ -1,7 +1,7 @@
 #ifndef __I2C_H__
 #define __I2C_H__
 
-// LIBRARY VERSION: 0.0.14
+// LIBRARY VERSION: 0.0.15
 
 #define I2C_DRIVER_DEFAULT_TIMEOUT_US	(5000)
 

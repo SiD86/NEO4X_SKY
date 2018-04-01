@@ -1,23 +1,23 @@
 #include <Arduino.h>
 #include "LIBRARY\USART3_PDC.h"
-#include "TXRX_PROTOCOL.h"
 #include "communication_subsystem.h"
 #include "configuration_subsystem.h"
 #include "util.h"
-#define USART_BAUDRATE						(175000)
 
 static const uint32_t g_packet_size = sizeof(TXRX::fly_controller_packet_t);
-static const uint32_t g_data_size = sizeof(TXRX::fly_controller_packet_t::data);
+static const uint32_t g_data_size   = sizeof(TXRX::fly_controller_packet_t::data);
 
-static void process_rx();
-static void process_tx();
-static bool process_rx_data();
+static void asynchronous_process_rx();
+static void asynchronous_process_tx();
+static bool process_rx_data(void* data, uint32_t packet_type);
 static uint32_t calculate_CRC(const uint8_t* data);
 
 static uint32_t g_status = CSS::NO_ERROR;
 
 TXRX::control_data_t g_cp = {0};
 TXRX::state_data_t g_sp = {0};
+TXRX::configure_data_t g_rx_cfg_data = { 0 };
+TXRX::configure_data_t g_tx_cfg_data = { 0 };
 
 uint32_t g_desync_count = 0;			// __DEBUG
 uint32_t g_hardware_error_count = 0;	// __DEBUG
@@ -27,19 +27,57 @@ uint32_t g_software_error_count = 0;	// __DEBUG
 // EXTERNAL INTERFACE
 //
 void CSS::initialize() {
-	USART3_initialize(USART_BAUDRATE);
+	USART3_initialize();
 	USART3_RX_start(g_packet_size);
 }
 
-void CSS::process() {
+void CSS::asynchronous_process() {
 
 	if (USART3_is_error() == true) {
 		USART3_reset(true, true);
 		++g_hardware_error_count;
 	}
 
-	process_tx();
-	process_rx();
+	asynchronous_process_tx();
+	asynchronous_process_rx();
+}
+
+bool CSS::synchronous_process(bool tx, bool rx) {
+
+	if (tx == true) {
+
+		TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_TX_get_buffer_address();
+		
+		// Build new packet
+		packet->type = TXRX::TYPE_CONFIG_ACK_PACKET;
+		memcpy(packet->data, &g_tx_cfg_data, g_data_size);
+		packet->CRC = calculate_CRC(packet->data);
+
+		// Start send packet and wait operation complite
+		USART3_TX_start(g_packet_size);
+		while (USART3_TX_is_complete() == false) {
+			if (USART3_is_error() == true) {
+				USART3_reset(true, false);
+				return false;
+			}
+		}
+	}
+	else {
+
+		// Wait packet
+		USART3_RX_start(g_packet_size);
+		while (USART3_RX_is_complete() == false) {
+			if (USART3_is_error() == true) {
+				USART3_reset(false, true);
+				return false;
+			}
+		}
+
+		if (process_rx_data(&g_rx_cfg_data, TXRX::TYPE_CONFIG_REQ_PACKET) == false)
+			return false;
+	}
+
+	return true;
 }
 
 uint32_t CSS::get_status() {
@@ -50,7 +88,7 @@ uint32_t CSS::get_status() {
 //
 // INTERNAL INTERFACE
 //
-static void process_tx() {
+static void asynchronous_process_tx() {
 
 	static uint32_t prev_tx_time = 0;
 
@@ -64,6 +102,7 @@ static void process_tx() {
 
 	// Build new packet
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_TX_get_buffer_address();
+	packet->type = TXRX::TYPE_STATE_PACKET;
 	memcpy(packet->data, &g_sp, g_data_size);
 	packet->CRC = calculate_CRC(packet->data);
 
@@ -74,7 +113,7 @@ static void process_tx() {
 	prev_tx_time = millis();
 }
 
-static void process_rx() {
+static void asynchronous_process_rx() {
 
 	static uint32_t prev_rx_data_time = 0;
 	uint32_t current_time = millis();
@@ -85,7 +124,7 @@ static void process_rx() {
 		if (IS_BIT_CLEAR(g_status, CSS::DESYNC)) {
 
 			static uint32_t error_count = 0;
-			if (process_rx_data() == true) {
+			if (process_rx_data(&g_cp, TXRX::TYPE_CONTROL_PACKET) == true) {
 				error_count = 0;
 				CLEAR_STATUS_BIT(g_status, CSS::CONNECTION_LOST);
 			}
@@ -123,9 +162,13 @@ static void process_rx() {
 	}
 }
 
-static bool process_rx_data() {
+static bool process_rx_data(void* data, uint32_t packet_type) {
 
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_RX_get_buffer_address();
+
+	// Check packet type
+	if (packet->type != packet_type)
+		return false;
 
 	// Check CRC
 	uint32_t CRC = calculate_CRC(packet->data);
@@ -133,7 +176,7 @@ static bool process_rx_data() {
 		return false;
 
 	// Copy data
-	memcpy(&g_cp, packet->data, g_data_size); 
+	memcpy(data, packet->data, g_data_size);
 	return true;
 }
 

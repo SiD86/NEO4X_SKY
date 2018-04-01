@@ -1,13 +1,9 @@
 #include <Arduino.h>
 #include "LIBRARY\I2C.h"
-#include "LIBRARY\MPU6050.h"
-#include "LIBRARY\BMP280.h"
-#include "TXRX_PROTOCOL.h"
 #include "communication_subsystem.h"
-#include "orientation_subsystem.h"
 #include "additional_subsystem.h"
-#include "fly_core.h"
 #include "configuration_subsystem.h"
+#include "fly_core.h"
 #include "CONFIG.h"
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
@@ -19,13 +15,16 @@ static uint8_t g_status = TXRX::MAIN_CORE_STATUS_NO_ERROR;
 
 void setup() {
 
-	Serial.begin(460800);	// DEBUG
+	Serial.begin(115200);	// DEBUG
+
 	pinMode(13, OUTPUT);
+	digitalWrite(13, HIGH);
+	delay(1000);
 	digitalWrite(13, LOW);
 
-	delay(1000);
-
-	digitalWrite(13, HIGH);
+	// Setup configuration pin
+	pinMode(6, INPUT);
+	digitalWrite(6, HIGH);
 
 	pinMode(53, OUTPUT); // PB14
 	pinMode(50, OUTPUT); // PC13
@@ -41,56 +40,30 @@ void setup() {
 	CLR_DEBUG_PIN_5;
 	CLR_DEBUG_PIN_6;
 
+	// Initialize communication subsystem
+	CSS::initialize();
+
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
 
+	if (digitalRead(6) == LOW) {
+		Serial.println("CONFIG MODE");
+		CONFIGSS::enter_to_configuration_mode();
+	}
+	Serial.println("MAIN MODE");
 	//
 	// Тут нужно ввести мониторинг пина для сброса настроек
 	//
 	//if (CONFIGSS::reset_configuration() == false)
-		//SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
-
-	// Check request enter to configuration mode
-	/*pinMode(2, INPUT);
-	digitalWrite(2, HIGH);
-	if (digitalRead(2) == LOW)
-		CONFIGSS::enter_to_configuration_mode();
+	//SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
 
 	if (CONFIGSS::load_and_check_configuration() == false)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);*/
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
 
-	g_cfg.send_state_interval = 30;			// 30 ms
-	g_cfg.desync_silence_window_time = 200; // 200 ms (!!! < connection_lost_timeout !!!)
-	g_cfg.connection_lost_timeout = 1000;	// 1000 ms
-
-	g_cfg.angle_protect = 60;				// [-60; 60]
-	g_cfg.ESC_PWM_frequency = 400;			// 400 Hz
-	
-	g_cfg.battery_low_voltage = 1000;		// 10.00V
-	
-	g_cfg.PID_output_limit = 400;			// 40%
-	g_cfg.PID_enable_threshold = 0;			// 0% (enable always)
-	
-	g_cfg.PID_X[0] = 0;
-	g_cfg.PID_X[1] = 0;
-	g_cfg.PID_X[2] = 0;
-	g_cfg.I_X_limit = 300;
-	
-	g_cfg.PID_Y[0] = 0;
-	g_cfg.PID_Y[1] = 0;
-	g_cfg.PID_Y[2] = 0;
-	g_cfg.I_Y_limit = 300;
-	
-	g_cfg.PID_Z[0] = 0;
-	g_cfg.PID_Z[1] = 0;
-	g_cfg.PID_Z[2] = 0;
-	g_cfg.I_Z_limit = 300;
-	
-	
-	// Initialize subsystems and fly core
-	CSS::initialize();
+	// Initialize additional subsystem
 	ASS::initialize();
 
+	// Initialize fly core
 	FLY_CORE::initialize();
 }
 
@@ -101,7 +74,7 @@ void loop() {
 	//
 
 	// Recieve and send data
-	CSS::process();
+	CSS::asynchronous_process();
 
 	// Additional subsystem process
 	ASS::process();

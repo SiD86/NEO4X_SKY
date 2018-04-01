@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include "TXRX_PROTOCOL.h"
 #include "LIBRARY\EEPROM.h"
 #include "configuration_subsystem.h"
+#include "communication_subsystem.h"
 
 #define EE_MEMORY_MAP_VERSION				(0x0000)
 #define EE_FW_VERSION						(0x0002)
@@ -21,9 +21,6 @@
 #define PID_I_OFFSET						(0x0004)
 #define PID_D_OFFSET						(0x0008)
 #define PID_I_LIMIT_OFFSET					(0x000C)
-
-
-static bool check_configuration();
 
 CONFIGSS::configuration_t g_cfg;
 
@@ -71,6 +68,33 @@ bool CONFIGSS::reset_configuration() {
 
 bool CONFIGSS::load_and_check_configuration() {
 
+	g_cfg.send_state_interval = 30;			// 30 ms
+	g_cfg.desync_silence_window_time = 200; // 200 ms (!!! < connection_lost_timeout !!!)
+	g_cfg.connection_lost_timeout = 1000;	// 1000 ms
+
+	g_cfg.angle_protect = 60;				// [-60; 60]
+	g_cfg.ESC_PWM_frequency = 400;			// 400 Hz
+
+	g_cfg.battery_low_voltage = 1000;		// 10.00V
+
+	g_cfg.PID_output_limit = 400;			// 40%
+	g_cfg.PID_enable_threshold = 0;			// 0% (enable always)
+
+	g_cfg.PID_X[0] = 0;
+	g_cfg.PID_X[1] = 0;
+	g_cfg.PID_X[2] = 0;
+	g_cfg.I_X_limit = 300;
+
+	g_cfg.PID_Y[0] = 0;
+	g_cfg.PID_Y[1] = 0;
+	g_cfg.PID_Y[2] = 0;
+	g_cfg.I_Y_limit = 300;
+
+	g_cfg.PID_Z[0] = 0;
+	g_cfg.PID_Z[1] = 0;
+	g_cfg.PID_Z[2] = 0;
+	g_cfg.I_Z_limit = 300;
+
 	//uint8_t buffer[256] = { 0 };
 	/*if (EEPROM_read_bytes(0x0000, buffer, 256) == false)
 		return false;*/
@@ -101,86 +125,103 @@ bool CONFIGSS::load_and_check_configuration() {
 	memcpy(&g_cfg.PID_H,						&buffer[0x0080], 12);
 	memcpy(&g_cfg.I_H_limit,					&buffer[0x008C], 4);*/
 	
-	return check_configuration();
+	return true;
 }
 
 void CONFIGSS::enter_to_configuration_mode() {
 
-	/*bool is_need_reset_UART = false;
-	uint8_t memory_image[256] = { 0 };
-
-	EEPROM_read_bytes(0x0000, memory_image, 256);
+	uint8_t memory_dump[256] = { 0 };
+	bool is_ready = EEPROM_read_bytes(0x0000, memory_dump, sizeof(memory_dump));
 
 	// Configuration loop
 	while (true) {
 
-		if (Serial.available() > 3 || is_need_reset_UART == true) {
-			Serial.end();
-			Serial.begin(460800);
-			is_need_reset_UART = false;
+		// Wait command
+		while (CSS::synchronous_process(false, true) == false);
+
+		// Check data
+		if (is_ready == false || g_rx_cfg_data.address > 0xFF || g_rx_cfg_data.bytes > sizeof(TXRX::configure_data_t::data)) {
+			g_tx_cfg_data.cmd	  = TXRX::CFG_OPERATION_ERROR;
+			g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
+			g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
+			memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
+			CSS::synchronous_process(true, false);
+			continue;
 		}
 
-		if (Serial.available() != 3)
+		// Process command
+		switch (g_rx_cfg_data.cmd)
+		{
+		case TXRX::CFG_CMD_READ_DEVICE_ID:
+			g_tx_cfg_data.cmd	  = g_rx_cfg_data.cmd;
+			g_tx_cfg_data.bytes	  = g_rx_cfg_data.bytes;
+			g_tx_cfg_data.address = g_rx_cfg_data.address;
+			g_tx_cfg_data.data[0] = 0x99;
+			g_tx_cfg_data.data[1] = 0x88;
+			g_tx_cfg_data.data[2] = 0x77;
+			g_tx_cfg_data.data[3] = 0x66;
+			break;
+
+		case TXRX::CFG_CMD_READ_BLOCK:
+			g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
+			g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
+			g_tx_cfg_data.address = g_rx_cfg_data.address;
+			memcpy(g_tx_cfg_data.data, &memory_dump[g_rx_cfg_data.address], g_rx_cfg_data.bytes);
+			break;
+
+		case TXRX::CFG_CMD_WRITE_BLOCK:
+			if (EEPROM_write_bytes(g_rx_cfg_data.address, g_rx_cfg_data.data, g_rx_cfg_data.bytes) == false) {
+				g_tx_cfg_data.cmd     = TXRX::CFG_OPERATION_ERROR;
+				g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
+				g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
+				memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
+			}
+			else {
+				g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
+				g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
+				g_tx_cfg_data.address = g_rx_cfg_data.address;
+				memcpy(&memory_dump[g_rx_cfg_data.address], g_rx_cfg_data.data, g_rx_cfg_data.bytes);
+			}
+			break;
+
+		case TXRX::CFG_CMD_SET_DEFAULT:
+			for (int i = 0; i < 256; ++i)
+				memory_dump[i] = i;
+
+			if (EEPROM_write_bytes(0x0000, memory_dump, sizeof(memory_dump)) == false) {
+				g_tx_cfg_data.cmd     = TXRX::CFG_OPERATION_ERROR;
+				g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
+				g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
+				memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
+			}
+			else {
+				g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
+				g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
+				g_tx_cfg_data.address = g_rx_cfg_data.address;
+				memset(g_tx_cfg_data.data, 0, sizeof(g_tx_cfg_data.data));
+			}
+			break;
+
+		case TXRX::CFG_CMD_SOFTWARE_RESET:
+			g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
+			g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
+			g_tx_cfg_data.address = g_rx_cfg_data.address;
+			memset(g_tx_cfg_data.data, 0, sizeof(g_tx_cfg_data.data));
+
+			CSS::synchronous_process(true, false);
+
+			REG_RSTC_CR = 0xA5000005;
 			continue;
 
-		uint8_t cmd = Serial.read();
-		uint8_t arg1 = Serial.read();
-		uint8_t arg2 = Serial.read();
-
-		uint8_t data_for_write = 0;
-
-		switch (cmd)
-		{
-		case TXRX::UART_CMD_NO_COMMAND:
-			break;
-
-		case TXRX::UART_CMD_WHO_I_AM:
-			data_for_write = TXRX::UART_ACK_QUADCOPTER;
-			Serial.write(&data_for_write, 1);
-			digitalWrite(13, HIGH);
-			break;
-
-		case TXRX::UART_CMD_GET_MEMORY_BLOCK:
-			Serial.write(&memory_image[arg1 * 32], 32);
-			break;
-
-		case TXRX::UART_CMD_WRITE_CELL:
-			EEPROM_write_4bytes(arg1, arg2, 1);
-			EEPROM_read_bytes(arg1, &memory_image[arg1], 1);
-
-			data_for_write = TXRX::UART_ACK_SUCCESS;
-			if (memory_image[arg1] != arg2)
-				data_for_write = TXRX::UART_ACK_FAIL;
-
-			Serial.write(&data_for_write, 1);
-			break;
-
-		default:
-			is_need_reset_UART = true;
+		default: // Unknown command
+			g_tx_cfg_data.cmd     = TXRX::CFG_OPERATION_ERROR;
+			g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
+			g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
+			memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
 			break;
 		}
-	}*/
+
+		CSS::synchronous_process(true, false);
+	}
 }
 
-
-//
-// INTERNAL INTERFACE
-//
-static bool check_configuration() {
-
-	/*if (g_cfg.PWM_frequency_ESC > 400) {
-		g_cfg.PWM_frequency_ESC = 50;
-		return false;
-	}
-	if (g_cfg.PWM_frequency_ESC < 50) {
-		g_cfg.PWM_frequency_ESC = 50;
-		return false;
-	}
-
-	if (g_cfg.PID_interval == 0) {
-		g_cfg.PID_interval = 2500;
-		return false;
-	}*/
-
-	return true;
-}

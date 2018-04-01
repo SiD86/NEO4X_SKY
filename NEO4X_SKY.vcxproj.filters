@@ -84,9 +84,6 @@
     <ClInclude Include="LIBRARY\EEPROM.h">
       <Filter>library</Filter>
     </ClInclude>
-    <ClInclude Include="LIBRARY\UART.h">
-      <Filter>library</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="library\I2C.cpp">
@@ -129,9 +126,6 @@
       <Filter>Файлы исходного кода\MAIN_CORE</Filter>
     </ClCompile>
     <ClCompile Include="LIBRARY\EEPROM.cpp">
-      <Filter>library</Filter>
-    </ClCompile>
-    <ClCompile Include="LIBRARY\UART.cpp">
       <Filter>library</Filter>
     </ClCompile>
   </ItemGroup>
