@@ -4,7 +4,6 @@
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
 #include "fly_core.h"
-#include "CONFIG.h"
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
 
@@ -43,6 +42,9 @@ void setup() {
 	// Initialize communication subsystem
 	CSS::initialize();
 
+	// Initialize additional subsystem
+	ASS::initialize();
+
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
 
@@ -59,9 +61,6 @@ void setup() {
 
 	if (CONFIGSS::load_and_check_configuration() == false)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
-
-	// Initialize additional subsystem
-	ASS::initialize();
 
 	// Initialize fly core
 	FLY_CORE::initialize();

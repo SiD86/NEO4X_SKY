@@ -42,9 +42,6 @@
     <ClInclude Include="library\MPU6050.h">
       <Filter>library</Filter>
     </ClInclude>
-    <ClInclude Include="CONFIG.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="PID_v1.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
@@ -82,6 +79,9 @@
       <Filter>Заголовочные файлы\MAIN_CORE</Filter>
     </ClInclude>
     <ClInclude Include="LIBRARY\EEPROM.h">
+      <Filter>library</Filter>
+    </ClInclude>
+    <ClInclude Include="LIBRARY\ADC.h">
       <Filter>library</Filter>
     </ClInclude>
   </ItemGroup>
@@ -126,6 +126,9 @@
       <Filter>Файлы исходного кода\MAIN_CORE</Filter>
     </ClCompile>
     <ClCompile Include="LIBRARY\EEPROM.cpp">
+      <Filter>library</Filter>
+    </ClCompile>
+    <ClCompile Include="LIBRARY\ADC.cpp">
       <Filter>library</Filter>
     </ClCompile>
   </ItemGroup>

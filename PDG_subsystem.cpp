@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "TXRX_PROTOCOL.h"
 #include "PDG_subsystem.h"
-#include "CONFIG.h"
 #define ESC_CALIBRATION_PIN				(PIO_PB25)
 #define MIN_PWM_DUTY					(1000)
 #define MAX_PWM_DUTY					(2000)
@@ -71,6 +70,8 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) { // Check LOW level
 		calibration_ESC();
 	}
+
+	PDGSS::stop();
 }
 
 void PDGSS::stop() {

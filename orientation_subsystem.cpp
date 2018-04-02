@@ -2,7 +2,6 @@
 #include "library\MPU6050.h"
 #include "LIBRARY\BMP280.h"
 #include "orientation_subsystem.h"
-#include "CONFIG.h"
 #include "util.h"
 #define MAX_ERROR_COUNT							(10)
 

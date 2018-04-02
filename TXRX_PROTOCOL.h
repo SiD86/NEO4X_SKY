@@ -30,7 +30,8 @@ namespace TXRX {
 		uint8_t motors_power[4];		// Motors power [0 - 100], %
 		int16_t	XYZ[3];					// X, Y, Z
 		int32_t alttitude;
-		uint16_t battery_voltage;		// Current battery voltage [0 - 65535], 0.01V
+
+		uint8_t battery_voltage;		// Current battery voltage [0 - 255], 0.1V
 
 		uint8_t hardware_error_count;
 		uint8_t software_error_count;
@@ -43,7 +44,7 @@ namespace TXRX {
 		uint8_t PID_OOR_diff;
 		uint8_t PID_I_OOR_diff;
 		
-		uint8_t reserved[3];
+		uint8_t reserved[4];
 	};
 	#pragma pack (pop)
 

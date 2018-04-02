@@ -6,7 +6,6 @@
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
 #include "PID_v1.h"
-#include "CONFIG.h"
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::FLY_CORE_STATUS_MPU6050_ERROR)
 #define SYNTHESIS(U,X,Y,Z)        	(U[0] * (X) + U[1] * (Y) + U[2] * (Z))
@@ -34,7 +33,6 @@ void FLY_CORE::initialize() {
 
 	// Initialize subsystems
 	PDGSS::initialize(g_cfg.ESC_PWM_frequency);
-	PDGSS::stop();
 	OSS::initialize();
 	
 	// Initialize PID controller channel for axis X

@@ -1,5 +1,4 @@
 #include "Arduino.h"
-#include "CONFIG.h"		
 #include "PID_v1.h"
 #include "util.h"
 #define MAX_CHANNEL_COUNT				(3)

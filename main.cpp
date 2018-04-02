@@ -32,10 +32,7 @@ extern "C" {
 
 		// Set Systick to 1ms interval, common to all SAM3 variants
 		if (SysTick_Config(SystemCoreClock / 1000))
-		{
-			// Capture error
 			while (true);
-		}
 
 		// Initialize C library
 		__libc_init_array();
@@ -106,17 +103,6 @@ extern "C" {
 			g_APinDescription[PINS_CAN1].ulPinType,
 			g_APinDescription[PINS_CAN1].ulPin,
 			g_APinDescription[PINS_CAN1].ulPinConfiguration);*/
-
-		// Initialize Analog Controller
-		pmc_enable_periph_clk(ID_ADC);
-		adc_init(ADC, SystemCoreClock, ADC_FREQ_MAX, ADC_STARTUP_FAST);
-		adc_configure_timing(ADC, 0, ADC_SETTLING_TIME_3, 1);
-		adc_configure_trigger(ADC, ADC_TRIG_SW, 0); // Disable hardware trigger.
-		adc_disable_interrupt(ADC, 0xFFFFFFFF); // Disable all ADC interrupts.
-		adc_disable_all_channel(ADC);
-
-		// Initialize analogOutput module
-		analogOutputInit();
 
 		delay(1);
 	}

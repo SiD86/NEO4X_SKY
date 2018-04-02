@@ -19,6 +19,10 @@ static volatile uint32_t g_status = I2C_DRIVER_NO_ERROR;
 //
 void I2C_initialize(uint32_t clock_speed) {
 
+	// Enable PDC clock
+	REG_PMC_PCER1 = PMC_PCER1_PID39;
+	while ((REG_PMC_PCSR1 & PMC_PCER1_PID39) == 0);
+
 	// Enable I2C and watch timeout timer clock
 	REG_PMC_PCER0 = PMC_PCER0_PID23 | PMC_PCER0_PID30;
 	while (	(REG_PMC_PCSR0 & (PMC_PCER0_PID23 | PMC_PCER0_PID30)) == 0 );
