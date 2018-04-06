@@ -3,10 +3,10 @@
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
 #include "util.h"
-#define BATTERY_VOLTAGE_CHANNEL_INDEX			(0)//(7)
-#define ESC_TEMPERATURE_CHANNEL_INDEX			(1)
-#define MOTOR_TEMPERATURE_CHANNEL_INDEX			(5)
-#define VIBRATION_CHANNEL_INDEX					(9)
+#define BATTERY_VOLTAGE_CHANNEL_INDEX			(7)
+#define ESC_TEMPERATURE_CHANNEL_INDEX			(0)
+#define MOTOR_TEMPERATURE_CHANNEL_INDEX			(0)
+#define VIBRATION_CHANNEL_INDEX					(0)
 
 #define STATE_START_CONVERSION					(0x02)
 #define STATE_WAIT_CONVERSION_COMPLITE			(0x03)
@@ -116,32 +116,63 @@ uint32_t ASS::get_status() {
 //
 static uint32_t process_battery_voltage(uint32_t adc) {
 
-	static const float alpha = 0.001;
-
-	// Filtering
-	static float prev_flt_value = adc;
-	float flt_value = adc * alpha + prev_flt_value * (1 - alpha);
-	prev_flt_value = flt_value;
+	// Parameter of complementary filter
+	const float alpha = 0.001;
 
 	// Calculation battery voltage
-	// 3.3 - Max GPIO voltage
-	// 4095 - 12 bit ADC max value
-	// 65.6 - Voltage divisor coefficient (6.56)
+	// 3.3 - ADC voltage reference
+	// 4095 - 12bit ADC resolution max value
+	// 6.56 - Voltage divisor coefficient
 	// Output: (0.1V)
-	//return flt_value * (3.3 / 4095.0) * 65.6;
-	return adc;
+	float voltage = adc * (3.3 / 4095.0) * 6.56;
+	voltage *= 10.0; // To 0.1V
+
+	// Filtering
+	static float flt_value = voltage;
+	flt_value = voltage * alpha + flt_value * (1.0 - alpha);
+
+	return flt_value;
 }
 
 static uint32_t process_ESC_temperature(uint32_t adc) {
-	return adc;
+
+	// Temperature calculation parameters
+	const float B = 4222;
+	const float T20 = 293.15;
+	const float R20 = 2200;
+	const float R2 = 1000;
+
+	// Parameter of complementary filter
+	const float alpha = 0.1;
+
+	// Calculating voltage from resistance divider
+	// 3.3 - ADC voltage reference
+	// 4095 - 12bit ADC resolution max value
+	float voltage = (3.3 / 4095.0) * adc;
+	if (voltage == 0)
+		return 0;
+
+	// Calculating resistance of thermal resistor 
+	float R1 = (3.3 * R2) / voltage - R2;
+
+	// Calculating temperature
+	float LN_div_B = log(R1 / R20) / B;
+	float T = 1.0 / (LN_div_B + (1.0 / T20)) - 273.15;
+
+	// Filtering
+	static float flt_value = T;
+	flt_value = T * alpha + flt_value * (1.0 - alpha);
+
+	//return flt_value;
+	return 0;
 }
 
 static uint32_t process_motor_temperature(uint32_t adc) {
-	return adc;
+	return 0;
 }
 
 static uint32_t process_vibration_level(uint32_t adc) {
-	return adc;
+	return 0;
 }
 
 static void error_status_update() {

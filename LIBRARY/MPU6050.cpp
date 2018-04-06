@@ -279,7 +279,7 @@ void MPU6050_initialize() {
         return;
 
 	// Set sample rate divisor
-	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x04)) // 1khz / (1 + 4) = 200Hz
+	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x03)) // 1khz / (1 + 3) = 250Hz
 		return;
 
 	// Load DMP firmware (reverse engineering)
@@ -295,7 +295,7 @@ void MPU6050_initialize() {
         return;
 
 	// Setup internal low pass filter
-	if (!I2C_write_bits(ADDRESS, REG_CONFIG, CFG_DLPF_CFG_MASK, DLPF_BW_42))
+	if (!I2C_write_bits(ADDRESS, REG_CONFIG, CFG_DLPF_CFG_MASK, DLPF_BW_98))
         return;
 
 	// Set accel range +/- 2g
