@@ -62,12 +62,14 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 	REG_PWM_ENA = PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3;
 	while ((REG_PWM_SR & (PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3)) == 0);
 
-	// Check calibration ESC pin
+	// Configure calibration enable pin
 	REG_PIOB_PER = ESC_CALIBRATION_PIN;
 	REG_PIOB_ODR = ESC_CALIBRATION_PIN;
 	REG_PIOB_PUER = ESC_CALIBRATION_PIN;
-	delay(5); // Wait pull-up time
-	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) { // Check LOW level
+	delay(3000); // Wait pull-up time and ESC initialize complite
+
+	// Check low level on ESC calibration pin
+	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) {
 		calibration_ESC();
 	}
 
