@@ -161,15 +161,11 @@ static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 	0x01,0xEC,0x04,0x00,0x00,0x40,0x00,				// D_1_236 inv_apply_endian_accel
 	0x03,0x7F,0x06,0x0C,0xC9,0x2C,0x97,0x97,0x97,	// FCFG_2  inv_set_mpu_sensors
 	0x04,0x09,0x04,0x87,0x2D,0x35,0x3D,				// FCFG_5  inv_set_bias_update
-	0x00,0xA3,0x01,0x00,							// D_0_163 inv_set_dead_zone
+	//0x00,0xA3,0x01,0x00,							// D_0_163 inv_set_dead_zone
 	0x07,0x86,0x01,0xFE,							// CFG_6   inv_set_fifo_interupt
 	0x07,0x41,0x05,0xF1,0x20,0x28,0x30,0x38,		// CFG_8   inv_send_quaternion
 	0x07,0x7E,0x01,0x30,							// CFG_16  inv_set_footer
-	0x02,0x16,0x02,0x00,MPU6050_FREQUENCY_DIV		// D_0_22  inv_set_fifo_rate 
-
-	// This very last 0x01 WAS a 0x09, which drops the FIFO rate down to 20 Hz. 0x07 is 25 Hz,
-	// 0x01 is 100Hz. Going faster than 100Hz (0x00=200Hz) tends to result in very noisy data.
-	// DMP output frequency is calculated easily using this equation: (200Hz / (1 + value))
+	//0x02,0x16,0x02,0x00,MPU6050_FREQUENCY_DIV		// D_0_22  inv_set_fifo_rate 
 };
 
 #define REG_SMPLRT_DIV				0x19	// Регистр делителя частоты снятия показаний
@@ -278,10 +274,6 @@ void MPU6050_initialize() {
 	if (!I2C_write_bits(ADDRESS, REG_PWR_MGMT_1, PWR1_SLEEP_MASK, PWR1_SLEEP_DIS))
         return;
 
-	// Set sample rate divisor
-	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x00)) // 1khz / (1 + 0) = 1kHz
-		return;
-
 	// Load DMP firmware (reverse engineering)
 	if (!writeMemoryBlock(DMP_MEMORY_BINARY, 0, 0, sizeof(DMP_MEMORY_BINARY)))
         return;
@@ -292,11 +284,15 @@ void MPU6050_initialize() {
 
 	// Set clock source
 	if (!I2C_write_bits(ADDRESS, REG_PWR_MGMT_1, PWR1_CLKSEL_MASK, CLOCK_PLL_XGYRO))
-        return;
+		return;
 
 	// Setup internal low pass filter
 	if (!I2C_write_bits(ADDRESS, REG_CONFIG, CFG_DLPF_CFG_MASK, DLPF_BW_42))
         return;
+
+	// Set sample rate divisor
+	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x00)) // 1khz / (1 + 0) = 1kHz
+		return;
 
 	// Set accel range +/- 2g
 	if (!I2C_write_bits(ADDRESS, REG_ACCEL_CONFIG, ACONFIG_AFS_SEL_MASK, ACCEL_AFS_2))
@@ -397,7 +393,7 @@ bool MPU6050_is_data_ready() {
 
 	g_status = MPU6050_DRIVER_ERROR;
 
-	// Check IQR data ready pin (HIGH - data not ready, LOW - data ready)
+	// Check IQR data ready pin (LOW - data ready)
 	if (REG_PIOC_PDSR & MPU6050_DRDY_PIN) {
 		if (g_is_data_ready_timeout == false)
 			g_status = MPU6050_DRIVER_NO_ERROR;
@@ -482,14 +478,14 @@ uint32_t MPU6050_get_status() {
 **************************************************************************/
 static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
 
-	// Получение кватернионов из пакета
+	// Parse quaternions
 	int16_t RawQ[4] = { 0 };
 	RawQ[0] = (static_cast<uint16_t>(data[0]) << 8) | data[1];
 	RawQ[1] = (static_cast<uint16_t>(data[4]) << 8) | data[5];
 	RawQ[2] = (static_cast<uint16_t>(data[8]) << 8) | data[9];
 	RawQ[3] = (static_cast<uint16_t>(data[12]) << 8) | data[13];
 
-	// Обработка значений
+	// Scaling
 	float Q[4] = { 0 };	// WXYZ
 	Q[0] = RawQ[0] / 16384.0f;
 	Q[1] = RawQ[1] / 16384.0f;
@@ -600,7 +596,6 @@ void TC4_Handler() {
 	uint32_t status = REG_TC1_SR1;
 	uint32_t irq_mask = REG_TC1_IMR1;
 
-	if ((irq_mask & TC_IMR_CPCS) && (status & TC_SR_CPCS)) {
+	if ((irq_mask & TC_IMR_CPCS) && (status & TC_SR_CPCS))
 		g_is_data_ready_timeout = true;
-	}
 }

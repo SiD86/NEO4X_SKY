@@ -204,7 +204,7 @@ static void calculation_altitude(uint8_t* data, float* altitude) {
 	// Filtering
 	static uint32_t calculation_counter = 0;
 	if (calculation_counter >= 10) { 
-		flt_altitude = uflt_altitude * 0.3 + flt_altitude * 0.7;
+		flt_altitude = uflt_altitude * 0.05 + flt_altitude * 0.95;
 	}
 	else {  // Wait stable value from sensor
 		++calculation_counter;
