@@ -5,6 +5,7 @@
 #define CLEAR_STATUS_BIT(_status, _bit)		((_status) &= ~(_bit))
 #define IS_BIT_SET(_status, _bit)			(((_status) & (_bit)) == (_bit))
 #define IS_BIT_CLEAR(_status, _bit)			(((_status) & (_bit)) == 0)
+#define IS_BITS_SET(_status, _bits)			(((_status) & (_bits)) == (_bits))
 
 #ifdef _DEBUG
 #define SET_DEBUG_PIN_1						(REG_PIOB_SODR = PIO_SODR_P14)

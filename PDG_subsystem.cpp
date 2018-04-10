@@ -5,7 +5,6 @@
 #define MIN_PWM_DUTY					(1000)
 #define MAX_PWM_DUTY					(2000)
 
-#define CHECK_SR(CH)					(REG_PWM_SR & (CH))
 #define PWM_FR_MOTOR_W					(REG_PWM_CDTYUPD0)
 #define PWM_RR_MOTOR_W					(REG_PWM_CDTYUPD1)
 #define PWM_RL_MOTOR_W					(REG_PWM_CDTYUPD2)
@@ -16,13 +15,30 @@
 #define PWM_RL_MOTOR_R					(REG_PWM_CDTY2)
 #define PWM_FL_MOTOR_R					(REG_PWM_CDTY3)
 
-static void calibration_ESC();
 
 
 //
 // EXTERNAL INTERFACE
 //
 void PDGSS::initialize(uint32_t ESC_frequency) {
+
+	// Configure calibration enable pin
+	REG_PIOB_PER = ESC_CALIBRATION_PIN;
+	REG_PIOB_ODR = ESC_CALIBRATION_PIN;
+	REG_PIOB_PUER = ESC_CALIBRATION_PIN;
+	delay(1);
+
+	// Get started duty cycle
+	bool is_calibration_mode = false;
+	uint32_t duty_cycle = MIN_PWM_DUTY;
+	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) {
+		is_calibration_mode = true;
+		duty_cycle = MAX_PWM_DUTY;
+	}
+
+	//
+	// Configure PWM
+	//
 
 	// Enable PWM clock
 	REG_PMC_PCER1 = PMC_PCER1_PID36;
@@ -38,42 +54,35 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 	REG_PIOC_ABSR |= PIO_ABSR_P3;									// Select B peripheral function
 	REG_PWM_CMR0 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
 	REG_PWM_CPRD0 = period;											// Set period
-	REG_PWM_CDTY0 = 0;												// Set pulse width 
+	REG_PWM_CDTY0 = duty_cycle;										// Set pulse width 
 	
 	REG_PIOC_PDR = PIO_PDR_P5;										// Disable IO, enable peripheral function
 	REG_PIOC_ABSR |= PIO_ABSR_P5;									// Select B peripheral function
 	REG_PWM_CMR1 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
 	REG_PWM_CPRD1 = period;											// Set period
-	REG_PWM_CDTY1 = 0;												// Set pulse width 
+	REG_PWM_CDTY1 = duty_cycle;										// Set pulse width 
 	
 	REG_PIOC_PDR = PIO_PDR_P7;										// Disable IO, enable peripheral function
 	REG_PIOC_ABSR |= PIO_ABSR_P7;									// Select B peripheral function
 	REG_PWM_CMR2 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
 	REG_PWM_CPRD2 = period;											// Set period
-	REG_PWM_CDTY2 = 0;												// Set pulse width 
+	REG_PWM_CDTY2 = duty_cycle;										// Set pulse width 
 	
 	REG_PIOC_PDR = PIO_PDR_P9;										// Disable IO, enable peripheral function
 	REG_PIOC_ABSR |= PIO_ABSR_P9;									// Select B peripheral function
 	REG_PWM_CMR3 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
 	REG_PWM_CPRD3 = period;											// Set period
-	REG_PWM_CDTY3 = 0;												// Set pulse width 
+	REG_PWM_CDTY3 = duty_cycle;										// Set pulse width 
 	
 	// Enable PWM
 	REG_PWM_ENA = PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3;
 	while ((REG_PWM_SR & (PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3)) == 0);
 
-	// Configure calibration enable pin
-	REG_PIOB_PER = ESC_CALIBRATION_PIN;
-	REG_PIOB_ODR = ESC_CALIBRATION_PIN;
-	REG_PIOB_PUER = ESC_CALIBRATION_PIN;
-	delay(3000); // Wait pull-up time and ESC initialize complite
-
-	// Check low level on ESC calibration pin
-	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) {
-		calibration_ESC();
-	}
+	if (is_calibration_mode == true)
+		delay(4000);
 
 	PDGSS::stop();
+	delay(2000);
 }
 
 void PDGSS::stop() {
@@ -105,37 +114,8 @@ void PDGSS::set_power(int32_t* power) {
 }
 
 void PDGSS::get_power_in_persent(uint8_t* power) {
-
-	if (PWM_FR_MOTOR_R == 0 || PWM_RR_MOTOR_R == 0 || PWM_RL_MOTOR_R == 0 || PWM_FL_MOTOR_R == 0)
-		return;
-		
 	power[0] = (PWM_FR_MOTOR_R - MIN_PWM_DUTY) / 10;
 	power[1] = (PWM_RR_MOTOR_R - MIN_PWM_DUTY) / 10;
 	power[2] = (PWM_RL_MOTOR_R - MIN_PWM_DUTY) / 10;
 	power[3] = (PWM_FL_MOTOR_R - MIN_PWM_DUTY) / 10;
-}
-
-
-//
-// INTERNAL INTERFACE
-//
-static void calibration_ESC() {
-
-	// Set maximum pulse width
-	PWM_FR_MOTOR_W = MAX_PWM_DUTY;
-	PWM_RR_MOTOR_W = MAX_PWM_DUTY;
-	PWM_RL_MOTOR_W = MAX_PWM_DUTY;
-	PWM_FL_MOTOR_W = MAX_PWM_DUTY;
-
-	// Wait motors
-	delay(3000);
-
-	// Set minimum pulse width
-	PWM_FR_MOTOR_W = MIN_PWM_DUTY;
-	PWM_RR_MOTOR_W = MIN_PWM_DUTY;
-	PWM_RL_MOTOR_W = MIN_PWM_DUTY;
-	PWM_FL_MOTOR_W = MIN_PWM_DUTY;
-
-	// Wait motors
-	delay(3000);
 }

@@ -1,29 +1,90 @@
 #include <Arduino.h>
+#include "LIBRARY\I2C.h"
+#include "communication_subsystem.h"
+#include "additional_subsystem.h"
+#include "configuration_subsystem.h"
+#include "fly_core.h"
+#include "util.h"
+#define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
 
 extern "C" {
-	static void initialize(void);
+	static void initialize_MCU(void);
 }
+static void intialize_FW();
+static void error_status_update();
+static void make_state_packet();
+
+static uint32_t g_status = TXRX::MAIN_CORE_STATUS_NO_ERROR;
 
 int main() {
 
-	initialize();
+	initialize_MCU();
 
-	setup();
+	Serial.begin(115200);	// DEBUG
+
+	/*pinMode(53, OUTPUT); // PB14
+	pinMode(50, OUTPUT); // PC13
+	pinMode(49, OUTPUT); // PC14
+	pinMode(27, OUTPUT); // PD2
+	pinMode(24, OUTPUT); // PA15
+	pinMode(23, OUTPUT); // PA14
+
+	CLR_DEBUG_PIN_1;
+	CLR_DEBUG_PIN_2;
+	CLR_DEBUG_PIN_3;
+	CLR_DEBUG_PIN_4;
+	CLR_DEBUG_PIN_5;
+	CLR_DEBUG_PIN_6;*/
+	
+	intialize_FW();
 
 	while (true) {
-		loop();
-	}
+		
+		//
+		// MAIN CORE PROCESS
+		//
 
+		// Recieve and send data
+		CSS::asynchronous_process();
+
+		// Additional subsystem process
+		ASS::process();
+
+		// Update error status
+		error_status_update();
+
+
+		//
+		// FLY CORE PROCESS
+		//
+
+		// Make command for fly core
+		uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_PROCESS;
+		if (IS_BITS_SET(g_status, FATAL_ERROR_MASK) == true)
+			fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE;
+
+		// Process fly core
+		FLY_CORE::process(fly_core_command, &g_cp);
+
+
+		//
+		// CONSTRUCT STATE PACKET
+		//
+
+		// Update state data
+		make_state_packet();
+	}
 	return 0;
 }
 
-#ifdef __cplusplus
+//
+// INTERNAL INTERFACE
+//
 extern "C" {
-#endif
 
 	void __libc_init_array(void);
 
-	static void initialize(void)
+	static void initialize_MCU(void)
 	{
 		// Disable Watch Dog Timer
 		WDT->WDT_MR = WDT_MR_WDDIS;
@@ -36,7 +97,6 @@ extern "C" {
 
 		// Initialize C library
 		__libc_init_array();
-
 
 		// Enable PIOA and PIOB clocks 
 		REG_PMC_PCER0 = PMC_PCER0_PID11 | PMC_PCER0_PID12;
@@ -53,9 +113,6 @@ extern "C" {
 		REG_PIOC_PUDR = 0xFFFFFFFF;
 		REG_PIOD_PUDR = 0xFFFFFFFF;
 
-		//for (unsigned i = 0; i < PINS_COUNT; i++)
-			//digitalWrite(i, LOW);
-
 		// Enable parallel access on PIO output data registers
 		REG_PIOA_OWER = 0xFFFFFFFF;
 		REG_PIOB_OWER = 0xFFFFFFFF;
@@ -69,44 +126,86 @@ extern "C" {
 			g_APinDescription[PINS_UART].ulPin,
 			g_APinDescription[PINS_UART].ulPinConfiguration);
 		digitalWrite(0, HIGH); // Enable pullup for RX0
-		/*PIO_Configure(
-			g_APinDescription[PINS_USART0].pPort,
-			g_APinDescription[PINS_USART0].ulPinType,
-			g_APinDescription[PINS_USART0].ulPin,
-			g_APinDescription[PINS_USART0].ulPinConfiguration);
-		PIO_Configure(
-			g_APinDescription[PINS_USART1].pPort,
-			g_APinDescription[PINS_USART1].ulPinType,
-			g_APinDescription[PINS_USART1].ulPin,
-			g_APinDescription[PINS_USART1].ulPinConfiguration);
-		PIO_Configure(
-			g_APinDescription[PINS_USART3].pPort,
-			g_APinDescription[PINS_USART3].ulPinType,
-			g_APinDescription[PINS_USART3].ulPin,
-			g_APinDescription[PINS_USART3].ulPinConfiguration);*/
-
-		// Initialize USB pins
-		/*PIO_Configure(
-			g_APinDescription[PINS_USB].pPort,
-			g_APinDescription[PINS_USB].ulPinType,
-			g_APinDescription[PINS_USB].ulPin,
-			g_APinDescription[PINS_USB].ulPinConfiguration);
-
-		// Initialize CAN pins
-		PIO_Configure(
-			g_APinDescription[PINS_CAN0].pPort,
-			g_APinDescription[PINS_CAN0].ulPinType,
-			g_APinDescription[PINS_CAN0].ulPin,
-			g_APinDescription[PINS_CAN0].ulPinConfiguration);
-		PIO_Configure(
-			g_APinDescription[PINS_CAN1].pPort,
-			g_APinDescription[PINS_CAN1].ulPinType,
-			g_APinDescription[PINS_CAN1].ulPin,
-			g_APinDescription[PINS_CAN1].ulPinConfiguration);*/
 
 		delay(1);
 	}
-
-#ifdef __cplusplus
 }
-#endif
+
+static void intialize_FW() {
+
+	// Initialize I2C wire
+	I2C_initialize(I2C_SPEED_400KHZ);
+
+	// Initialize configuration subsystem
+	if (CONFIGSS::intialize() == false)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
+
+	// Initialize communication subsystem
+	CSS::initialize();
+
+	// Initialize additional subsystem
+	ASS::initialize();
+
+	// Initialize fly core
+	FLY_CORE::initialize();
+}
+
+static void error_status_update() {
+
+	// Check communication subsystem status
+	uint32_t status = CSS::get_status();
+	if (status & CSS::CONNECTION_LOST)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
+
+	if (status & CSS::DESYNC)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_DESYNC);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_DESYNC);
+
+
+	// Check additional subsystem status
+	status = ASS::get_status();
+	if (status & ASS::BATTERY_LOW_VOLTAGE)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
+}
+
+extern uint8_t MPU6050_get_FIFO_size_error_count;
+extern uint8_t MPU6050_check_FIFO_size_error_count;
+extern uint8_t MPU6050_get_data_error_count;
+extern volatile uint8_t I2C_nack_count;
+extern volatile uint8_t I2C_timeout_count;
+extern uint32_t g_PID_OOR_diff;
+extern uint32_t g_PID_I_OOR_diff;
+extern uint32_t g_hardware_error_count;
+extern uint32_t g_software_error_count;
+extern uint32_t g_desync_count;
+
+static void make_state_packet() {
+
+	// Clear packet
+	memset(&g_sp, 0, sizeof(g_sp));
+
+	g_sp.main_core_status = g_status;
+
+	FLY_CORE::make_state_data(&g_sp);
+	ASS::make_state_data(&g_sp);
+
+	// Debug info
+	g_sp.hardware_error_count = g_hardware_error_count;
+	g_sp.software_error_count = g_software_error_count;
+	g_sp.desync_count = g_desync_count;
+
+	g_sp.MPU6050_get_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
+	g_sp.MPU6050_check_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
+	g_sp.MPU6050_get_data_error_count = MPU6050_get_data_error_count;
+
+	g_sp.I2C_nack_count = I2C_nack_count;
+	g_sp.I2C_timeout_count = I2C_timeout_count;
+
+	g_sp.PID_OOR_diff = g_PID_OOR_diff;
+	g_sp.PID_I_OOR_diff = g_PID_I_OOR_diff;
+}

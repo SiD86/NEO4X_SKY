@@ -36,10 +36,7 @@ namespace CONFIGSS {
 
 // External interface
 namespace CONFIGSS {
-
-	bool reset_configuration();
-	bool load_and_check_configuration();
-	void enter_to_configuration_mode();
+	bool intialize();
 }
 
 extern CONFIGSS::configuration_t g_cfg;

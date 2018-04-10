@@ -95,9 +95,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="main_loop.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="PID_v1.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>

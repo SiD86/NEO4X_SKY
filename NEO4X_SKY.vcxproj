@@ -108,7 +108,6 @@
     <ClCompile Include="library\MPU6050.cpp" />
     <ClCompile Include="LIBRARY\USART3_PDC.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="main_loop.cpp" />
     <ClCompile Include="orientation_subsystem.cpp" />
     <ClCompile Include="PDG_subsystem.cpp" />
     <ClCompile Include="PID_v1.cpp" />

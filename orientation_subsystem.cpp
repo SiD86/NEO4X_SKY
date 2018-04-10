@@ -202,7 +202,6 @@ static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_f
 
 			if (++g_MPU6050_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::MPU6050_ERROR);
-			//Serial.println("MPU6050 error");
 		}
 		else if (status == MPU6050_DRIVER_NO_ERROR) {
 			g_MPU6050_error_count = 0;
@@ -217,7 +216,6 @@ static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_f
 
 			if (++g_BMP280_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_STATUS_BIT(g_status, OSS::BMP280_ERROR);
-			//Serial.println("BMP280 error");
 		}
 		else if (status == BMP280_DRIVER_NO_ERROR) {
 			g_BMP280_error_count = 0;

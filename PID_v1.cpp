@@ -45,7 +45,10 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	uint32_t current_time = micros();
 	float error = set_point - input; 
 	float dt = (current_time - g_PID_ch[ch].prev_process_time) / 1000000.0; // is seconds
-
+	
+	if (dt == 0) // Div 0 check
+		dt = 4000.0 / 1000000.0; // 4000us
+	
 	// Calculate P
 	float P = g_PID_ch[ch].Kp * error;
 
