@@ -291,7 +291,7 @@ void MPU6050_initialize() {
         return;
 
 	// Set sample rate divisor
-	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x00)) // 1khz / (1 + 0) = 1kHz
+	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x03)) // 1khz / (1 + 3) = 250Hz
 		return;
 
 	// Set accel range +/- 2g
