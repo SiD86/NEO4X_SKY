@@ -1,10 +1,6 @@
 #ifndef __I2C_H__
 #define __I2C_H__
 
-// LIBRARY VERSION: 0.0.15
-
-#define I2C_DRIVER_DEFAULT_TIMEOUT_US	(5000)
-
 const uint32_t I2C_SPEED_100KHZ			= 0x1D0D0;
 const uint32_t I2C_SPEED_400KHZ			= 0x6565;
 

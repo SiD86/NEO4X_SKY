@@ -4,6 +4,7 @@
 #define SDA_PIN							(PIO_PB12)
 #define SCK_PIN							(PIO_PB13)
 #define MAX_PDC_BUFFER_SIZE				(64)
+#define I2C_DRIVER_DEFAULT_TIMEOUT_US	(5000)
 
 static void stop_communication();
 
@@ -78,7 +79,7 @@ bool I2C_write_bytes(uint8_t dev_addr, uint32_t internal_addr, uint8_t* data, ui
 	// Copy data to transmit buffer
 	memcpy(tx_buffer, data, size);
 
-	// Start send data and wait complite communication
+	// Start send data and wait complete communication
 	I2C_async_write_bytes(dev_addr, internal_addr, size);
 	while (g_status == I2C_DRIVER_BUSY);
 
@@ -234,7 +235,7 @@ void TWI1_Handler() {
 		++I2C_nack_count;	// __DEBUG
 	}
 	
-	// Send STOP complite
+	// Send STOP complete
 	else if (IS_BIT_SET(status, TWI_SR_TXCOMP) && IS_BIT_SET(irq_mask, TWI_IMR_TXCOMP)) {
 		stop_communication();
 		g_status = I2C_DRIVER_NO_ERROR;

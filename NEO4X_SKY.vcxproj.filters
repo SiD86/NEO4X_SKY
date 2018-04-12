@@ -42,9 +42,6 @@
     <ClInclude Include="library\MPU6050.h">
       <Filter>library</Filter>
     </ClInclude>
-    <ClInclude Include="PID_v1.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="TXRX_PROTOCOL.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
@@ -84,6 +81,9 @@
     <ClInclude Include="LIBRARY\ADC.h">
       <Filter>library</Filter>
     </ClInclude>
+    <ClInclude Include="PID_controller.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="library\I2C.cpp">
@@ -93,9 +93,6 @@
       <Filter>library</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="PID_v1.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="orientation_subsystem.cpp">
@@ -127,6 +124,9 @@
     </ClCompile>
     <ClCompile Include="LIBRARY\ADC.cpp">
       <Filter>library</Filter>
+    </ClCompile>
+    <ClCompile Include="PID_controller.cpp">
+      <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

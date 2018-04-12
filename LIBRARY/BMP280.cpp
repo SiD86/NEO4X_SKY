@@ -159,7 +159,7 @@ void BMP280_get_data(float* altitude) {
 		is_start_communication = true;
 		g_status = BMP280_DRIVER_BUSY;
 	}
-	else { // Communication started. Wait complite
+	else { // Communication started. Wait complete
 
 		// Check I2C driver status
 		uint32_t status = I2C_get_status();

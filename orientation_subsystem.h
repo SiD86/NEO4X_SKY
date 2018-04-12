@@ -3,7 +3,7 @@
 
 // OSS - Orientation SubSystem
 
-// Error codes and commands
+// Error codes (bitfield) and commands
 namespace OSS {
 
 	const uint32_t NO_ERROR				= 0x00;

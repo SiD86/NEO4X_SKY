@@ -5,14 +5,14 @@
 #include "PDG_subsystem.h"
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
-#include "PID_v1.h"
+#include "PID_controller.h"
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::FLY_CORE_STATUS_MPU6050_ERROR)
 #define SYNTHESIS(U,X,Y,Z)        	(U[0] * (X) + U[1] * (Y) + U[2] * (Z))
 
 #define STATE_ENABLE				(0x01)
 #define STATE_PROCESS				(0x02)
-#define STATE_FAIL					(0x04)
+#define STATE_FAIL					(0x03)
 
 static uint8_t g_state = STATE_FAIL;
 static uint8_t g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
@@ -23,7 +23,8 @@ static void state_ENABLE_handling();
 static void state_PROCESS_handling(TXRX::control_data_t* control_data);
 static void state_FAIL_handling();
 
-static void error_status_handling(uint32_t next_state);
+static void error_status_update();
+static void request_state(uint32_t next_state);
 
 
 //
@@ -48,7 +49,8 @@ void FLY_CORE::initialize() {
 	PID_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
 
 	// Check errors and request go to next state
-	error_status_handling(STATE_ENABLE);
+	error_status_update();
+	request_state(STATE_ENABLE);
 }
 
 void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data) {
@@ -65,17 +67,20 @@ void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data
 	{
 	case STATE_ENABLE: // Call once after core initialize 
 		state_ENABLE_handling();
-		error_status_handling(STATE_PROCESS);
+		error_status_update();
+		request_state(STATE_PROCESS);
 		break;
 
 	case STATE_PROCESS:
 		state_PROCESS_handling(control_data);
-		error_status_handling(STATE_PROCESS);
+		error_status_update();
+		request_state(STATE_PROCESS);
 		break;
 
 	case STATE_FAIL:
 		state_FAIL_handling();
-		error_status_handling(STATE_FAIL);
+		error_status_update();
+		request_state(STATE_FAIL);
 		break;
 	}
 }
@@ -181,7 +186,8 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 		if (thrust + g_cfg.PID_output_limit > 1000)
 			thrust = 1000 - g_cfg.PID_output_limit;
 
-		// Synthesis PIDs
+		
+		// Calculate motor power
 		int32_t motors_power[4] = { thrust, thrust, thrust, thrust };
 		if (thrust >= g_cfg.PID_enable_threshold) {
 			motors_power[0] += SYNTHESIS(PIDU, -1.0F, -1.0F, -1.0F);
@@ -190,7 +196,7 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 			motors_power[3] += SYNTHESIS(PIDU, +1.0F, -1.0F, +1.0F);
 		}
 
-		// Update ESC singal
+		// Set motor power
 		PDGSS::set_power(motors_power);
 	}
 	else if (g_fly_mode == TXRX::FLY_CORE_MODE_WAIT) {
@@ -204,22 +210,26 @@ static void state_FAIL_handling() {
 }
 
 
-static void error_status_handling(uint32_t next_state) {
+static void error_status_update() {
 
 	// Check orientation subsystem error status
-	uint8_t status = OSS::get_status();
-	if (status & OSS::MPU6050_ERROR)
-		g_status |= TXRX::FLY_CORE_STATUS_MPU6050_ERROR;
-	if (status & OSS::BMP280_ERROR)
-		g_status |= TXRX::FLY_CORE_STATUS_BMP280_ERROR;
-
-	// Check fly core fatal errors
-	if (g_status & FATAL_ERROR_MASK)
-		g_state = STATE_FAIL;
-	else
-		g_state = next_state;
+	uint32_t status = OSS::get_status();
+	if (IS_BIT_SET(status, OSS::MPU6050_ERROR) == true)
+		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_MPU6050_ERROR);
+	if (IS_BIT_SET(status, OSS::BMP280_ERROR) == true)
+		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_BMP280_ERROR);
 
 	// Check FAIL mode
 	if (g_state == STATE_FAIL)
-		g_status |= TXRX::FLY_CORE_STATUS_FATAL_ERROR;
+		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_FATAL_ERROR);
+}
+
+// Call after error_status_update()
+static void request_state(uint32_t next_state) {
+
+	// Check fly core fatal errors
+	if (IS_BITS_SET(g_status, FATAL_ERROR_MASK) == true)
+		g_state = STATE_FAIL;
+	else
+		g_state = next_state;
 }

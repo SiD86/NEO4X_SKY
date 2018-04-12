@@ -1,19 +1,27 @@
 #include <Arduino.h>
 #include "TXRX_PROTOCOL.h"
 #include "PDG_subsystem.h"
-#define ESC_CALIBRATION_PIN				(PIO_PB25)
-#define MIN_PWM_DUTY					(1000)
-#define MAX_PWM_DUTY					(2000)
+#define ESC_CALIBRATION_PIN			(PIO_PB25)
+#define MIN_POWER_PULSE				(1000)
+#define MAX_POWER_PULSE				(2000)
 
-#define PWM_FR_MOTOR_W					(REG_PWM_CDTYUPD0)
-#define PWM_RR_MOTOR_W					(REG_PWM_CDTYUPD1)
-#define PWM_RL_MOTOR_W					(REG_PWM_CDTYUPD2)
-#define PWM_FL_MOTOR_W					(REG_PWM_CDTYUPD3)
+/*
+	[41]     [35]
+		\   /
+		 [ ]
+		/   \
+	[39]     [37]
+*/
+#define PULSE_TO_TICKS(_width)		(_width)
+#define SET_FR_MOTOR_PULSE(_width)	(REG_PWM_CDTYUPD0 = PULSE_TO_TICKS(_width))
+#define SET_RR_MOTOR_PULSE(_width)	(REG_PWM_CDTYUPD1 = PULSE_TO_TICKS(_width))
+#define SET_RL_MOTOR_PULSE(_width)	(REG_PWM_CDTYUPD2 = PULSE_TO_TICKS(_width))
+#define SET_FL_MOTOR_PULSE(_width)	(REG_PWM_CDTYUPD3 = PULSE_TO_TICKS(_width))
 
-#define PWM_FR_MOTOR_R					(REG_PWM_CDTY0)
-#define PWM_RR_MOTOR_R					(REG_PWM_CDTY1)
-#define PWM_RL_MOTOR_R					(REG_PWM_CDTY2)
-#define PWM_FL_MOTOR_R					(REG_PWM_CDTY3)
+#define GET_FR_MOTOR_PULSE()		(REG_PWM_CDTY0)
+#define GET_RR_MOTOR_PULSE()		(REG_PWM_CDTY1)
+#define GET_RL_MOTOR_PULSE()		(REG_PWM_CDTY2)
+#define GET_FL_MOTOR_PULSE()		(REG_PWM_CDTY3)
 
 
 
@@ -30,10 +38,10 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 
 	// Get started duty cycle
 	bool is_calibration_mode = false;
-	uint32_t duty_cycle = MIN_PWM_DUTY;
+	uint32_t pulse_width = MIN_POWER_PULSE;
 	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) {
 		is_calibration_mode = true;
-		duty_cycle = MAX_PWM_DUTY;
+		pulse_width = MAX_POWER_PULSE;
 	}
 
 	//
@@ -44,78 +52,75 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 	REG_PMC_PCER1 = PMC_PCER1_PID36;
 	while ((REG_PMC_PCSR1 & PMC_PCER1_PID36) == 0);
 	
-	// Setup PWM clock devider (2 MHz = 84Mhz / 42)
-	REG_PWM_CLK = PWM_CLK_PREA(0) | PWM_CLK_DIVA(42);
+	// Setup PWM clock devider (84Mhz / 84 = 1MHz)
+	REG_PWM_CLK = PWM_CLK_PREA(0) | PWM_CLK_DIVA(84);
 
-	// Calculation period (PWM clock 2MHz)
-	uint32_t period = 1000000 / ESC_frequency; // ESC_frequency = 2Mhz / (2 * period)
+	// Calculation period (PWM clock 1MHz)
+	uint32_t period = 1000000 / ESC_frequency; // ESC_frequency = 1Mhz / period
+
+	REG_PWM_SCM |= PWM_SCM_SYNC0 | PWM_SCM_SYNC1 | PWM_SCM_SYNC2 | PWM_SCM_SYNC3;
+	REG_PWM_SCM |= PWM_SCM_UPDM_MODE0;
 	
-	REG_PIOC_PDR = PIO_PDR_P3;										// Disable IO, enable peripheral function
-	REG_PIOC_ABSR |= PIO_ABSR_P3;									// Select B peripheral function
-	REG_PWM_CMR0 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
-	REG_PWM_CPRD0 = period;											// Set period
-	REG_PWM_CDTY0 = duty_cycle;										// Set pulse width 
+	REG_PIOC_PDR = PIO_PDR_P3 | PIO_PDR_P5 | PIO_PDR_P7 | PIO_PDR_P9;
+	REG_PIOC_ABSR |= PIO_ABSR_P3 | PIO_ABSR_P5 | PIO_ABSR_P7 | PIO_ABSR_P9;
+	REG_PWM_CMR0 = PWM_CMR_CPRE_CLKA | PWM_CMR_CPOL;
+	REG_PWM_CMR1 = PWM_CMR_CPRE_CLKA | PWM_CMR_CPOL;
+	REG_PWM_CMR2 = PWM_CMR_CPRE_CLKA | PWM_CMR_CPOL;
+	REG_PWM_CMR3 = PWM_CMR_CPRE_CLKA | PWM_CMR_CPOL;
+	REG_PWM_CDTY0 = PULSE_TO_TICKS(pulse_width);
+	REG_PWM_CDTY1 = PULSE_TO_TICKS(pulse_width);
+	REG_PWM_CDTY2 = PULSE_TO_TICKS(pulse_width);
+	REG_PWM_CDTY3 = PULSE_TO_TICKS(pulse_width);
+	REG_PWM_CPRD0 = period;
 	
-	REG_PIOC_PDR = PIO_PDR_P5;										// Disable IO, enable peripheral function
-	REG_PIOC_ABSR |= PIO_ABSR_P5;									// Select B peripheral function
-	REG_PWM_CMR1 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
-	REG_PWM_CPRD1 = period;											// Set period
-	REG_PWM_CDTY1 = duty_cycle;										// Set pulse width 
-	
-	REG_PIOC_PDR = PIO_PDR_P7;										// Disable IO, enable peripheral function
-	REG_PIOC_ABSR |= PIO_ABSR_P7;									// Select B peripheral function
-	REG_PWM_CMR2 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
-	REG_PWM_CPRD2 = period;											// Set period
-	REG_PWM_CDTY2 = duty_cycle;										// Set pulse width 
-	
-	REG_PIOC_PDR = PIO_PDR_P9;										// Disable IO, enable peripheral function
-	REG_PIOC_ABSR |= PIO_ABSR_P9;									// Select B peripheral function
-	REG_PWM_CMR3 = PWM_CMR_CPRE_CLKA | PWM_CMR_CALG | PWM_CMR_CPOL;	// Select CLKA as clock source, select center alignment, signal inverted
-	REG_PWM_CPRD3 = period;											// Set period
-	REG_PWM_CDTY3 = duty_cycle;										// Set pulse width 
-	
-	// Enable PWM
-	REG_PWM_ENA = PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3;
+	// Enable all sync PWM channels
+	REG_PWM_ENA = PWM_ENA_CHID0;
 	while ((REG_PWM_SR & (PWM_ENA_CHID0 | PWM_ENA_CHID1 | PWM_ENA_CHID2 | PWM_ENA_CHID3)) == 0);
 
+
 	if (is_calibration_mode == true)
-		delay(4000);
+		delay(4000); // Wait ESC handling MAX pulse width
 
 	PDGSS::stop();
-	delay(2000);
+	delay(2000); // Wait ESC initialize complete
 }
 
 void PDGSS::stop() {
-	PWM_FR_MOTOR_W = MIN_PWM_DUTY;
-	PWM_RR_MOTOR_W = MIN_PWM_DUTY;
-	PWM_RL_MOTOR_W = MIN_PWM_DUTY;
-	PWM_FL_MOTOR_W = MIN_PWM_DUTY;
+	SET_FR_MOTOR_PULSE(MIN_POWER_PULSE);
+	SET_RR_MOTOR_PULSE(MIN_POWER_PULSE);
+	SET_RL_MOTOR_PULSE(MIN_POWER_PULSE);
+	SET_FL_MOTOR_PULSE(MIN_POWER_PULSE);
+
+	REG_PWM_SCUC = PWM_SCUC_UPDULOCK;
 }
 
 void PDGSS::set_power(int32_t* power) {
 
 	// Convert [0; 1000] to [1000; 2000]
-	power[0] += MIN_PWM_DUTY;
-	power[1] += MIN_PWM_DUTY;
-	power[2] += MIN_PWM_DUTY;
-	power[3] += MIN_PWM_DUTY;
+	power[0] += MIN_POWER_PULSE;
+	power[1] += MIN_POWER_PULSE;
+	power[2] += MIN_POWER_PULSE;
+	power[3] += MIN_POWER_PULSE;
 	
 	// Check range
-	power[0] = constrain(power[0], MIN_PWM_DUTY, MAX_PWM_DUTY);
-	power[1] = constrain(power[1], MIN_PWM_DUTY, MAX_PWM_DUTY);
-	power[2] = constrain(power[2], MIN_PWM_DUTY, MAX_PWM_DUTY);
-	power[3] = constrain(power[3], MIN_PWM_DUTY, MAX_PWM_DUTY);
+	power[0] = constrain(power[0], MIN_POWER_PULSE, MAX_POWER_PULSE);
+	power[1] = constrain(power[1], MIN_POWER_PULSE, MAX_POWER_PULSE);
+	power[2] = constrain(power[2], MIN_POWER_PULSE, MAX_POWER_PULSE);
+	power[3] = constrain(power[3], MIN_POWER_PULSE, MAX_POWER_PULSE);
 
 	// Update pulse width
-	PWM_FR_MOTOR_W = power[0];
-	PWM_RR_MOTOR_W = power[1];
-	PWM_RL_MOTOR_W = power[2];
-	PWM_FL_MOTOR_W = power[3];
+	SET_FR_MOTOR_PULSE(power[0]);
+	SET_RR_MOTOR_PULSE(power[1]);
+	SET_RL_MOTOR_PULSE(power[2]);
+	SET_FL_MOTOR_PULSE(power[3]);
+
+	REG_PWM_SCUC = PWM_SCUC_UPDULOCK;
 }
 
 void PDGSS::get_power_in_persent(uint8_t* power) {
-	power[0] = (PWM_FR_MOTOR_R - MIN_PWM_DUTY) / 10;
-	power[1] = (PWM_RR_MOTOR_R - MIN_PWM_DUTY) / 10;
-	power[2] = (PWM_RL_MOTOR_R - MIN_PWM_DUTY) / 10;
-	power[3] = (PWM_FL_MOTOR_R - MIN_PWM_DUTY) / 10;
+	// Convert [1000; 2000] to [0; 100]
+	power[0] = (GET_FR_MOTOR_PULSE() - MIN_POWER_PULSE) / 10;
+	power[1] = (GET_RR_MOTOR_PULSE() - MIN_POWER_PULSE) / 10;
+	power[2] = (GET_RL_MOTOR_PULSE() - MIN_POWER_PULSE) / 10;
+	power[3] = (GET_FL_MOTOR_PULSE() - MIN_POWER_PULSE) / 10;
 }

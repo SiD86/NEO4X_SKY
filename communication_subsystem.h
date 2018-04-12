@@ -5,7 +5,7 @@
 
 // CSS - Communication SubSystem
 
-// Error codes
+// Error codes (bitfield)
 namespace CSS {
 	const uint32_t NO_ERROR					= 0x00;
 	const uint32_t DESYNC					= 0x01;
@@ -15,9 +15,33 @@ namespace CSS {
 // External interface
 namespace CSS {
 
+	/**************************************************************************
+	* @brief	Function for initialize subsystem
+	**************************************************************************/
 	void initialize();
+
+	/**************************************************************************
+	* @brief	Function for asynchonous communication 
+	* @note		Handling TX and RX data
+	* @note		Use only normal mode
+	**************************************************************************/
 	void asynchronous_process();
+
+	/**************************************************************************
+	* @brief	Function for synchonous communication
+	* @note		Use only configuration mode. 
+	* @note		Error status not used, get_status() function not used
+	* @note		tx = true and rx = true - this error
+	* @param	tx: true - if need transmit data
+	* @param	rx: true - if need receive data
+	* @retval	true - if process success, false - timeout or packet damage
+	**************************************************************************/
 	bool synchronous_process(bool tx, bool rx);
+
+	/**************************************************************************
+	* @brief	Function for get subsystem status
+	* @retval	Status
+	**************************************************************************/
 	uint32_t get_status();
 }
 

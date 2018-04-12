@@ -11,9 +11,27 @@ namespace ASS {
 // External interface
 namespace ASS {
 
+	/**************************************************************************
+	* @brief	Function for initialize subsystem
+	**************************************************************************/
 	void initialize();
+
+	/**************************************************************************
+	* @brief	Function for process subsystem
+	* @note		Measurement voltage, temperature, vibration 
+	**************************************************************************/
 	void process();
+
+	/**************************************************************************
+	* @brief	Function for load subsystem data to state packet
+	* @param	state_data: state packet address
+	**************************************************************************/
 	void make_state_data(TXRX::state_data_t* state_data);
+
+	/**************************************************************************
+	* @brief	Function for get subsystem status
+	* @retval	Status
+	**************************************************************************/
 	uint32_t get_status();
 }
 

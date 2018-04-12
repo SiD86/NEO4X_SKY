@@ -1,5 +1,5 @@
-#ifndef __PID_H__
-#define __PID_H__
+#ifndef __PID_CONTROLLER_H__
+#define __PID_CONTROLLER_H__
 
 static const uint32_t PID_CHANNEL_X = 0;
 static const uint32_t PID_CHANNEL_Y = 1;
@@ -11,5 +11,5 @@ float PID_get_last_output(uint32_t ch);
 void PID_set_tunings(uint32_t ch, float Kp, float Ki, float Kd);
 void PID_reset(uint32_t ch);
 
-#endif /* __PID_H__ */
+#endif /* __PID_CONTROLLER_H__ */
 

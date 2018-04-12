@@ -7,6 +7,8 @@
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
 
+#include "PDG_subsystem.h"
+
 extern "C" {
 	static void initialize_MCU(void);
 }
@@ -20,7 +22,10 @@ int main() {
 
 	initialize_MCU();
 
-	Serial.begin(115200);	// DEBUG
+	Serial.begin(460800);	// DEBUG
+
+	PDGSS::initialize(400);
+	while (true);
 
 	/*pinMode(53, OUTPUT); // PB14
 	pinMode(50, OUTPUT); // PC13
@@ -119,7 +124,7 @@ extern "C" {
 		REG_PIOC_OWER = 0xFFFFFFFF;
 		REG_PIOD_OWER = 0xFFFFFFFF;
 
-		// Initialize Serial port U(S)ART pins
+		// Initialize Serial port UART pins
 		PIO_Configure(
 			g_APinDescription[PINS_UART].pPort,
 			g_APinDescription[PINS_UART].ulPinType,

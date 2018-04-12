@@ -6,15 +6,12 @@
 #include <Arduino.h>
 #include "I2C.h"
 #include "MPU6050.h"
-#define MPU6050_FIFO_PACKET_SIZE	18							// Размер пакета FIFO
-#define MPU6050_FREQUENCY_DIV		0x00						// Делитель частоты 200Hz / (1 + DIV) 
-#define MPU6050_DATA_READY_TIMEOUT	100							// 100 ms
-#define MPU6050_DATA_RDY_PIN		5
-#define MPU6050_CHIP_ID				0x34
+#define ADDRESS							0x68
+#define CHIP_ID							0x34
+#define FIFO_PACKET_SIZE				18		// [bytes]
 
-#define MPU6050_DRDY_PIN			(PIO_PC25)
-
-#define ADDRESS						0x68
+#define DATA_READY_PIN					(PIO_PC25)
+#define DATA_READY_TIMEOUT				100		// [ms]
 
 static const uint8_t DMP_MEMORY_BINARY[] PROGMEM = {
 	// bank 0, 256 bytes
@@ -165,7 +162,7 @@ static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 	0x07,0x86,0x01,0xFE,							// CFG_6   inv_set_fifo_interupt
 	0x07,0x41,0x05,0xF1,0x20,0x28,0x30,0x38,		// CFG_8   inv_send_quaternion
 	0x07,0x7E,0x01,0x30,							// CFG_16  inv_set_footer
-	//0x02,0x16,0x02,0x00,MPU6050_FREQUENCY_DIV		// D_0_22  inv_set_fifo_rate 
+	0x02,0x16,0x02,0x00,0x00						// D_0_22  inv_set_fifo_rate 
 };
 
 #define REG_SMPLRT_DIV				0x19	// Регистр делителя частоты снятия показаний
@@ -262,7 +259,7 @@ void MPU6050_initialize() {
 	if (!I2C_read_byte(ADDRESS, REG_WHO_AM_I, &reg))
 		return;
 	
-	if ( (reg >> 1) != MPU6050_CHIP_ID)
+	if ( (reg >> 1) != CHIP_ID)
         return;
 
 	// Software reset
@@ -291,7 +288,7 @@ void MPU6050_initialize() {
         return;
 
 	// Set sample rate divisor
-	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x03)) // 1khz / (1 + 3) = 250Hz
+	if (!I2C_write_byte(ADDRESS, REG_SMPLRT_DIV, 0x04)) // 1khz / (1 + 4) = 200Hz
 		return;
 
 	// Set accel range +/- 2g
@@ -325,14 +322,14 @@ void MPU6050_initialize() {
 		return;
 
 	// Configure data ready pin
-	REG_PIOC_PER = MPU6050_DRDY_PIN;
-	REG_PIOC_ODR = MPU6050_DRDY_PIN;
-	REG_PIOC_PUDR = MPU6050_DRDY_PIN;
+	REG_PIOC_PER = DATA_READY_PIN;
+	REG_PIOC_ODR = DATA_READY_PIN;
+	REG_PIOC_PUDR = DATA_READY_PIN;
 
 	// Configure watch data ready timeout timer clock
 	REG_PMC_PCER0 = PMC_PCER0_PID31;
 	REG_TC1_CMR1 = TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK2 | TC_CMR_CPCDIS;
-	REG_TC1_RC1 = MPU6050_DATA_READY_TIMEOUT * (VARIANT_MCK / 8 / 1000);
+	REG_TC1_RC1 = DATA_READY_TIMEOUT * (VARIANT_MCK / 8 / 1000);
 	NVIC_EnableIRQ(TC4_IRQn);
 
 	// Initialize success
@@ -394,7 +391,7 @@ bool MPU6050_is_data_ready() {
 	g_status = MPU6050_DRIVER_ERROR;
 
 	// Check data ready pin (LOW - data ready)
-	if (REG_PIOC_PDSR & MPU6050_DRDY_PIN) {
+	if (REG_PIOC_PDSR & DATA_READY_PIN) {
 		if (g_is_data_ready_timeout == false)
 			g_status = MPU6050_DRIVER_NO_ERROR;
 		return false;
@@ -414,7 +411,7 @@ bool MPU6050_is_data_ready() {
 	uint32_t FIFO_bytes_count = (static_cast<uint16_t>(buffer[0]) << 8) | buffer[1];
 
 	// Check FIFO buffer size
-	if (FIFO_bytes_count != MPU6050_FIFO_PACKET_SIZE) {
+	if (FIFO_bytes_count != FIFO_PACKET_SIZE) {
 		I2C_write_bits(ADDRESS, REG_USER_CTRL, USERCTRL_FIFO_RESET_MASK, USERCTRL_FIFO_RESET);
 		++MPU6050_check_FIFO_size_error_count;  // __DEBUG
 		return false;
@@ -431,7 +428,7 @@ void MPU6050_get_data(float* X, float* Y, float* Z) {
 	if (is_start_communication == false) { // Start communication
 
 		I2C_set_internal_address_length(1);
-		if (I2C_async_read_bytes(ADDRESS, REG_FIFO_R_W, MPU6050_FIFO_PACKET_SIZE) == false) {
+		if (I2C_async_read_bytes(ADDRESS, REG_FIFO_R_W, FIFO_PACKET_SIZE) == false) {
 			++MPU6050_get_data_error_count; // __DEBUG
 			g_status = MPU6050_DRIVER_ERROR;
 			return;
@@ -439,7 +436,7 @@ void MPU6050_get_data(float* X, float* Y, float* Z) {
 		is_start_communication = true;
 		g_status = MPU6050_DRIVER_BUSY;
 	}
-	else { // Communication started. Wait complite
+	else { // Communication started. Wait complete
 
 		// Check I2C driver status
 		uint32_t status = I2C_get_status();

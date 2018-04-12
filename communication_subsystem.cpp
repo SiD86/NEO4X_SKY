@@ -53,7 +53,7 @@ bool CSS::synchronous_process(bool tx, bool rx) {
 		memcpy(packet->data, &g_tx_cfg_data, g_data_size);
 		packet->CRC = calculate_CRC(packet->data);
 
-		// Start send packet and wait operation complite
+		// Start send packet and wait operation complete
 		USART3_TX_start(g_packet_size);
 		while (USART3_TX_is_complete() == false) {
 			if (USART3_is_error() == true) {
@@ -96,7 +96,7 @@ static void asynchronous_process_tx() {
 	if (millis() - prev_tx_time < g_cfg.send_state_interval)
 		return;
 
-	// Check complite TX previus data
+	// Check complete TX previus data
 	if (USART3_TX_is_complete() == false)
 		return;
 
