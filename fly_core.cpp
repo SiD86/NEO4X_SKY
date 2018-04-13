@@ -161,6 +161,9 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 	// Process current fly mode
 	if (g_fly_mode == TXRX::FLY_CORE_MODE_STABILIZE || g_fly_mode == TXRX::FLY_CORE_MODE_PID_SETUP) {
 
+		if (is_position_updated == false)
+			return;
+
 		// Runtime PID setup
 		if (g_fly_mode == TXRX::FLY_CORE_MODE_PID_SETUP) {
 			PID_set_tunings(PID_CHANNEL_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
@@ -170,23 +173,15 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 
 		// Calculation PID
 		float PIDU[3] = { 0 };    // X, Y, Z
-		if (is_position_updated == true) {
-			PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], control_data->XYZ[0]);
-			PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], control_data->XYZ[1]);
-			PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], control_data->XYZ[2]);
-		}
-		else {
-			PIDU[0] = PID_get_last_output(PID_CHANNEL_X);
-			PIDU[1] = PID_get_last_output(PID_CHANNEL_Y);
-			PIDU[2] = PID_get_last_output(PID_CHANNEL_Z);
-		}
+		PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], control_data->XYZ[0]);
+		PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], control_data->XYZ[1]);
+		PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], control_data->XYZ[2]);
 
 		// Constrain thrust [0; 1000 - PID_output_limit]
 		int32_t thrust = control_data->thrust * 10; // Scale thrust [0; 100] -> [0; 1000]
 		if (thrust + g_cfg.PID_output_limit > 1000)
 			thrust = 1000 - g_cfg.PID_output_limit;
 
-		
 		// Calculate motor power
 		int32_t motors_power[4] = { thrust, thrust, thrust, thrust };
 		if (thrust >= g_cfg.PID_enable_threshold) {

@@ -16,7 +16,7 @@ struct pid_param_t {
 
 	// For internal
 	float integral;
-	float prev_error;
+	float prev_input;
 	uint32_t prev_process_time;
 	float output;
 };
@@ -47,7 +47,7 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	float dt = (current_time - g_PID_ch[ch].prev_process_time) / 1000000.0; // is seconds
 	
 	if (dt == 0) // Div 0 check
-		dt = 4000.0 / 1000000.0; // 4000us
+		dt = g_PID_ch[ch].output;
 	
 	// Calculate P
 	float P = g_PID_ch[ch].Kp * error;
@@ -64,10 +64,10 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	}
 
 	// Calculate D
-	float D = g_PID_ch[ch].Kd * ((error - g_PID_ch[ch].prev_error) / dt);
+	float D = g_PID_ch[ch].Kd * ((input - g_PID_ch[ch].prev_input) / dt);
 
 	// Calculate PID output
-	g_PID_ch[ch].output = P + g_PID_ch[ch].integral + D;
+	g_PID_ch[ch].output = P + g_PID_ch[ch].integral - D;
 	if (g_PID_ch[ch].output > g_PID_ch[ch].output_max) {
 		g_PID_OOR_diff = g_PID_ch[ch].output_max - g_PID_ch[ch].output; // __DEBUG
 		g_PID_ch[ch].output = g_PID_ch[ch].output_max;
@@ -78,7 +78,7 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	}
 
 	// Remember variables
-	g_PID_ch[ch].prev_error = error;
+	g_PID_ch[ch].prev_input = input;
 	g_PID_ch[ch].prev_process_time = current_time;
 
 	return g_PID_ch[ch].output;
@@ -96,7 +96,7 @@ void PID_set_tunings(uint32_t ch, float Kp, float Ki, float Kd) {
 
 void PID_reset(uint32_t ch) {
 	g_PID_ch[ch].integral = 0;
-	g_PID_ch[ch].prev_error = 0;
+	g_PID_ch[ch].prev_input = 0;
 	g_PID_ch[ch].prev_process_time = micros();
 	g_PID_ch[ch].output = 0;
 }

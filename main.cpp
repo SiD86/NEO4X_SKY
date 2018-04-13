@@ -7,8 +7,6 @@
 #include "util.h"
 #define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
 
-#include "PDG_subsystem.h"
-
 extern "C" {
 	static void initialize_MCU(void);
 }
@@ -23,9 +21,6 @@ int main() {
 	initialize_MCU();
 
 	Serial.begin(460800);	// DEBUG
-
-	PDGSS::initialize(400);
-	while (true);
 
 	/*pinMode(53, OUTPUT); // PB14
 	pinMode(50, OUTPUT); // PC13
