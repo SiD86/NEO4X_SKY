@@ -215,7 +215,7 @@ static void error_status_update() {
 		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_BMP280_ERROR);
 
 	// Check FAIL mode
-	if (g_state == STATE_FAIL)
+	if (IS_BITS_SET(g_status, FATAL_ERROR_MASK) == true)
 		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_FATAL_ERROR);
 }
 
@@ -223,7 +223,7 @@ static void error_status_update() {
 static void request_state(uint32_t next_state) {
 
 	// Check fly core fatal errors
-	if (IS_BITS_SET(g_status, FATAL_ERROR_MASK) == true)
+	if (IS_BIT_SET(g_status, TXRX::FLY_CORE_STATUS_FATAL_ERROR) == true)
 		g_state = STATE_FAIL;
 	else
 		g_state = next_state;
