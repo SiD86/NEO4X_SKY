@@ -8,7 +8,7 @@
 #include "MPU6050.h"
 #define ADDRESS							0x68
 #define CHIP_ID							0x34
-#define FIFO_PACKET_SIZE				18		// [bytes]
+#define FIFO_PACKET_SIZE				30		// [bytes]
 
 #define DATA_READY_PIN					(PIO_PC25)
 #define DATA_READY_TIMEOUT				100		// [ms]
@@ -162,6 +162,10 @@ static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 	0x07,0x86,0x01,0xFE,							// CFG_6   inv_set_fifo_interupt
 	0x07,0x41,0x05,0xF1,0x20,0x28,0x30,0x38,		// CFG_8   inv_send_quaternion
 	0x07,0x7E,0x01,0x30,							// CFG_16  inv_set_footer
+
+	0x07,0x46,0x01,0x9A,							// CFG_GYRO_SOURCE inv_send_gyro
+	0x07,0x47,0x04,0xF1,0x28,0x30,0x38,				// CFG_9 inv_send_gyro -> inv_construct3_fifo
+
 	0x02,0x16,0x02,0x00,0x00						// D_0_22  inv_set_fifo_rate 
 };
 
@@ -492,15 +496,18 @@ static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
 	// Euler angles
 	float tmp_x = atan2(2.0 * (Q[0] * Q[1] + Q[2] * Q[3]), 1.0 - 2.0 * (Q[1] * Q[1] + Q[2] * Q[2]));
 	float tmp_y = asin(2.0 * (Q[0] * Q[2] - Q[3] * Q[1]));
-	float tmp_z = atan2(2.0 * (Q[0] * Q[3] + Q[1] * Q[2]), 1.0 - 2.0 * (Q[2] * Q[2] + Q[3] * Q[3]));
+	//float tmp_z = atan2(2.0 * (Q[0] * Q[3] + Q[1] * Q[2]), 1.0 - 2.0 * (Q[2] * Q[2] + Q[3] * Q[3]));
 
 	tmp_x *= 180.0 / M_PI;
 	tmp_y *= 180.0 / M_PI;
-	tmp_z *= 180.0 / M_PI;
+	//tmp_z *= 180.0 / M_PI;
 
 	*X = tmp_x;
 	*Y = tmp_y;
-	*Z = tmp_z;
+	//*Z = tmp_z;
+
+	*Z = (((int32_t)data[24] << 24) | ((int32_t)data[25] << 16) | ((int32_t)data[26] << 8) | data[27]);
+	*Z /= 65535.0;
 }
 
 static bool writeMemoryBlock(const uint8_t* data, uint32_t address, uint32_t bank, uint32_t data_size)  {

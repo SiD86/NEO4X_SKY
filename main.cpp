@@ -60,8 +60,9 @@ int main() {
 
 		// Make command for fly core
 		uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_PROCESS;
-		if (IS_BITS_SET(g_status, FATAL_ERROR_MASK) == true)
+		if (g_status & FATAL_ERROR_MASK) {
 			fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE;
+		}
 
 		// Process fly core
 		FLY_CORE::process(fly_core_command, &g_cp);

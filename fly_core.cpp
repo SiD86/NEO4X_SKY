@@ -215,7 +215,7 @@ static void error_status_update() {
 		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_BMP280_ERROR);
 
 	// Check FAIL mode
-	if (IS_BITS_SET(g_status, FATAL_ERROR_MASK) == true)
+	if (g_status & FATAL_ERROR_MASK)
 		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_FATAL_ERROR);
 }
 
