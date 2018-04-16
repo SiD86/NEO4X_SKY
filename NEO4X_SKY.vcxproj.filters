@@ -92,9 +92,6 @@
     <ClCompile Include="library\MPU6050.cpp">
       <Filter>library</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="orientation_subsystem.cpp">
       <Filter>Файлы исходного кода\FLY_CORE</Filter>
     </ClCompile>
@@ -126,6 +123,9 @@
       <Filter>library</Filter>
     </ClCompile>
     <ClCompile Include="PID_controller.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="main_core.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>

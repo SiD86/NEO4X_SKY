@@ -3,7 +3,13 @@
 #include "LIBRARY\BMP280.h"
 #include "orientation_subsystem.h"
 #include "util.h"
-#define MAX_ERROR_COUNT							(10)
+#define MAX_ERROR_COUNT					(10)
+
+#define STATE_DISABLE					(0x00)
+#define STATE_MPU6050_CHECK_RDY			(0x01)
+#define STATE_MPU6050_GET_DATA			(0x02)
+#define STATE_BMP280_CHECK_RDY			(0x03)
+#define STATE_BMP280_GET_DATA			(0x04)
 
 static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_fatal_operation);
 static void state_MPU6050_CHECK_RDY_handler();
@@ -11,17 +17,12 @@ static void state_MPU6050_GET_DATA_handler();
 static void state_BMP280_CHECK_RDY_handler();
 static void state_BMP280_GET_DATA_handler();
 
-static const uint32_t STATE_DISABLE				= 0x00;
-static const uint32_t STATE_MPU6050_CHECK_RDY	= 0x01;
-static const uint32_t STATE_MPU6050_GET_DATA	= 0x02;
-static const uint32_t STATE_BMP280_CHECK_RDY	= 0x03;
-static const uint32_t STATE_BMP280_GET_DATA		= 0x04;
-
 static uint32_t g_state = STATE_DISABLE;
 static uint32_t g_status = OSS::NO_ERROR;
 static uint32_t g_MPU6050_error_count = 0;
 static uint32_t g_BMP280_error_count = 0;
 static float g_XYZH[4] = { 0 };
+static float g_gyro_XYZ[4] = { 0 };
 static bool g_is_position_updated = false;
 
 
@@ -66,6 +67,9 @@ void OSS::process() {
 
 	switch (g_state)
 	{
+	case STATE_DISABLE:
+		break;
+
 	case STATE_MPU6050_CHECK_RDY:	// Sync operation
 		state_MPU6050_CHECK_RDY_handler();
 		break;
@@ -81,16 +85,16 @@ void OSS::process() {
 	case STATE_BMP280_GET_DATA:		// Async operation
 		state_BMP280_GET_DATA_handler();
 		break;
-
-	case STATE_DISABLE:
-		break;
 	}
 }
 
-bool OSS::get_position(float* XYZH) {
-
+void OSS::get_position(float* XYZH, float* gyro_XYZ) {
+	g_XYZH[2] = 0; // Axis Z
 	memcpy(XYZH, g_XYZH, sizeof(g_XYZH));
+	memcpy(XYZH, gyro_XYZ, sizeof(g_gyro_XYZ));
+}
 
+bool OSS::is_position_updated() {
 	bool temp = g_is_position_updated;
 	g_is_position_updated = false;
 	return temp;
@@ -134,7 +138,7 @@ static void state_MPU6050_GET_DATA_handler() {
 		g_state = STATE_BMP280_CHECK_RDY;
 
 	// Process state
-	MPU6050_get_data(&g_XYZH[0], &g_XYZH[1], &g_XYZH[2]);
+	MPU6050_get_data(g_XYZH, g_gyro_XYZ);
 	if (MPU6050_get_status() != MPU6050_DRIVER_BUSY) {
 		g_state = STATE_BMP280_CHECK_RDY;
 		g_is_position_updated = true;

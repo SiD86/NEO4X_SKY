@@ -1,7 +1,9 @@
 /* ================================================================================================ *
-| FIFO packet structure:                                                                    |                                                                                               |
-| [QUAT W][      ][QUAT X][      ][QUAT Y][      ][QUAT Z][      ][      ]                          |
-|   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17                           |
+| FIFO packet structure:                                                                                              |
+| [QUAT W][      ][QUAT X][      ][QUAT Y][      ][QUAT Z][      ]
+|  00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15      
+| [GYRO X][GYRO X][GYRO Y][GYRO Y][GYRO Z][GYRO Z][      ]
+|  16  17  18  19  20  21  22  23  24  25  28  27  28  29  
 * ================================================================================================ */
 #include <Arduino.h>
 #include "I2C.h"
@@ -11,7 +13,7 @@
 #define FIFO_PACKET_SIZE				30		// [bytes]
 
 #define DATA_READY_PIN					(PIO_PC25)
-#define DATA_READY_TIMEOUT				100		// [ms]
+#define DATA_READY_TIMEOUT				20		// [ms]
 
 static const uint8_t DMP_MEMORY_BINARY[] PROGMEM = {
 	// bank 0, 256 bytes
@@ -237,7 +239,7 @@ static const uint8_t DMP_CONFIG_BINARY[] PROGMEM = {
 #define PWR1_SLEEP_EN				0x40
 #define PWR1_SLEEP_DIS				0x00
 
-static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z);
+static void calculation_XYZ(uint8_t* data, float* XY, float* gyro_XYZ);
 static bool writeMemoryBlock(const uint8_t* data, uint32_t address, uint32_t bank, uint32_t data_size);
 static bool writeDMPConfig();
 
@@ -426,7 +428,7 @@ bool MPU6050_is_data_ready() {
 	return true;
 }
 
-void MPU6050_get_data(float* X, float* Y, float* Z) {
+void MPU6050_get_data(float* XY, float* gyro_XYZ) {
 
 	static bool is_start_communication = false;
 	if (is_start_communication == false) { // Start communication
@@ -447,7 +449,7 @@ void MPU6050_get_data(float* X, float* Y, float* Z) {
 		if (status == I2C_DRIVER_NO_ERROR) {
 
 			uint8_t* data = I2C_async_get_rx_buffer_address();
-			calculation_XYZ(data, X, Y, Z);
+			calculation_XYZ(data, XY, gyro_XYZ);
 
 			g_status = MPU6050_DRIVER_NO_ERROR;
 			is_start_communication = false;
@@ -471,20 +473,19 @@ uint32_t MPU6050_get_status() {
 // INTERNAL INTERFACE
 //
 /**************************************************************************
-* @brief	Function for calculation XYZ
+* @brief	Function for calculation XYZ and angular velocity
 * @param	data: FIFO data
-* @param	X: angle on axis X
-* @param	Y: angle on axis Y
-* @param	Z: angle on axis Z
+* @param	XY: angles on axis X, Y
+* @param	gyro_XYZ: angular velocity on axis X, Y, Z
 **************************************************************************/
-static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
+static void calculation_XYZ(uint8_t* data, float* XY, float* gyro_XYZ) {
 
 	// Parse quaternions
 	int16_t RawQ[4] = { 0 };
-	RawQ[0] = (static_cast<uint16_t>(data[0]) << 8) | data[1];
-	RawQ[1] = (static_cast<uint16_t>(data[4]) << 8) | data[5];
-	RawQ[2] = (static_cast<uint16_t>(data[8]) << 8) | data[9];
-	RawQ[3] = (static_cast<uint16_t>(data[12]) << 8) | data[13];
+	RawQ[0] = (static_cast<int16_t>(data[0]) << 8) | data[1];
+	RawQ[1] = (static_cast<int16_t>(data[4]) << 8) | data[5];
+	RawQ[2] = (static_cast<int16_t>(data[8]) << 8) | data[9];
+	RawQ[3] = (static_cast<int16_t>(data[12]) << 8) | data[13];
 
 	// Scaling
 	float Q[4] = { 0 };	// WXYZ
@@ -494,20 +495,21 @@ static void calculation_XYZ(uint8_t* data, float* X, float* Y, float* Z) {
 	Q[3] = RawQ[3] / 16384.0f;
 
 	// Euler angles
-	float tmp_x = atan2(2.0 * (Q[0] * Q[1] + Q[2] * Q[3]), 1.0 - 2.0 * (Q[1] * Q[1] + Q[2] * Q[2]));
-	float tmp_y = asin(2.0 * (Q[0] * Q[2] - Q[3] * Q[1]));
-	//float tmp_z = atan2(2.0 * (Q[0] * Q[3] + Q[1] * Q[2]), 1.0 - 2.0 * (Q[2] * Q[2] + Q[3] * Q[3]));
+	XY[0] = atan2(2.0 * (Q[0] * Q[1] + Q[2] * Q[3]), 1.0 - 2.0 * (Q[1] * Q[1] + Q[2] * Q[2]));
+	XY[1] = asin(2.0 * (Q[0] * Q[2] - Q[3] * Q[1]));
 
-	tmp_x *= 180.0 / M_PI;
-	tmp_y *= 180.0 / M_PI;
-	//tmp_z *= 180.0 / M_PI;
+	XY[0] *= 180.0 / M_PI;
+	XY[1] *= 180.0 / M_PI;
 
-	*X = tmp_x;
-	*Y = tmp_y;
-	//*Z = tmp_z;
-
-	*Z = (((int32_t)data[24] << 24) | ((int32_t)data[25] << 16) | ((int32_t)data[26] << 8) | data[27]);
-	*Z /= 65535.0;
+	// Angular velocity
+	gyro_XYZ[0] = (((int32_t)data[16] << 24) | ((int32_t)data[17] << 16) | ((int32_t)data[18] << 8) | data[19]);
+	gyro_XYZ[1] = (((int32_t)data[20] << 24) | ((int32_t)data[21] << 16) | ((int32_t)data[22] << 8) | data[23]);
+	gyro_XYZ[2] = (((int32_t)data[24] << 24) | ((int32_t)data[25] << 16) | ((int32_t)data[26] << 8) | data[27]);
+	
+	// Scaling
+	gyro_XYZ[0] /= 65535.0;
+	gyro_XYZ[1] /= 65535.0;
+	gyro_XYZ[2] /= 65535.0;
 }
 
 static bool writeMemoryBlock(const uint8_t* data, uint32_t address, uint32_t bank, uint32_t data_size)  {

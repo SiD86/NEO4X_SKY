@@ -33,9 +33,10 @@ bool MPU6050_is_data_ready();
 /**************************************************************************
 * @brief	Function for get data (XYZ) from MPU6050
 * @note		This function use I2C async mode for read FIFO packet
-* @param	X,Y,Z: buffers for angles
+* @param	XY: buffer for angles
+* @param	gyro_XYZ: buffer for angular velocity
 **************************************************************************/
-void MPU6050_get_data(float* X, float* Y, float* Z);
+void MPU6050_get_data(float* XY, float* gyro_XYZ);
 
 /**************************************************************************
 * @brief	Functions for get and reset current driver status

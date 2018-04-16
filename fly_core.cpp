@@ -90,12 +90,19 @@ void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
 	state_data->fly_core_status = g_status;
 	state_data->fly_core_mode = g_fly_mode;
 
-	float cur_XYZH[4] = { 0 };
-	OSS::get_position(cur_XYZH);
-	state_data->XYZ[0] = cur_XYZH[0] * 100; // to 0.01*
-	state_data->XYZ[1] = cur_XYZH[1] * 100; // to 0.01*
-	state_data->XYZ[2] = cur_XYZH[2] * 100; // to 0.01*
-	state_data->alttitude = cur_XYZH[3];
+	float XYZH[4] = { 0 };
+	float gyro_XYZ[3] = { 0 };
+	OSS::get_position(XYZH, gyro_XYZ);
+
+	state_data->XYZ[0] = XYZH[0] * 100; // to 0.01*
+	state_data->XYZ[1] = XYZH[1] * 100; // to 0.01*
+	state_data->XYZ[2] = XYZH[2] * 100; // to 0.01*
+
+	state_data->gyro_XYZ[0] = gyro_XYZ[0];
+	state_data->gyro_XYZ[1] = gyro_XYZ[1];
+	state_data->gyro_XYZ[2] = gyro_XYZ[2];
+
+	state_data->alttitude = XYZH[3];
 
 	PDGSS::get_power_in_persent(state_data->motors_power);
 }
@@ -146,14 +153,16 @@ static void state_ENABLE_handling() {
 static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 
 	// Get current position
-	float cur_XYZH[4] = { 0 };
-	bool is_position_updated = OSS::get_position(cur_XYZH);
+	float XYZH[4] = { 0 };
+	float gyro_XYZ[3] = { 0 };
+	bool is_position_updated = OSS::is_position_updated(); 
+	OSS::get_position(XYZH, gyro_XYZ);
 
 	// ====================================================
 	// Debug angle protection
-	if (cur_XYZH[0] > g_cfg.angle_protect || cur_XYZH[0] < -g_cfg.angle_protect) // Axis X
+	if (XYZH[0] > g_cfg.angle_protect || XYZH[0] < -g_cfg.angle_protect) // Axis X
 		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
-	if (cur_XYZH[1] > g_cfg.angle_protect || cur_XYZH[1] < -g_cfg.angle_protect) // Axis Y
+	if (XYZH[1] > g_cfg.angle_protect || XYZH[1] < -g_cfg.angle_protect) // Axis Y
 		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
 	// 
 	// ====================================================
@@ -171,11 +180,11 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 			PID_set_tunings(PID_CHANNEL_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
 		}
 
-		// Calculation PID
+		// Calculation rate PID
 		float PIDU[3] = { 0 };    // X, Y, Z
-		PIDU[0] = PID_process(PID_CHANNEL_X, cur_XYZH[0], control_data->XYZ[0]);
-		PIDU[1] = PID_process(PID_CHANNEL_Y, cur_XYZH[1], control_data->XYZ[1]);
-		PIDU[2] = PID_process(PID_CHANNEL_Z, cur_XYZH[2], control_data->XYZ[2]);
+		PIDU[0] = PID_process(PID_CHANNEL_X, gyro_XYZ[0], control_data->XYZ[0]);
+		PIDU[1] = PID_process(PID_CHANNEL_Y, gyro_XYZ[1], control_data->XYZ[1]);
+		PIDU[2] = PID_process(PID_CHANNEL_Z, gyro_XYZ[2], control_data->XYZ[2]);
 
 		// Constrain thrust [0; 1000 - PID_output_limit]
 		int32_t thrust = control_data->thrust * 10; // Scale thrust [0; 100] -> [0; 1000]
