@@ -29,14 +29,11 @@ namespace TXRX {
 
 		uint8_t motors_power[4];		// Motors power [0 - 100], %
 		int16_t	XYZ[3];					// X, Y, Z
-		int8_t gyro_XYZ[3];				// Angular velocity
+		int16_t gyro_XYZ[3];			// Angular velocity
 		int32_t alttitude;				// H
 
 		uint8_t battery_voltage;		// Current battery voltage [0 - 255], 0.1V
 
-		uint8_t hardware_error_count;
-		uint8_t software_error_count;
-		uint8_t desync_count;
 		uint8_t MPU6050_get_FIFO_size_error_count;
 		uint8_t MPU6050_check_FIFO_size_error_count;
 		uint8_t MPU6050_get_data_error_count;
@@ -59,7 +56,8 @@ namespace TXRX {
 	// Fly core mode
 	const uint8_t FLY_CORE_MODE_WAIT					= 0x01;
 	const uint8_t FLY_CORE_MODE_STABILIZE				= 0x02;
-	const uint8_t FLY_CORE_MODE_PID_SETUP				= 0x03;
+	const uint8_t FLY_CORE_MODE_ANGLE_PID_SETUP			= 0x03;
+	const uint8_t FLY_CORE_MODE_RATE_PID_SETUP			= 0x04;
 
 	// Fly core status (bitfield)
 	const uint8_t FLY_CORE_STATUS_NO_ERROR				= 0x00;
@@ -90,7 +88,8 @@ namespace TXRX {
 	const uint8_t CMD_NO_COMMAND					= 0x00;
 	const uint8_t CMD_SET_FLY_MODE_WAIT				= 0x01;
 	const uint8_t CMD_SET_FLY_MODE_STABILIZE		= 0x02;
-	const uint8_t CMD_SET_FLY_MODE_PID_SETUP		= 0x03;
+	const uint8_t CMD_SET_FLY_MODE_ANGLE_PID_SETUP  = 0x03;
+	const uint8_t CMD_SET_FLY_MODE_RATE_PID_SETUP   = 0x04;
 }
 
 namespace TXRX {

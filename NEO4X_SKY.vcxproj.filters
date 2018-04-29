@@ -126,7 +126,7 @@
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="main_core.cpp">
-      <Filter>Файлы исходного кода</Filter>
+      <Filter>Файлы исходного кода\MAIN_CORE</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

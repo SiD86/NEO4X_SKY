@@ -196,10 +196,6 @@ static void make_state_packet() {
 	ASS::make_state_data(&g_sp);
 
 	// Debug info
-	g_sp.hardware_error_count = g_hardware_error_count;
-	g_sp.software_error_count = g_software_error_count;
-	g_sp.desync_count = g_desync_count;
-
 	g_sp.MPU6050_get_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
 	g_sp.MPU6050_check_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
 	g_sp.MPU6050_get_data_error_count = MPU6050_get_data_error_count;

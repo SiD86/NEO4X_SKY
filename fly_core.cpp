@@ -98,9 +98,9 @@ void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
 	state_data->XYZ[1] = XYZH[1] * 100; // to 0.01*
 	state_data->XYZ[2] = XYZH[2] * 100; // to 0.01*
 
-	state_data->gyro_XYZ[0] = gyro_XYZ[0];
-	state_data->gyro_XYZ[1] = gyro_XYZ[1];
-	state_data->gyro_XYZ[2] = gyro_XYZ[2];
+	state_data->gyro_XYZ[0] = gyro_XYZ[0] * 100; // to 0.01*;
+	state_data->gyro_XYZ[1] = gyro_XYZ[1] * 100; // to 0.01*;
+	state_data->gyro_XYZ[2] = gyro_XYZ[2] * 100; // to 0.01*;
 
 	state_data->alttitude = XYZH[3];
 
@@ -131,10 +131,19 @@ static void user_command_handling(uint32_t cmd) {
 		PID_reset(PID_CHANNEL_Z);
 		break;
 
-	case TXRX::CMD_SET_FLY_MODE_PID_SETUP:
-		if (g_fly_mode == TXRX::CMD_SET_FLY_MODE_PID_SETUP)
+	case TXRX::CMD_SET_FLY_MODE_ANGLE_PID_SETUP:
+		if (g_fly_mode == TXRX::CMD_SET_FLY_MODE_ANGLE_PID_SETUP)
 			break;
-		g_fly_mode = TXRX::CMD_SET_FLY_MODE_PID_SETUP;
+		g_fly_mode = TXRX::FLY_CORE_MODE_ANGLE_PID_SETUP;
+		PID_reset(PID_CHANNEL_X);
+		PID_reset(PID_CHANNEL_Y);
+		PID_reset(PID_CHANNEL_Z);
+		break;
+
+	case TXRX::CMD_SET_FLY_MODE_RATE_PID_SETUP:
+		if (g_fly_mode == TXRX::CMD_SET_FLY_MODE_RATE_PID_SETUP)
+			break;
+		g_fly_mode = TXRX::FLY_CORE_MODE_RATE_PID_SETUP;
 		PID_reset(PID_CHANNEL_X);
 		PID_reset(PID_CHANNEL_Y);
 		PID_reset(PID_CHANNEL_Z);
@@ -168,13 +177,15 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 	// ====================================================
 	
 	// Process current fly mode
-	if (g_fly_mode == TXRX::FLY_CORE_MODE_STABILIZE || g_fly_mode == TXRX::FLY_CORE_MODE_PID_SETUP) {
-
+	if (g_fly_mode == TXRX::FLY_CORE_MODE_STABILIZE || g_fly_mode == TXRX::FLY_CORE_MODE_ANGLE_PID_SETUP ||
+		g_fly_mode == TXRX::FLY_CORE_MODE_RATE_PID_SETUP) 
+	{
+		
 		if (is_position_updated == false)
 			return;
 
 		// Runtime PID setup
-		if (g_fly_mode == TXRX::FLY_CORE_MODE_PID_SETUP) {
+		if (g_fly_mode == TXRX::FLY_CORE_MODE_ANGLE_PID_SETUP || g_fly_mode == TXRX::FLY_CORE_MODE_RATE_PID_SETUP) {
 			PID_set_tunings(PID_CHANNEL_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
 			PID_set_tunings(PID_CHANNEL_Y, control_data->PIDY[0] / 100.0, control_data->PIDY[1] / 100.0, control_data->PIDY[2] / 100.0);
 			PID_set_tunings(PID_CHANNEL_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
@@ -182,9 +193,16 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 
 		// Calculation rate PID
 		float PIDU[3] = { 0 };    // X, Y, Z
-		PIDU[0] = PID_process(PID_CHANNEL_X, gyro_XYZ[0], control_data->XYZ[0]);
-		PIDU[1] = PID_process(PID_CHANNEL_Y, gyro_XYZ[1], control_data->XYZ[1]);
-		PIDU[2] = PID_process(PID_CHANNEL_Z, gyro_XYZ[2], control_data->XYZ[2]);
+		if (g_fly_mode == TXRX::FLY_CORE_MODE_RATE_PID_SETUP) { // Use gyro data
+			PIDU[0] = PID_process(PID_CHANNEL_X, gyro_XYZ[0], control_data->XYZ[0]);
+			PIDU[1] = PID_process(PID_CHANNEL_Y, gyro_XYZ[1], control_data->XYZ[1]);
+			PIDU[2] = PID_process(PID_CHANNEL_Z, gyro_XYZ[2], control_data->XYZ[2]);
+		}
+		else { // Use angle data
+			PIDU[0] = PID_process(PID_CHANNEL_X, XYZH[0], control_data->XYZ[0]);
+			PIDU[1] = PID_process(PID_CHANNEL_Y, XYZH[1], control_data->XYZ[1]);
+			PIDU[2] = PID_process(PID_CHANNEL_Z, XYZH[2], control_data->XYZ[2]);
+		}
 
 		// Constrain thrust [0; 1000 - PID_output_limit]
 		int32_t thrust = control_data->thrust * 10; // Scale thrust [0; 100] -> [0; 1000]

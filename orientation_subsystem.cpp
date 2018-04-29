@@ -89,9 +89,15 @@ void OSS::process() {
 }
 
 void OSS::get_position(float* XYZH, float* gyro_XYZ) {
-	g_XYZH[2] = 0; // Axis Z
-	memcpy(XYZH, g_XYZH, sizeof(g_XYZH));
-	memcpy(XYZH, gyro_XYZ, sizeof(g_gyro_XYZ));
+
+	XYZH[0] = g_XYZH[0];
+	XYZH[1] = g_XYZH[1];
+	XYZH[2] = g_XYZH[2];
+	XYZH[3] = g_XYZH[3];
+
+	gyro_XYZ[0] = g_gyro_XYZ[0];
+	gyro_XYZ[1] = g_gyro_XYZ[1];
+	gyro_XYZ[2] = g_gyro_XYZ[2];
 }
 
 bool OSS::is_position_updated() {

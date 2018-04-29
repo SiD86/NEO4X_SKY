@@ -19,9 +19,6 @@ TXRX::state_data_t g_sp = {0};
 TXRX::configure_data_t g_rx_cfg_data = { 0 };
 TXRX::configure_data_t g_tx_cfg_data = { 0 };
 
-uint32_t g_desync_count = 0;			// __DEBUG
-uint32_t g_hardware_error_count = 0;	// __DEBUG
-uint32_t g_software_error_count = 0;	// __DEBUG
 
 //
 // EXTERNAL INTERFACE
@@ -33,10 +30,8 @@ void CSS::initialize() {
 
 void CSS::asynchronous_process() {
 
-	if (USART3_is_error() == true) {
+	if (USART3_is_error() == true)
 		USART3_reset(true, true);
-		++g_hardware_error_count;
-	}
 
 	asynchronous_process_tx();
 	asynchronous_process_rx();
@@ -130,10 +125,8 @@ static void asynchronous_process_rx() {
 			}
 			else {
 
-				++g_software_error_count;
 				if (++error_count >= 5) {
 					SET_STATUS_BIT(g_status, CSS::DESYNC);
-					++g_desync_count; // __DEBUG
 				}
 			}
 		}
