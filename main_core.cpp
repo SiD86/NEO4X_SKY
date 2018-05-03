@@ -5,7 +5,7 @@
 #include "configuration_subsystem.h"
 #include "fly_core.h"
 #include "util.h"
-#define FATAL_ERROR_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
+#define FATAL_ERRORS_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
 
 extern "C" {
 	static void initialize_MCU(void);
@@ -60,7 +60,7 @@ int main() {
 
 		// Make command for fly core
 		uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_PROCESS;
-		if (g_status & FATAL_ERROR_MASK) {
+		if (g_status & TXRX::MAIN_CORE_STATUS_FATAL_ERROR) {
 			fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE;
 		}
 
@@ -169,9 +169,13 @@ static void error_status_update() {
 	// Check additional subsystem status
 	status = ASS::get_status();
 	if (status & ASS::BATTERY_LOW_VOLTAGE)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_12V_LOW_VOLTAGE);
 	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_LOW_VOLTAGE);
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_12V_LOW_VOLTAGE);
+
+	// Check fatal errors
+	if (g_status & FATAL_ERRORS_MASK)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_FATAL_ERROR);
 }
 
 extern uint8_t MPU6050_get_FIFO_size_error_count;

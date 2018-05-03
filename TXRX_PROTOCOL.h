@@ -48,16 +48,22 @@ namespace TXRX {
 
 	// Main core status (bitfield)
 	const uint8_t MAIN_CORE_STATUS_NO_ERROR				= 0x00;
-	const uint8_t MAIN_CORE_STATUS_CONFIG_ERROR			= 0x01;
-	const uint8_t MAIN_CORE_STATUS_COMM_LOST			= 0x02;
-	const uint8_t MAIN_CORE_STATUS_COMM_DESYNC			= 0x04;
-	const uint8_t MAIN_CORE_STATUS_LOW_VOLTAGE			= 0x08;
+	const uint8_t MAIN_CORE_STATUS_FATAL_ERROR			= 0x01;
+	const uint8_t MAIN_CORE_STATUS_CONFIG_ERROR			= 0x02;
+	const uint8_t MAIN_CORE_STATUS_COMM_LOST			= 0x04;
+	const uint8_t MAIN_CORE_STATUS_COMM_DESYNC			= 0x08;
+	const uint8_t MAIN_CORE_STATUS_12V_LOW_VOLTAGE		= 0x10;
+	const uint8_t MAIN_CORE_STATUS_5V_LOW_VOLTAGE		= 0x20;
+	const uint8_t MAIN_CORE_STATUS_3V3_LOW_VOLTAGE		= 0x40;
+	const uint8_t MAIN_CORE_STATUS_DANGER_VIBRATION		= 0x80;
+
 
 	// Fly core mode
 	const uint8_t FLY_CORE_MODE_WAIT					= 0x01;
 	const uint8_t FLY_CORE_MODE_STABILIZE				= 0x02;
 	const uint8_t FLY_CORE_MODE_ANGLE_PID_SETUP			= 0x03;
 	const uint8_t FLY_CORE_MODE_RATE_PID_SETUP			= 0x04;
+	const uint8_t FLY_CORE_MODE_DEFENCE					= 0xFF;
 
 	// Fly core status (bitfield)
 	const uint8_t FLY_CORE_STATUS_NO_ERROR				= 0x00;

@@ -7,7 +7,7 @@
 #include "configuration_subsystem.h"
 #include "PID_controller.h"
 #include "util.h"
-#define FATAL_ERROR_MASK			(TXRX::FLY_CORE_STATUS_MPU6050_ERROR)
+#define FATAL_ERRORS_MASK			(TXRX::FLY_CORE_STATUS_MPU6050_ERROR)
 #define SYNTHESIS(U,X,Y,Z)        	(U[0] * (X) + U[1] * (Y) + U[2] * (Z))
 
 #define STATE_ENABLE				(0x01)
@@ -22,7 +22,7 @@ static void user_command_handling(uint32_t cmd);
 static void state_ENABLE_handling();
 static void state_PROCESS_handling(TXRX::control_data_t* control_data);
 static void state_FAIL_handling();
-
+static void defence_process(float* XYZH);
 static void error_status_update();
 static void request_state(uint32_t next_state);
 
@@ -167,14 +167,8 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 	bool is_position_updated = OSS::is_position_updated(); 
 	OSS::get_position(XYZH, gyro_XYZ);
 
-	// ====================================================
-	// Debug angle protection
-	if (XYZH[0] > g_cfg.angle_protect || XYZH[0] < -g_cfg.angle_protect) // Axis X
-		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
-	if (XYZH[1] > g_cfg.angle_protect || XYZH[1] < -g_cfg.angle_protect) // Axis Y
-		g_fly_mode = TXRX::FLY_CORE_MODE_WAIT;
-	// 
-	// ====================================================
+	// Defence process
+	defence_process(XYZH);
 	
 	// Process current fly mode
 	if (g_fly_mode == TXRX::FLY_CORE_MODE_STABILIZE || g_fly_mode == TXRX::FLY_CORE_MODE_ANGLE_PID_SETUP ||
@@ -224,11 +218,31 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 	else if (g_fly_mode == TXRX::FLY_CORE_MODE_WAIT) {
 		PDGSS::stop();
 	}
+	else if (g_fly_mode == TXRX::FLY_CORE_MODE_DEFENCE) {
+		PDGSS::stop();
+	}
 }
 
 static void state_FAIL_handling() {
 	PDGSS::stop();
 	OSS::send_command(OSS::CMD_DISABLE);
+}
+
+static void defence_process(float* XYZH) {
+
+	// ====================================================
+	// Debug angle protection
+
+	// Check angle on axis X
+	if (XYZH[0] > g_cfg.angle_protect || XYZH[0] < -g_cfg.angle_protect)
+		g_fly_mode = TXRX::FLY_CORE_MODE_DEFENCE;
+
+	// Check angle on axis Y
+	if (XYZH[1] > g_cfg.angle_protect || XYZH[1] < -g_cfg.angle_protect)
+		g_fly_mode = TXRX::FLY_CORE_MODE_DEFENCE;
+
+	//
+	// ====================================================
 }
 
 
@@ -242,7 +256,7 @@ static void error_status_update() {
 		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_BMP280_ERROR);
 
 	// Check FAIL mode
-	if (g_status & FATAL_ERROR_MASK)
+	if (g_status & FATAL_ERRORS_MASK)
 		SET_STATUS_BIT(g_status, TXRX::FLY_CORE_STATUS_FATAL_ERROR);
 }
 
