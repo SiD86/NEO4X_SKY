@@ -155,7 +155,7 @@ static void error_status_update() {
 
 	// Check communication subsystem status
 	uint32_t status = CSS::get_status();
-	if (status & CSS::CONNECTION_LOST)
+	if (IS_BIT_SET(status, CSS::CONNECTION_LOST) == true)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
 	else
 		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
@@ -168,7 +168,7 @@ static void error_status_update() {
 
 	// Check additional subsystem status
 	status = ASS::get_status();
-	if (status & ASS::BATTERY_LOW_VOLTAGE)
+	if (IS_BIT_SET(status, ASS::BATTERY_LOW_VOLTAGE) == true)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_12V_LOW_VOLTAGE);
 	else
 		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_12V_LOW_VOLTAGE);
@@ -176,6 +176,8 @@ static void error_status_update() {
 	// Check fatal errors
 	if (g_status & FATAL_ERRORS_MASK)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_FATAL_ERROR);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_FATAL_ERROR);
 }
 
 extern uint8_t MPU6050_get_FIFO_size_error_count;
