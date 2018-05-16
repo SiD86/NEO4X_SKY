@@ -180,16 +180,8 @@ static void error_status_update() {
 		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_FATAL_ERROR);
 }
 
-extern uint8_t MPU6050_get_FIFO_size_error_count;
-extern uint8_t MPU6050_check_FIFO_size_error_count;
-extern uint8_t MPU6050_get_data_error_count;
-extern volatile uint8_t I2C_nack_count;
-extern volatile uint8_t I2C_timeout_count;
 extern uint32_t g_PID_OOR_diff;
 extern uint32_t g_PID_I_OOR_diff;
-extern uint32_t g_hardware_error_count;
-extern uint32_t g_software_error_count;
-extern uint32_t g_desync_count;
 
 static void make_state_packet() {
 
@@ -202,13 +194,6 @@ static void make_state_packet() {
 	ASS::make_state_data(&g_sp);
 
 	// Debug info
-	g_sp.MPU6050_get_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
-	g_sp.MPU6050_check_FIFO_size_error_count = MPU6050_get_FIFO_size_error_count;
-	g_sp.MPU6050_get_data_error_count = MPU6050_get_data_error_count;
-
-	g_sp.I2C_nack_count = I2C_nack_count;
-	g_sp.I2C_timeout_count = I2C_timeout_count;
-
 	g_sp.PID_OOR_diff = g_PID_OOR_diff;
 	g_sp.PID_I_OOR_diff = g_PID_I_OOR_diff;
 }

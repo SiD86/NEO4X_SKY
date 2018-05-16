@@ -246,10 +246,6 @@ static bool writeDMPConfig();
 static uint32_t g_status = MPU6050_DRIVER_NO_ERROR;
 static volatile bool g_is_data_ready_timeout = false;
 
-uint8_t MPU6050_get_FIFO_size_error_count = 0;		// __DEBUG
-uint8_t MPU6050_check_FIFO_size_error_count = 0;	// __DEBUG
-uint8_t MPU6050_get_data_error_count = 0;			// __DEBUG
-
 
 
 //
@@ -411,7 +407,6 @@ bool MPU6050_is_data_ready() {
 	// Get FIFO buffer size
 	uint8_t buffer[2] = { 0 };
 	if (I2C_read_bytes(ADDRESS, REG_FIFO_COUNTH, buffer, 2) == false) {
-		++MPU6050_get_FIFO_size_error_count; // __DEBUG
 		return false;
 	}
 	uint32_t FIFO_bytes_count = (static_cast<uint16_t>(buffer[0]) << 8) | buffer[1];
@@ -419,7 +414,6 @@ bool MPU6050_is_data_ready() {
 	// Check FIFO buffer size
 	if (FIFO_bytes_count != FIFO_PACKET_SIZE) {
 		I2C_write_bits(ADDRESS, REG_USER_CTRL, USERCTRL_FIFO_RESET_MASK, USERCTRL_FIFO_RESET);
-		++MPU6050_check_FIFO_size_error_count;  // __DEBUG
 		return false;
 	}
 
@@ -435,7 +429,6 @@ void MPU6050_get_data(float* XY, float* gyro_XYZ) {
 
 		I2C_set_internal_address_length(1);
 		if (I2C_async_read_bytes(ADDRESS, REG_FIFO_R_W, FIFO_PACKET_SIZE) == false) {
-			++MPU6050_get_data_error_count; // __DEBUG
 			g_status = MPU6050_DRIVER_ERROR;
 			return;
 		}
@@ -460,7 +453,6 @@ void MPU6050_get_data(float* XY, float* gyro_XYZ) {
 		else if (status == I2C_DRIVER_ERROR) {
 			g_status = MPU6050_DRIVER_ERROR;
 			is_start_communication = false;
-			++MPU6050_get_data_error_count;  // __DEBUG
 		}
 	}
 }
