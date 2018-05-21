@@ -11,8 +11,6 @@
 #define ADDRESS							0x68
 #define CHIP_ID							0x34
 #define FIFO_PACKET_SIZE				30		// [bytes]
-
-#define DATA_READY_PIN					(PIO_PC25)
 #define DATA_READY_TIMEOUT				20		// [ms]
 
 static const uint8_t DMP_MEMORY_BINARY[] PROGMEM = {
@@ -324,9 +322,9 @@ void MPU6050_initialize() {
 		return;
 
 	// Configure data ready pin
-	REG_PIOC_PER = DATA_READY_PIN;
-	REG_PIOC_ODR = DATA_READY_PIN;
-	REG_PIOC_PUDR = DATA_READY_PIN;
+	REG_PIOB_PER = PIO_PB26;
+	REG_PIOB_ODR = PIO_PB26;
+	REG_PIOB_PUDR = PIO_PB26;
 
 	// Configure watch data ready timeout timer clock
 	REG_PMC_PCER0 = PMC_PCER0_PID31;
@@ -393,7 +391,7 @@ bool MPU6050_is_data_ready() {
 	g_status = MPU6050_DRIVER_ERROR;
 
 	// Check data ready pin (LOW - data ready)
-	if (REG_PIOC_PDSR & DATA_READY_PIN) {
+	if (REG_PIOB_PDSR & PIO_PB26) {
 		if (g_is_data_ready_timeout == false)
 			g_status = MPU6050_DRIVER_NO_ERROR;
 		return false;

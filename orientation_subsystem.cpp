@@ -192,8 +192,9 @@ static void state_BMP280_GET_DATA_handler() {
 
 	// Get data
 	BMP280_get_data(&g_XYZH[3]);
-	if (BMP280_get_status() != BMP280_DRIVER_BUSY)
-		g_state = STATE_MPU6050_CHECK_RDY; 
+	if (BMP280_get_status() != BMP280_DRIVER_BUSY) {
+		g_state = STATE_MPU6050_CHECK_RDY;
+	}
 
 	error_status_update(false, true, false);
 }
