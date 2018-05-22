@@ -68,8 +68,6 @@ static bool load_and_check_configuration() {
 	g_cfg.angle_protect = 60;				// [-60; 60]
 	g_cfg.ESC_PWM_frequency = 400;			// 400 Hz
 
-	g_cfg.battery_low_voltage = 100;		// 10.0V
-
 	g_cfg.PID_output_limit = 400;			// 40%
 	g_cfg.PID_enable_threshold = 0;			// 0% (enable always)
 

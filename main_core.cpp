@@ -1,11 +1,15 @@
 #include <Arduino.h>
 #include "LIBRARY\I2C.h"
+#include "LIBRARY\ADC.h"
 #include "communication_subsystem.h"
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
 #include "fly_core.h"
 #include "util.h"
-#define FATAL_ERRORS_MASK			(TXRX::MAIN_CORE_STATUS_CONFIG_ERROR | TXRX::MAIN_CORE_STATUS_COMM_LOST)
+#define FATAL_ERRORS_MASK	(TXRX::MAIN_STA_CONFIG_ERROR |			\
+							 TXRX::MAIN_STA_COMMUNICATION_LOST |	\
+							 TXRX::MAIN_STA_WIRELESS_POWER_SUPPLY | \
+							 TXRX::MAIN_STA_SENSORS_POWER_SUPPLY)
 
 extern "C" {
 	static void initialize_MCU(void);
@@ -14,7 +18,7 @@ static void intialize_FW();
 static void error_status_update();
 static void make_state_packet();
 
-static uint32_t g_status = TXRX::MAIN_CORE_STATUS_NO_ERROR;
+static uint32_t g_status = TXRX::MAIN_STA_NO_ERROR;
 
 int main() {
 
@@ -22,20 +26,6 @@ int main() {
 
 	Serial.begin(460800);	// DEBUG
 
-	/*pinMode(53, OUTPUT); // PB14
-	pinMode(50, OUTPUT); // PC13
-	pinMode(49, OUTPUT); // PC14
-	pinMode(27, OUTPUT); // PD2
-	pinMode(24, OUTPUT); // PA15
-	pinMode(23, OUTPUT); // PA14
-
-	CLR_DEBUG_PIN_1;
-	CLR_DEBUG_PIN_2;
-	CLR_DEBUG_PIN_3;
-	CLR_DEBUG_PIN_4;
-	CLR_DEBUG_PIN_5;
-	CLR_DEBUG_PIN_6;*/
-	
 	intialize_FW();
 
 	while (true) {
@@ -50,7 +40,7 @@ int main() {
 		// Additional subsystem process
 		ASS::process();
 
-		// Update error status
+		// Update main core error status
 		error_status_update();
 
 
@@ -60,7 +50,7 @@ int main() {
 
 		// Make command for fly core
 		uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_PROCESS;
-		if (g_status & TXRX::MAIN_CORE_STATUS_FATAL_ERROR) {
+		if (g_status & TXRX::MAIN_STA_FATAL_ERROR) {
 			fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE;
 		}
 
@@ -139,13 +129,10 @@ static void intialize_FW() {
 
 	// Initialize configuration subsystem
 	if (CONFIGSS::intialize() == false)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_CONFIG_ERROR);
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
 
 	// Initialize communication subsystem
 	CSS::initialize();
-
-	// Initialize additional subsystem
-	ASS::initialize();
 
 	// Initialize fly core
 	FLY_CORE::initialize();
@@ -156,28 +143,44 @@ static void error_status_update() {
 	// Check communication subsystem status
 	uint32_t status = CSS::get_status();
 	if (IS_BIT_SET(status, CSS::CONNECTION_LOST) == true)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_LOST);
 	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_LOST);
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_LOST);
 
 	if (status & CSS::DESYNC)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_DESYNC);
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_DESYNC);
 	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_COMM_DESYNC);
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_DESYNC);
 
 
 	// Check additional subsystem status
 	status = ASS::get_status();
-	if (IS_BIT_SET(status, ASS::BATTERY_LOW_VOLTAGE) == true)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_12V_LOW_VOLTAGE);
+	if (IS_BIT_SET(status, ASS::MAIN_POWER_SUPPLY_LOW_VOLTAGE) == true)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_MAIN_POWER_SUPPLY);
 	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_12V_LOW_VOLTAGE);
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_MAIN_POWER_SUPPLY);
+
+	if (IS_BIT_SET(status, ASS::WIRELESS_POWER_SUPPLY_LOW_VOLTAGE) == true)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_WIRELESS_POWER_SUPPLY);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_WIRELESS_POWER_SUPPLY);
+
+	if (IS_BIT_SET(status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE) == true)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CAMERA_POWER_SUPPLY);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_CAMERA_POWER_SUPPLY);
+
+	if (IS_BIT_SET(status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE) == true)
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_SENSORS_POWER_SUPPLY);
+	else
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_SENSORS_POWER_SUPPLY);
+
 
 	// Check fatal errors
 	if (g_status & FATAL_ERRORS_MASK)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_FATAL_ERROR);
+		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_FATAL_ERROR);
 	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_CORE_STATUS_FATAL_ERROR);
+		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_FATAL_ERROR);
 }
 
 extern uint32_t g_PID_OOR_diff;
@@ -192,8 +195,4 @@ static void make_state_packet() {
 
 	FLY_CORE::make_state_data(&g_sp);
 	ASS::make_state_data(&g_sp);
-
-	// Debug info
-	g_sp.PID_OOR_diff = g_PID_OOR_diff;
-	g_sp.PID_I_OOR_diff = g_PID_I_OOR_diff;
 }

@@ -23,48 +23,49 @@ namespace TXRX {
 	// Fly controller state data (CONTROLLER -> PC)
 	#pragma pack (push, 1)
 	struct state_data_t {
-		uint8_t main_core_status;
-		uint8_t fly_core_mode;
-		uint8_t fly_core_status;
+		uint8_t main_core_status;	// Main core status					[bitfield]
+		uint8_t fly_core_mode;		// Fly core mode					[NO]
+		uint8_t fly_core_status;	// Fly core status					[bitfield]
 
-		uint8_t motors_power[4];		// Motors power [0 - 100], %
-		int16_t	XYZ[3];					// X, Y, Z
-		int16_t gyro_XYZ[3];			// Angular velocity
-		int32_t alttitude;				// H
+		uint8_t motors_power[4];	// Motors power						[%]
+		int16_t	XYZ[3];				// X, Y, Z							[*]
+		int16_t gyro_XYZ[3];		// Angular velocity					[*/sec]
+		int32_t alttitude;			// H								[cm]
 
-		uint8_t battery_voltage;		// Current battery voltage [0 - 255], 0.1V
+		uint8_t main_voltage;		// Main power supply voltage		[0.1V]
+		uint8_t wireless_voltage;	// Wireless power supply voltage	[0.1V]
+		uint8_t camera_voltage;		// Camera power supply voltage		[0.1V]
+		uint8_t sensors_voltage;	// Sensors power supply voltage		[0.1V]
+		uint8_t vibration_level;	// Vibration level					[?]
+		uint8_t ESC_temperature[4];	// ESC temperatures					[*C]
 
-		uint8_t PID_OOR_diff;
-		uint8_t PID_I_OOR_diff;
-		
-		uint8_t reserved[6];
+		//uint8_t reserved[0];
 	};
 	#pragma pack (pop)
 
 	// Main core status (bitfield)
-	const uint8_t MAIN_CORE_STATUS_NO_ERROR				= 0x00;
-	const uint8_t MAIN_CORE_STATUS_FATAL_ERROR			= 0x01;
-	const uint8_t MAIN_CORE_STATUS_CONFIG_ERROR			= 0x02;
-	const uint8_t MAIN_CORE_STATUS_COMM_LOST			= 0x04;
-	const uint8_t MAIN_CORE_STATUS_COMM_DESYNC			= 0x08;
-	const uint8_t MAIN_CORE_STATUS_12V_LOW_VOLTAGE		= 0x10;
-	const uint8_t MAIN_CORE_STATUS_5V_LOW_VOLTAGE		= 0x20;
-	const uint8_t MAIN_CORE_STATUS_3V3_LOW_VOLTAGE		= 0x40;
-	const uint8_t MAIN_CORE_STATUS_DANGER_VIBRATION		= 0x80;
-
+	const uint8_t MAIN_STA_NO_ERROR					= 0x00;
+	const uint8_t MAIN_STA_FATAL_ERROR				= 0x01;
+	const uint8_t MAIN_STA_CONFIG_ERROR				= 0x02;
+	const uint8_t MAIN_STA_COMMUNICATION_LOST		= 0x04;
+	const uint8_t MAIN_STA_COMMUNICATION_DESYNC		= 0x08;
+	const uint8_t MAIN_STA_MAIN_POWER_SUPPLY		= 0x10;
+	const uint8_t MAIN_STA_WIRELESS_POWER_SUPPLY	= 0x20;
+	const uint8_t MAIN_STA_CAMERA_POWER_SUPPLY		= 0x40;
+	const uint8_t MAIN_STA_SENSORS_POWER_SUPPLY		= 0x80;
 
 	// Fly core mode
-	const uint8_t FLY_CORE_MODE_WAIT					= 0x01;
-	const uint8_t FLY_CORE_MODE_STABILIZE				= 0x02;
-	const uint8_t FLY_CORE_MODE_ANGLE_PID_SETUP			= 0x03;
-	const uint8_t FLY_CORE_MODE_RATE_PID_SETUP			= 0x04;
-	const uint8_t FLY_CORE_MODE_DEFENCE					= 0xFF;
+	const uint8_t FLY_MODE_WAIT						= 0x01;
+	const uint8_t FLY_MODE_STABILIZE				= 0x02;
+	const uint8_t FLY_MODE_ANGLE_PID_SETUP			= 0x03;
+	const uint8_t FLY_MODE_RATE_PID_SETUP			= 0x04;
+	const uint8_t FLY_MODE_DEFENCE					= 0xFF;
 
 	// Fly core status (bitfield)
-	const uint8_t FLY_CORE_STATUS_NO_ERROR				= 0x00;
-	const uint8_t FLY_CORE_STATUS_FATAL_ERROR			= 0x01;
-	const uint8_t FLY_CORE_STATUS_MPU6050_ERROR			= 0x02;
-	const uint8_t FLY_CORE_STATUS_BMP280_ERROR			= 0x04;
+	const uint8_t FLY_STA_NO_ERROR					= 0x00;
+	const uint8_t FLY_STA_FATAL_ERROR				= 0x01;
+	const uint8_t FLY_STA_MPU6050_ERROR				= 0x02;
+	const uint8_t FLY_STA_BMP280_ERROR				= 0x04;
 }
 
 namespace TXRX {

@@ -3,53 +3,47 @@
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
 #include "util.h"
-#define BATTERY_VOLTAGE_CHANNEL_INDEX			(7)
-#define ESC_TEMPERATURE_CHANNEL_INDEX			(0)
-#define MOTOR_TEMPERATURE_CHANNEL_INDEX			(0)
-#define VIBRATION_CHANNEL_INDEX					(0)
 
-#define STATE_START_CONVERSION					(0x02)
-#define STATE_WAIT_CONVERSION_COMPLITE			(0x03)
-#define STATE_PROCESS_BATTERY_VOLTAGE			(0x04)
-#define STATE_PROCESS_ESC_TEMPERATURE			(0x05)
-#define STATE_PROCESS_MOTOR_TEMPERATURE			(0x06)
-#define STATE_PROCESS_VIBRATION					(0x07)
-#define STATE_ANALYSIS_DATA						(0x08)
+#define STATE_NO_INIT								(0x00)
+#define STATE_START_CONVERSION						(0x01)
+#define STATE_WAIT_CONVERSION_COMPLITE				(0x02)
+#define STATE_PROCESS_ALL_POWER_SUPPLY_VOLTAGES		(0x03)
+#define STATE_PROCESS_ESC_TEMPERATURE				(0x04)
+#define STATE_PROCESS_VIBRATION_LEVEL				(0x05)
+#define STATE_ANALYSIS_DATA							(0x06)
 
-static uint32_t process_battery_voltage(uint32_t adc);
-static uint32_t process_ESC_temperature(uint32_t adc);
-static uint32_t process_motor_temperature(uint32_t adc);
-static uint32_t process_vibration_level(uint32_t adc);
+static void process_all_power_supply_voltages();
+static void process_ESC_temperature();
+static void process_vibration_level();
 static void error_status_update();
+static void calc_flt_voltage(uint32_t adc, float VCC, float GND, float* flt_value);
 
 // Measurements
-static uint32_t g_battery_voltage = 0;
-static uint32_t g_ESC_temperature[4] = { 0 };
-static uint32_t g_motor_temperature[4] = { 0 };
-static uint32_t g_vibration_level = 0;
+static float g_main_power_supply_voltage = 0;
+static float g_wireless_power_supply_voltage = 0;
+static float g_camera_power_supply_voltage = 0;
+static float g_sensors_power_supply_voltage = 0;
+static float g_ESC_temperature[4] = { 0 };
+static float g_vibration_level = 0;
 
-// Current state
-static uint32_t g_state = STATE_START_CONVERSION;
+static uint32_t g_state = STATE_NO_INIT;
 static uint32_t g_status = ASS::NO_ERROR;
+
 
 
 //
 // EXTERNAL INTERFACE
 //
-void ASS::initialize() {
-	ADC_intialize();
-	g_state = STATE_START_CONVERSION;
-	g_status = ASS::NO_ERROR;
-}
-
 void ASS::process() {
-
-	static uint32_t current_element = 0;
-
-	uint16_t ADC_data = 0;
 
 	switch (g_state)
 	{
+	case STATE_NO_INIT:
+		ADC_intialize();
+		g_state = STATE_START_CONVERSION;
+		g_status = ASS::NO_ERROR;
+		break;
+
 	case STATE_START_CONVERSION:
 		ADC_start_conversion();
 		g_state = STATE_WAIT_CONVERSION_COMPLITE;
@@ -57,40 +51,21 @@ void ASS::process() {
 
 	case STATE_WAIT_CONVERSION_COMPLITE:
 		if (ADC_is_convesrion_complite() == true)
-			g_state = STATE_PROCESS_BATTERY_VOLTAGE;
+			g_state = STATE_PROCESS_ALL_POWER_SUPPLY_VOLTAGES;
 		break;
 
-	case STATE_PROCESS_BATTERY_VOLTAGE:
-		ADC_data = ADC_get_data(BATTERY_VOLTAGE_CHANNEL_INDEX);
-		g_battery_voltage = process_battery_voltage(ADC_data);
+	case STATE_PROCESS_ALL_POWER_SUPPLY_VOLTAGES:
+		process_all_power_supply_voltages();
 		g_state = STATE_PROCESS_ESC_TEMPERATURE;
 		break;
 
 	case STATE_PROCESS_ESC_TEMPERATURE:
-		ADC_data = ADC_get_data(ESC_TEMPERATURE_CHANNEL_INDEX + current_element);
-		g_ESC_temperature[current_element] = process_ESC_temperature(ADC_data);
-		++current_element;
-
-		if (current_element >= 4) {
-			current_element = 0;
-			g_state = STATE_PROCESS_MOTOR_TEMPERATURE;
-		}
+		process_ESC_temperature();
+		g_state = STATE_PROCESS_VIBRATION_LEVEL;
 		break;
 
-	case STATE_PROCESS_MOTOR_TEMPERATURE:
-		ADC_data = ADC_get_data(MOTOR_TEMPERATURE_CHANNEL_INDEX + current_element);
-		g_motor_temperature[current_element] = process_motor_temperature(ADC_data);
-		++current_element;
-
-		if (current_element >= 4) {
-			current_element = 0;
-			g_state = STATE_PROCESS_VIBRATION;
-		}
-		break;
-
-	case STATE_PROCESS_VIBRATION:
-		ADC_data = ADC_get_data(VIBRATION_CHANNEL_INDEX);
-		g_vibration_level = process_vibration_level(ADC_data);
+	case STATE_PROCESS_VIBRATION_LEVEL:
+		process_vibration_level();
 		g_state = STATE_ANALYSIS_DATA;
 		break;
 
@@ -103,7 +78,20 @@ void ASS::process() {
 
 void ASS::make_state_data(TXRX::state_data_t* state_data) {
 
-	state_data->battery_voltage = g_battery_voltage;
+	// [0.1V]
+	state_data->main_voltage = g_main_power_supply_voltage * 10.0;
+	state_data->wireless_voltage = g_wireless_power_supply_voltage * 10.0;
+	state_data->camera_voltage = g_camera_power_supply_voltage * 10.0;
+	state_data->sensors_voltage = g_sensors_power_supply_voltage * 10.0;
+
+	// [*C]
+	state_data->ESC_temperature[0] = g_ESC_temperature[0];
+	state_data->ESC_temperature[1] = g_ESC_temperature[1];
+	state_data->ESC_temperature[2] = g_ESC_temperature[2];
+	state_data->ESC_temperature[3] = g_ESC_temperature[3];
+
+	// [?]
+	state_data->vibration_level = g_vibration_level;
 }
 
 uint32_t ASS::get_status() {
@@ -114,27 +102,45 @@ uint32_t ASS::get_status() {
 //
 // INTERNAL INTERFACE
 //
-static uint32_t process_battery_voltage(uint32_t adc) {
+static void process_all_power_supply_voltages() {
 
-	// Parameter of complementary filter
-	const float alpha = 0.001;
+	//
+	// MAIN POWER SUPPLY
+	//
 
-	// Calculation battery voltage
-	// 3.3 - ADC voltage reference
-	// 4095 - 12bit ADC resolution max value
-	// 6.56 - Voltage divisor coefficient
-	// Output: (0.1V)
-	float voltage = adc * (3.3 / 4095.0) * 6.56;
-	voltage *= 10.0; // To 0.1V
+	// Calculate main power supply voltage
+	uint32_t adc = ADC_get_data(ADC_MAIN_POWER_SUPPLY_CHANNEL);
+	calc_flt_voltage(adc, 100, 240, &g_main_power_supply_voltage);
 
-	// Filtering
-	static float flt_value = voltage;
-	flt_value = voltage * alpha + flt_value * (1.0 - alpha);
 
-	return flt_value;
+
+	//
+	// ADDITIONAL POWER SUPPLY
+	//
+
+	// Calculate wireless power supply voltage
+	adc = ADC_get_data(ADC_WIRELESS_POWER_SUPPLY_CHANNEL);
+	calc_flt_voltage(adc, 1000, 1000, &g_wireless_power_supply_voltage);
+
+	// Calculate camera power supply voltage
+	adc = ADC_get_data(ADC_CAMERA_POWER_SUPPLY_CHANNEL);
+	calc_flt_voltage(adc, 1000, 1000, &g_camera_power_supply_voltage);
+
+	// Calculate sensors power supply voltage
+	adc = ADC_get_data(ADC_SENSORS_POWER_SUPPLY_CHANNEL);
+	calc_flt_voltage(adc, 1000, 1000, &g_sensors_power_supply_voltage);
 }
 
-static uint32_t process_ESC_temperature(uint32_t adc) {
+static void process_ESC_temperature() {
+
+}
+
+static void process_vibration_level() {
+
+}
+
+/*
+static void process_ESC_temperature(uint32_t adc) {
 
 	// Temperature calculation parameters
 	const float B = 4222;
@@ -164,41 +170,53 @@ static uint32_t process_ESC_temperature(uint32_t adc) {
 	flt_value = T * alpha + flt_value * (1.0 - alpha);
 
 	//return flt_value;
-	return 0;
-}
-
-static uint32_t process_motor_temperature(uint32_t adc) {
-	return 0;
-}
-
-static uint32_t process_vibration_level(uint32_t adc) {
-	return 0;
-}
+}*/
 
 static void error_status_update() {
 
-	/*Serial.print(g_battery_voltage);
-	Serial.print(" ");
-	for (int i = 0; i < 4; ++i) {
-		Serial.print(g_ESC_temperature[i]);
-		Serial.print(" ");
-	}
-	for (int i = 0; i < 4; ++i) {
-		Serial.print(g_motor_temperature[i]);
-		Serial.print(" ");
-	}
-	Serial.print(g_vibration_level);
-	Serial.println("");*/
-
-	// Check battery voltage
-	if (g_battery_voltage < g_cfg.battery_low_voltage)
-		SET_STATUS_BIT(g_status, ASS::BATTERY_LOW_VOLTAGE);
+	// Check main power supply voltage
+	if (g_main_power_supply_voltage < 9.5)
+		SET_STATUS_BIT(g_status, ASS::MAIN_POWER_SUPPLY_LOW_VOLTAGE);
 	else
-		CLEAR_STATUS_BIT(g_status, ASS::BATTERY_LOW_VOLTAGE);
+		CLEAR_STATUS_BIT(g_status, ASS::MAIN_POWER_SUPPLY_LOW_VOLTAGE);
+
+	// Check wireless power supply voltage
+	if (g_wireless_power_supply_voltage < 4.0)
+		SET_STATUS_BIT(g_status, ASS::WIRELESS_POWER_SUPPLY_LOW_VOLTAGE);
+	else
+		CLEAR_STATUS_BIT(g_status, ASS::WIRELESS_POWER_SUPPLY_LOW_VOLTAGE);
+
+	// Check camera power supply voltage
+	if (g_camera_power_supply_voltage < 4.0)
+		SET_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
+	else
+		CLEAR_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
+
+	// Check sensors power supply voltage
+	if (g_sensors_power_supply_voltage < 2.7)
+		SET_STATUS_BIT(g_status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE);
+	else
+		CLEAR_STATUS_BIT(g_status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE);
+
+
 
 	// Check ESC temperature
 
 	// Check motor temperature
 
 	// Check vibration level
+}
+
+static void calc_flt_voltage(uint32_t adc, float VCC, float GND, float* flt_value) {
+
+	const float alpha = 0.001; // Filtering parameter
+
+	float divider_factor = (VCC + GND) / GND;
+	float voltage = (adc * ADC_FACTOR) * divider_factor;
+
+	// Filtering [flt = alpha * uflt + (1 - alpha) * flt]
+	if (*flt_value == 0)
+		*flt_value = voltage;
+	else
+		*flt_value = alpha * voltage + (1.0 - alpha) * (*flt_value);
 }

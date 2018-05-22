@@ -18,8 +18,6 @@ namespace CONFIGSS {
 		uint8_t angle_protect;
 		uint16_t ESC_PWM_frequency;
 
-		uint16_t battery_low_voltage;
-
 		uint16_t PID_output_limit;
 		uint16_t PID_enable_threshold;
 		float PID_X[3];

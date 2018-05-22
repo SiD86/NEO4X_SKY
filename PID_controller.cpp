@@ -20,12 +20,12 @@ struct pid_param_t {
 	uint32_t prev_process_time;
 	float output;
 };
-
 static pid_param_t g_PID_ch[MAX_CHANNEL_COUNT];
 
-uint32_t g_PID_OOR_diff = 0;	// __DEBUG
-uint32_t g_PID_I_OOR_diff = 0;	// __DEBUG
 
+//
+// EXTERNAL INTERFACE
+//
 void PID_initialize(uint32_t ch, float output_limit, float I_limit) {
 	
 	g_PID_ch[ch].Kp = 0;
@@ -55,11 +55,9 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	// Calculate I
 	g_PID_ch[ch].integral += (g_PID_ch[ch].Ki * error) * dt;
 	if (g_PID_ch[ch].integral > g_PID_ch[ch].integral_max) {
-		g_PID_I_OOR_diff = g_PID_ch[ch].integral_max - g_PID_ch[ch].integral; // __DEBUG
 		g_PID_ch[ch].integral = g_PID_ch[ch].integral_max;
 	}
 	else if (g_PID_ch[ch].integral < g_PID_ch[ch].integral_min) {
-		g_PID_I_OOR_diff = g_PID_ch[ch].integral - g_PID_ch[ch].integral_min; // __DEBUG
 		g_PID_ch[ch].integral = g_PID_ch[ch].integral_min;
 	}
 
@@ -69,11 +67,9 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	// Calculate PID output
 	g_PID_ch[ch].output = P + g_PID_ch[ch].integral - D;
 	if (g_PID_ch[ch].output > g_PID_ch[ch].output_max) {
-		g_PID_OOR_diff = g_PID_ch[ch].output_max - g_PID_ch[ch].output; // __DEBUG
 		g_PID_ch[ch].output = g_PID_ch[ch].output_max;
 	}
 	else if (g_PID_ch[ch].output < g_PID_ch[ch].output_min) {
-		g_PID_OOR_diff = g_PID_ch[ch].output - g_PID_ch[ch].output_min; // __DEBUG
 		g_PID_ch[ch].output = g_PID_ch[ch].output_min;
 	}
 
@@ -100,4 +96,3 @@ void PID_reset(uint32_t ch) {
 	g_PID_ch[ch].prev_process_time = micros();
 	g_PID_ch[ch].output = 0;
 }
-
