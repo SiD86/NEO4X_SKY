@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "TXRX_PROTOCOL.h"
 #include "PDG_subsystem.h"
-#define ESC_CALIBRATION_PIN			(PIO_PB25)
 #define MIN_POWER_PULSE				(1000)
 #define MAX_POWER_PULSE				(2000)
 
@@ -31,15 +30,15 @@
 void PDGSS::initialize(uint32_t ESC_frequency) {
 
 	// Configure calibration enable pin
-	REG_PIOB_PER = ESC_CALIBRATION_PIN;
-	REG_PIOB_ODR = ESC_CALIBRATION_PIN;
-	REG_PIOB_PUER = ESC_CALIBRATION_PIN;
+	REG_PIOC_PER = PIO_PC23;
+	REG_PIOC_ODR = PIO_PC23;
+	REG_PIOC_PUER = PIO_PC23;
 	delay(1);
 
 	// Get started duty cycle
 	bool is_calibration_mode = false;
 	uint32_t pulse_width = MIN_POWER_PULSE;
-	if ((REG_PIOB_PDSR & ESC_CALIBRATION_PIN) == 0) {
+	if ((REG_PIOC_PDSR & PIO_PC23) == 0) {
 		is_calibration_mode = true;
 		pulse_width = MAX_POWER_PULSE;
 	}

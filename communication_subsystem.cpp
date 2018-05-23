@@ -160,13 +160,15 @@ static bool process_rx_data(void* data, uint32_t packet_type) {
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_RX_get_buffer_address();
 
 	// Check packet type
-	if (packet->type != packet_type)
+	if (packet->type != packet_type) {
 		return false;
+	}
 
 	// Check CRC
 	uint32_t CRC = calculate_CRC(packet->data);
-	if (packet->CRC != CRC)
+	if (packet->CRC != CRC) {
 		return false;
+	}
 
 	// Copy data
 	memcpy(data, packet->data, g_data_size);

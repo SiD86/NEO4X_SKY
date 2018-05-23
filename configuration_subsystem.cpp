@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "LIBRARY\EEPROM.h"
+#include "LED.h"
 #include "configuration_subsystem.h"
 #include "communication_subsystem.h"
 
@@ -34,23 +35,25 @@ CONFIGSS::configuration_t g_cfg;
 //
 bool CONFIGSS::intialize() {
 
-	// Setup configuration mode pin (pin 6)
-	REG_PIOC_PER = PIO_PER_P24;
-	REG_PIOC_ODR = PIO_ODR_P24;
-	REG_PIOC_PUER = PIO_PUER_P24;
+	// Setup configuration mode pin (pin 2)
+	REG_PIOB_PER  = PIO_PB25;
+	REG_PIOB_ODR  = PIO_PB25;
+	REG_PIOB_PUER = PIO_PB25;
 
-	// Setup reset configuration pin (pin X)
-	//REG_PIOC_PER = PIO_PER_P24;
-	//REG_PIOC_ODR = PIO_ODR_P24;
-	//REG_PIOC_PUER = PIO_PUER_P24;
+	// Setup reset configuration pin (pin 3)
+	REG_PIOC_PER = PIO_PC28;
+	REG_PIOC_ODR = PIO_PC28;
+	REG_PIOC_PUER = PIO_PC28;
 
-	/*if ((REG_PIOB_PDSR & PIO_PDSR_P24) == 0) {
+	if ((REG_PIOC_PDSR & PIO_PC28) == 0) {
 		if (reset_configuration() == false)
 			return false;
-	}*/
+	}
 
-	if ((REG_PIOC_PDSR & PIO_PDSR_P24) == 0)
+	if ((REG_PIOB_PDSR & PIO_PB25) == 0) {
 		enter_to_configuration_mode();
+		LED_configuration_mode_enable();
+	}
 
 	return load_and_check_configuration();
 }

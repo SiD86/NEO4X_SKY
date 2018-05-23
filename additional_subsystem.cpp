@@ -110,7 +110,7 @@ static void process_all_power_supply_voltages() {
 
 	// Calculate main power supply voltage
 	uint32_t adc = ADC_get_data(ADC_MAIN_POWER_SUPPLY_CHANNEL);
-	calc_flt_voltage(adc, 100, 240, &g_main_power_supply_voltage);
+	calc_flt_voltage(adc, 1000, 240, &g_main_power_supply_voltage);
 
 
 

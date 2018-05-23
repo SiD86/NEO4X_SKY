@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "LIBRARY\I2C.h"
 #include "LIBRARY\ADC.h"
+#include "LED.h"
 #include "communication_subsystem.h"
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
@@ -26,10 +27,20 @@ int main() {
 
 	Serial.begin(460800);	// DEBUG
 
+	// Jumpers pins
+	pinMode(7, INPUT_PULLUP);
+	pinMode(6, INPUT_PULLUP);
+	pinMode(5, INPUT_PULLUP);
+	pinMode(4, INPUT_PULLUP);
+	//pinMode(3, INPUT_PULLUP);
+	//pinMode(2, INPUT_PULLUP);
+
 	intialize_FW();
 
 	while (true) {
-		
+
+		Serial.println("LOOP");
+
 		//
 		// MAIN CORE PROCESS
 		//
@@ -58,12 +69,19 @@ int main() {
 		FLY_CORE::process(fly_core_command, &g_cp);
 
 
+
 		//
 		// CONSTRUCT STATE PACKET
 		//
 
 		// Update state data
 		make_state_packet();
+
+
+		//
+		// LED INDICATOR PROCESS
+		//
+		LED_process(g_sp.main_core_status, g_sp.fly_core_status);
 	}
 	return 0;
 }
@@ -127,6 +145,8 @@ static void intialize_FW() {
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
 
+	LED_initialize();
+
 	// Initialize configuration subsystem
 	if (CONFIGSS::intialize() == false)
 		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
@@ -182,9 +202,6 @@ static void error_status_update() {
 	else
 		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_FATAL_ERROR);
 }
-
-extern uint32_t g_PID_OOR_diff;
-extern uint32_t g_PID_I_OOR_diff;
 
 static void make_state_packet() {
 

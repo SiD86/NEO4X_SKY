@@ -84,6 +84,9 @@
     <ClInclude Include="PID_controller.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="LED.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="library\I2C.cpp">
@@ -127,6 +130,9 @@
     </ClCompile>
     <ClCompile Include="main_core.cpp">
       <Filter>Файлы исходного кода\MAIN_CORE</Filter>
+    </ClCompile>
+    <ClCompile Include="LED.cpp">
+      <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
