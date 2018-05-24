@@ -3,40 +3,31 @@
 
 // CONFIGSS - Configuration SubSystem
 
-namespace CONFIGSS {
+typedef struct {
 
-	typedef struct {
+	uint16_t connection_lost_timeout;
+	uint16_t desync_silence_window_time;
+	uint16_t send_state_interval;
 
-		uint16_t memory_map_version;
-		uint16_t FW_version;
-		uint16_t device_ID;
+	uint8_t angle_protect;
+	uint16_t ESC_PWM_frequency;
 
-		uint16_t connection_lost_timeout;
-		uint16_t desync_silence_window_time;
-		uint16_t send_state_interval;
+	uint16_t PID_output_limit;
+	uint16_t PID_enable_threshold;
+	float PID_X[3];
+	float I_X_limit;
+	float PID_Y[3];
+	float I_Y_limit;
+	float PID_Z[3];
+	float I_Z_limit;
 
-		uint8_t angle_protect;
-		uint16_t ESC_PWM_frequency;
-
-		uint16_t PID_output_limit;
-		uint16_t PID_enable_threshold;
-		float PID_X[3];
-		float I_X_limit;
-		float PID_Y[3];
-		float I_Y_limit;
-		float PID_Z[3];
-		float I_Z_limit;
-		float PID_H[3];
-		float I_H_limit;
-
-	} configuration_t;
-}
+} configuration_t;
 
 // External interface
-namespace CONFIGSS {
-	bool intialize();
-}
+bool CONFIG_reset_configuration();
+bool CONFIG_load_and_check_configuration();
+void CONFIG_enter_to_configuration_mode();
 
-extern CONFIGSS::configuration_t g_cfg;
+extern configuration_t g_cfg;
 
 #endif /* __CONFIGURATION_SUBSYSTEM_H__ */

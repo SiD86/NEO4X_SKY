@@ -2,6 +2,7 @@
 #include "LIBRARY\I2C.h"
 #include "LIBRARY\ADC.h"
 #include "LED.h"
+#include "GPI.h"
 #include "communication_subsystem.h"
 #include "additional_subsystem.h"
 #include "configuration_subsystem.h"
@@ -24,22 +25,10 @@ static uint32_t g_status = TXRX::MAIN_STA_NO_ERROR;
 int main() {
 
 	initialize_MCU();
-
 	Serial.begin(460800);	// DEBUG
-
-	// Jumpers pins
-	pinMode(7, INPUT_PULLUP);
-	pinMode(6, INPUT_PULLUP);
-	pinMode(5, INPUT_PULLUP);
-	pinMode(4, INPUT_PULLUP);
-	//pinMode(3, INPUT_PULLUP);
-	//pinMode(2, INPUT_PULLUP);
-
 	intialize_FW();
 
 	while (true) {
-
-		Serial.println("LOOP");
 
 		//
 		// MAIN CORE PROCESS
@@ -145,11 +134,21 @@ static void intialize_FW() {
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
 
+	GPI_initialize();
 	LED_initialize();
 
-	// Initialize configuration subsystem
-	if (CONFIGSS::intialize() == false)
+	// Initialize configuration
+	if (GPI_is_low(GPI_CONFIGURATION_MODE_INPUT) == true) {
+		LED_configuration_mode_enable();
+		CONFIG_enter_to_configuration_mode();
+	}
+	if (GPI_is_low(GPI_RESET_CONFIGURATION_INPUT) == true) {
+		if (CONFIG_reset_configuration() == false)
+			SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
+	}
+	if (CONFIG_load_and_check_configuration() == false) {
 		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
+	}
 
 	// Initialize communication subsystem
 	CSS::initialize();

@@ -23,46 +23,17 @@
 #define PID_D_OFFSET						(0x0008)
 #define PID_I_LIMIT_OFFSET					(0x000C)
 
-static void enter_to_configuration_mode();
-static bool load_and_check_configuration();
-static bool reset_configuration();
-
-CONFIGSS::configuration_t g_cfg;
+configuration_t g_cfg;
 
 
 //
 // EXTERNAL INTERFACE
 //
-bool CONFIGSS::intialize() {
-
-	// Setup configuration mode pin (pin 2)
-	REG_PIOB_PER  = PIO_PB25;
-	REG_PIOB_ODR  = PIO_PB25;
-	REG_PIOB_PUER = PIO_PB25;
-
-	// Setup reset configuration pin (pin 3)
-	REG_PIOC_PER = PIO_PC28;
-	REG_PIOC_ODR = PIO_PC28;
-	REG_PIOC_PUER = PIO_PC28;
-
-	if ((REG_PIOC_PDSR & PIO_PC28) == 0) {
-		if (reset_configuration() == false)
-			return false;
-	}
-
-	if ((REG_PIOB_PDSR & PIO_PB25) == 0) {
-		enter_to_configuration_mode();
-		LED_configuration_mode_enable();
-	}
-
-	return load_and_check_configuration();
-}
-
-static bool reset_configuration() {
+bool CONFIG_reset_configuration() {
 	return true;
 }
 
-static bool load_and_check_configuration() {
+bool CONFIG_load_and_check_configuration() {
 
 	g_cfg.send_state_interval = 30;			// 30 ms
 	g_cfg.desync_silence_window_time = 200; // 200 ms (!!! < connection_lost_timeout !!!)
@@ -91,7 +62,7 @@ static bool load_and_check_configuration() {
 	return true;
 }
 
-static void enter_to_configuration_mode() {
+void CONFIG_enter_to_configuration_mode() {
 
 	uint8_t memory_dump[256] = { 0 };
 	bool is_ready = EEPROM_read_bytes(0x0000, memory_dump, sizeof(memory_dump));

@@ -17,6 +17,7 @@ static void process_ESC_temperature();
 static void process_vibration_level();
 static void error_status_update();
 static void calc_flt_voltage(uint32_t adc, float VCC, float GND, float* flt_value);
+static void calculate_temperature(uint32_t adc, float* flt_value);
 
 // Measurements
 static float g_main_power_supply_voltage = 0;
@@ -133,46 +134,34 @@ static void process_all_power_supply_voltages() {
 
 static void process_ESC_temperature() {
 
+	static uint32_t current_ESC_index = 0;
+	static uint32_t ADC_channels[] = { ADC_TEMPERATURE_ESC_1,
+									   ADC_TEMPERATURE_ESC_2,
+									   ADC_TEMPERATURE_ESC_3,
+									   ADC_TEMPERATURE_ESC_4 };
+
+	uint32_t adc = ADC_get_data(ADC_channels[current_ESC_index]);
+	calculate_temperature(adc, &g_ESC_temperature[current_ESC_index]);
+
+	if (++current_ESC_index >= 4)
+		current_ESC_index = 0;
 }
 
 static void process_vibration_level() {
 
 }
 
-/*
-static void process_ESC_temperature(uint32_t adc) {
-
-	// Temperature calculation parameters
-	const float B = 4222;
-	const float T20 = 293.15;
-	const float R20 = 2200;
-	const float R2 = 1000;
-
-	// Parameter of complementary filter
-	const float alpha = 0.1;
-
-	// Calculating voltage from resistance divider
-	// 3.3 - ADC voltage reference
-	// 4095 - 12bit ADC resolution max value
-	float voltage = (3.3 / 4095.0) * adc;
-	if (voltage == 0)
-		return 0;
-
-	// Calculating resistance of thermal resistor 
-	float R1 = (3.3 * R2) / voltage - R2;
-
-	// Calculating temperature
-	float LN_div_B = log(R1 / R20) / B;
-	float T = 1.0 / (LN_div_B + (1.0 / T20)) - 273.15;
-
-	// Filtering
-	static float flt_value = T;
-	flt_value = T * alpha + flt_value * (1.0 - alpha);
-
-	//return flt_value;
-}*/
-
 static void error_status_update() {
+
+	Serial.print(g_ESC_temperature[0]);
+	Serial.print(" ");
+	Serial.print(g_ESC_temperature[1]);
+	Serial.print(" ");
+	Serial.print(g_ESC_temperature[2]);
+	Serial.print(" ");
+	Serial.print(g_ESC_temperature[3]);
+	Serial.println(" ");
+
 
 	// Check main power supply voltage
 	if (g_main_power_supply_voltage < 9.5)
@@ -219,4 +208,36 @@ static void calc_flt_voltage(uint32_t adc, float VCC, float GND, float* flt_valu
 		*flt_value = voltage;
 	else
 		*flt_value = alpha * voltage + (1.0 - alpha) * (*flt_value);
+}
+
+static void calculate_temperature(uint32_t adc, float* flt_value) {
+
+	// Temperature calculation parameters
+	const float B = 4222;
+	const float T20 = 293.15;
+	const float R20 = 2200;
+	const float R2 = 1000;
+
+	// Parameter of complementary filter
+	const float alpha = 0.1;
+
+	// Calculating voltage from resistance divider
+	// 3.3 - ADC voltage reference
+	// 4095 - 12bit ADC resolution max value
+	float voltage = ADC_FACTOR * adc;
+	if (voltage == 0)
+		*flt_value = 0.0;
+
+	// Calculating resistance of thermal resistor 
+	float R1 = (3.3 * R2) / voltage - R2;
+
+	// Calculating temperature
+	float LN_div_B = log(R1 / R20) / B;
+	float T = 1.0 / (LN_div_B + (1.0 / T20)) - 273.15;
+
+	// Filtering [flt = alpha * uflt + (1 - alpha) * flt]
+	if (*flt_value == 0)
+		*flt_value = voltage;
+	else
+		*flt_value = alpha * T + (1.0 - alpha) * (*flt_value);
 }
