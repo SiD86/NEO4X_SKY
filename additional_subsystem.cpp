@@ -123,13 +123,13 @@ static void process_all_power_supply_voltages() {
 	adc = ADC_get_data(ADC_WIRELESS_POWER_SUPPLY_CHANNEL);
 	calc_flt_voltage(adc, 1000, 1000, &g_wireless_power_supply_voltage);
 
-	// Calculate camera power supply voltage
-	adc = ADC_get_data(ADC_CAMERA_POWER_SUPPLY_CHANNEL);
-	calc_flt_voltage(adc, 1000, 1000, &g_camera_power_supply_voltage);
-
 	// Calculate sensors power supply voltage
 	adc = ADC_get_data(ADC_SENSORS_POWER_SUPPLY_CHANNEL);
 	calc_flt_voltage(adc, 1000, 1000, &g_sensors_power_supply_voltage);
+
+	// Calculate camera power supply voltage
+	adc = ADC_get_data(ADC_CAMERA_POWER_SUPPLY_CHANNEL);
+	calc_flt_voltage(adc, 1000, 1000, &g_camera_power_supply_voltage);
 }
 
 static void process_ESC_temperature() {
@@ -175,17 +175,17 @@ static void error_status_update() {
 	else
 		CLEAR_STATUS_BIT(g_status, ASS::WIRELESS_POWER_SUPPLY_LOW_VOLTAGE);
 
-	// Check camera power supply voltage
-	if (g_camera_power_supply_voltage < 4.0)
-		SET_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
-	else
-		CLEAR_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
-
 	// Check sensors power supply voltage
 	if (g_sensors_power_supply_voltage < 2.7)
 		SET_STATUS_BIT(g_status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE);
 	else
 		CLEAR_STATUS_BIT(g_status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE);
+
+	// Check camera power supply voltage
+	if (g_camera_power_supply_voltage < 4.0)
+		SET_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
+	else
+		CLEAR_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
 
 
 

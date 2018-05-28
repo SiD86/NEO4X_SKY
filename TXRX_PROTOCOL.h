@@ -51,8 +51,8 @@ namespace TXRX {
 	const uint8_t MAIN_STA_COMMUNICATION_DESYNC		= 0x08;
 	const uint8_t MAIN_STA_MAIN_POWER_SUPPLY		= 0x10;
 	const uint8_t MAIN_STA_WIRELESS_POWER_SUPPLY	= 0x20;
-	const uint8_t MAIN_STA_CAMERA_POWER_SUPPLY		= 0x40;
-	const uint8_t MAIN_STA_SENSORS_POWER_SUPPLY		= 0x80;
+	const uint8_t MAIN_STA_SENSORS_POWER_SUPPLY		= 0x40;
+	const uint8_t MAIN_STA_CAMERA_POWER_SUPPLY		= 0x80;
 
 	// Fly core mode
 	const uint8_t FLY_MODE_WAIT						= 0x01;
