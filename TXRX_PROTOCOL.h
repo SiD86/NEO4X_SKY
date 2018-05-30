@@ -3,10 +3,11 @@
 
 namespace TXRX {
 
-	// Packet size - 37
+	// Packet size - 38
 	#pragma pack (push, 1)
 	struct fly_controller_packet_t {
 		uint8_t type;
+		uint16_t number;
 		uint8_t data[32];
 		uint32_t CRC;
 	};

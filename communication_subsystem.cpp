@@ -85,6 +85,7 @@ uint32_t CSS::get_status() {
 //
 static void asynchronous_process_tx() {
 
+	static uint16_t packet_number = 0;
 	static uint32_t prev_tx_time = 0;
 
 	// Check TX interval
@@ -98,14 +99,15 @@ static void asynchronous_process_tx() {
 	// Build new packet
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_TX_get_buffer_address();
 	packet->type = TXRX::TYPE_STATE_PACKET;
+	packet->number = packet_number;
 	memcpy(packet->data, &g_sp, g_data_size);
 	packet->CRC = calculate_CRC(packet->data);
 
 	// Start transmit
 	USART3_TX_start(g_packet_size);
 
-	// Update time 
-	prev_tx_time = millis();
+	prev_tx_time = millis();	// Update time 
+	++packet_number;			// Update packet counter
 }
 
 static void asynchronous_process_rx() {
