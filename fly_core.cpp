@@ -53,13 +53,10 @@ void FLY_CORE::initialize() {
 	request_state(STATE_ENABLE);
 }
 
-void FLY_CORE::process(uint32_t internal_cmd, TXRX::control_data_t* control_data) {
+void FLY_CORE::process(TXRX::control_data_t* control_data) {
 
-	// Process commands
 	user_command_handling(control_data->command);
-	if (internal_cmd == FLY_CORE::INTERNAL_CMD_DISABLE)
-		g_fly_mode = TXRX::FLY_MODE_WAIT;
-	
+
 	// Process OSS
 	OSS::process();
 

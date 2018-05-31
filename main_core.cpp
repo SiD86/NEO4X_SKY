@@ -48,14 +48,13 @@ int main() {
 		// FLY CORE PROCESS
 		//
 
-		// Make command for fly core
-		uint32_t fly_core_command = FLY_CORE::INTERNAL_CMD_PROCESS;
+		// Check system status
 		if (g_status & TXRX::MAIN_STA_FATAL_ERROR) {
-			fly_core_command = FLY_CORE::INTERNAL_CMD_DISABLE;
+			g_cp.command = TXRX::FLY_MODE_WAIT;
 		}
 
 		// Process fly core
-		FLY_CORE::process(fly_core_command, &g_cp);
+		FLY_CORE::process(&g_cp);
 
 
 
