@@ -153,14 +153,14 @@ static void process_vibration_level() {
 
 static void error_status_update() {
 
-	Serial.print(g_ESC_temperature[0]);
+	/*Serial.print(g_ESC_temperature[0]);
 	Serial.print(" ");
 	Serial.print(g_ESC_temperature[1]);
 	Serial.print(" ");
 	Serial.print(g_ESC_temperature[2]);
 	Serial.print(" ");
 	Serial.print(g_ESC_temperature[3]);
-	Serial.println(" ");
+	Serial.println(" ");*/
 
 
 	// Check main power supply voltage
