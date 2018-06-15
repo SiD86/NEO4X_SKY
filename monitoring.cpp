@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "LIBRARY\ADC.h"
-#include "additional_subsystem.h"
-#include "configuration_subsystem.h"
+#include "monitoring.h"
+#include "configuration.h"
 #include "util.h"
 
 #define STATE_NO_INIT								(0x00)
@@ -9,12 +9,12 @@
 #define STATE_WAIT_CONVERSION_COMPLITE				(0x02)
 #define STATE_PROCESS_ALL_POWER_SUPPLY_VOLTAGES		(0x03)
 #define STATE_PROCESS_ESC_TEMPERATURE				(0x04)
-#define STATE_PROCESS_VIBRATION_LEVEL				(0x05)
+#define STATE_PROCESS_HULL_VIBRATION				(0x05)
 #define STATE_ANALYSIS_DATA							(0x06)
 
 static void process_all_power_supply_voltages();
 static void process_ESC_temperature();
-static void process_vibration_level();
+static void process_hull_vibration();
 static void error_status_update();
 static void calc_flt_voltage(uint32_t adc, float VCC, float GND, float* flt_value);
 static void calculate_temperature(uint32_t adc, float* flt_value);
@@ -25,24 +25,24 @@ static float g_wireless_power_supply_voltage = 0;
 static float g_camera_power_supply_voltage = 0;
 static float g_sensors_power_supply_voltage = 0;
 static float g_ESC_temperature[4] = { 0 };
-static float g_vibration_level = 0;
+static float g_hull_vibration = 0;
 
 static uint32_t g_state = STATE_NO_INIT;
-static uint32_t g_status = ASS::NO_ERROR;
+static uint32_t g_status = MONITORING_NO_ERROR;
 
 
 
 //
 // EXTERNAL INTERFACE
 //
-void ASS::process() {
+void monitoring_process() {
 
 	switch (g_state)
 	{
 	case STATE_NO_INIT:
 		ADC_intialize();
 		g_state = STATE_START_CONVERSION;
-		g_status = ASS::NO_ERROR;
+		g_status = MONITORING_NO_ERROR;
 		break;
 
 	case STATE_START_CONVERSION:
@@ -62,11 +62,11 @@ void ASS::process() {
 
 	case STATE_PROCESS_ESC_TEMPERATURE:
 		process_ESC_temperature();
-		g_state = STATE_PROCESS_VIBRATION_LEVEL;
+		g_state = STATE_PROCESS_HULL_VIBRATION;
 		break;
 
-	case STATE_PROCESS_VIBRATION_LEVEL:
-		process_vibration_level();
+	case STATE_PROCESS_HULL_VIBRATION:
+		process_hull_vibration();
 		g_state = STATE_ANALYSIS_DATA;
 		break;
 
@@ -77,7 +77,7 @@ void ASS::process() {
 	}
 }
 
-void ASS::make_state_data(TXRX::state_data_t* state_data) {
+void monitoring_make_state_data(TXRX::state_data_t* state_data) {
 
 	// [0.1V]
 	state_data->main_voltage = g_main_power_supply_voltage * 10.0;
@@ -92,10 +92,10 @@ void ASS::make_state_data(TXRX::state_data_t* state_data) {
 	state_data->ESC_temperature[3] = g_ESC_temperature[3];
 
 	// [?]
-	state_data->vibration_level = g_vibration_level;
+	state_data->hull_vibration = g_hull_vibration;
 }
 
-uint32_t ASS::get_status() {
+uint32_t monitoring_get_status() {
 	return g_status;
 }
 
@@ -147,7 +147,7 @@ static void process_ESC_temperature() {
 		current_ESC_index = 0;
 }
 
-static void process_vibration_level() {
+static void process_hull_vibration() {
 
 	const float alpha = 0.0005; // Filtering parameter
 	const float convert_factor = 255.0 / 4095.0;
@@ -158,10 +158,10 @@ static void process_vibration_level() {
 	adc = adc * convert_factor; // Convert [0; 4095] -> [0; 255]
 
 	// Filtering [flt = alpha * uflt + (1 - alpha) * flt]
-	if (g_vibration_level == 0)
-		g_vibration_level = adc;
+	if (g_hull_vibration == 0)
+		g_hull_vibration = adc;
 	else
-		g_vibration_level = alpha * adc + (1.0 - alpha) * g_vibration_level;
+		g_hull_vibration = alpha * adc + (1.0 - alpha) * g_hull_vibration;
 }
 
 static void error_status_update() {
@@ -175,31 +175,24 @@ static void error_status_update() {
 	Serial.print(g_ESC_temperature[3]);
 	Serial.println(" ");*/
 
+	// Reset all errors
+	g_status = MONITORING_NO_ERROR;
 
 	// Check main power supply voltage
 	if (g_main_power_supply_voltage < 9.5)
-		SET_STATUS_BIT(g_status, ASS::MAIN_POWER_SUPPLY_LOW_VOLTAGE);
-	else
-		CLEAR_STATUS_BIT(g_status, ASS::MAIN_POWER_SUPPLY_LOW_VOLTAGE);
+		SET_BIT(g_status, MONITORING_MAIN_LOW_VOLTAGE);
 
 	// Check wireless power supply voltage
 	if (g_wireless_power_supply_voltage < 4.0)
-		SET_STATUS_BIT(g_status, ASS::WIRELESS_POWER_SUPPLY_LOW_VOLTAGE);
-	else
-		CLEAR_STATUS_BIT(g_status, ASS::WIRELESS_POWER_SUPPLY_LOW_VOLTAGE);
+		SET_BIT(g_status, MONITORING_WIRELESS_LOW_VOLTAGE);
 
 	// Check sensors power supply voltage
 	if (g_sensors_power_supply_voltage < 2.7)
-		SET_STATUS_BIT(g_status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE);
-	else
-		CLEAR_STATUS_BIT(g_status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE);
+		SET_BIT(g_status, MONITORING_SENSORS_LOW_VOLTAGE);
 
 	// Check camera power supply voltage
 	if (g_camera_power_supply_voltage < 4.0)
-		SET_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
-	else
-		CLEAR_STATUS_BIT(g_status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE);
-
+		SET_BIT(g_status, MONITORING_CAMERA_LOW_VOLTAGE);
 
 
 	// Check ESC temperature

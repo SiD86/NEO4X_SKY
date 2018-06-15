@@ -3,15 +3,15 @@
 #include "LIBRARY\ADC.h"
 #include "LED.h"
 #include "GPI.h"
-#include "communication_subsystem.h"
-#include "additional_subsystem.h"
-#include "configuration_subsystem.h"
+#include "communication.h"
+#include "monitoring.h"
+#include "configuration.h"
 #include "fly_core.h"
 #include "util.h"
-#define FATAL_ERRORS_MASK	(TXRX::MAIN_STA_CONFIG_ERROR |			\
-							 TXRX::MAIN_STA_COMMUNICATION_LOST |	\
-							 TXRX::MAIN_STA_WIRELESS_POWER_SUPPLY | \
-							 TXRX::MAIN_STA_SENSORS_POWER_SUPPLY)
+#define FATAL_ERRORS_MASK	(TXRX::MAIN_STA_CONFIG_ERROR |				\
+							 TXRX::MAIN_STA_COMMUNICATION_BREAK |		\
+							 TXRX::MAIN_STA_WIRELESS_LOW_VOLTAGE |		\
+							 TXRX::MAIN_STA_SENSORS_LOW_VOLTAGE)
 
 extern "C" {
 	static void initialize_MCU(void);
@@ -35,41 +35,36 @@ int main() {
 		//
 
 		// Recieve and send data
-		CSS::asynchronous_process();
+		communication_process();
 
-		// Additional subsystem process
-		ASS::process();
+		// Hardware monitoring process
+		monitoring_process();
 
 		// Update main core error status
 		error_status_update();
+
+		// Check main core status
+		if (g_status & TXRX::MAIN_STA_FATAL_ERROR) {
+			g_comm_cp.command = TXRX::FLY_MODE_WAIT;
+		}
 
 
 		//
 		// FLY CORE PROCESS
 		//
-
-		// Check system status
-		if (g_status & TXRX::MAIN_STA_FATAL_ERROR) {
-			g_cp.command = TXRX::FLY_MODE_WAIT;
-		}
-
-		// Process fly core
-		FLY_CORE::process(&g_cp);
-
+		fly_core_process(&g_comm_cp);
 
 
 		//
 		// CONSTRUCT STATE PACKET
 		//
-
-		// Update state data
 		make_state_packet();
 
 
 		//
 		// LED INDICATOR PROCESS
 		//
-		LED_process(g_sp.main_core_status, g_sp.fly_core_status);
+		led_process(g_comm_sp.main_core_status, g_comm_sp.fly_core_status);
 	}
 	return 0;
 }
@@ -130,84 +125,70 @@ extern "C" {
 
 static void intialize_FW() {
 
+	gpi_initialize();
+	led_initialize();
+
 	// Initialize I2C wire
 	I2C_initialize(I2C_SPEED_400KHZ);
 
-	GPI_initialize();
-	LED_initialize();
-
 	// Initialize configuration
-	if (GPI_is_low(GPI_CONFIGURATION_MODE_INPUT) == true) {
-		LED_configuration_mode_enable();
-		CONFIG_enter_to_configuration_mode();
+	if (gpi_is_low(GPI_CONFIGURATION_MODE_INPUT) == true) {
+		led_configuration_mode_enable();
+		configuration_enter_to_change_mode();
 	}
-	if (GPI_is_low(GPI_RESET_CONFIGURATION_INPUT) == true) {
-		if (CONFIG_reset_configuration() == false)
-			SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
+	if (gpi_is_low(GPI_RESET_CONFIGURATION_INPUT) == true) {
+
+		if (configuration_reset() == false) {
+			SET_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
+		}
 	}
-	if (CONFIG_load_and_check_configuration() == false) {
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
+	if (configuration_load() == false) {
+		SET_BIT(g_status, TXRX::MAIN_STA_CONFIG_ERROR);
 	}
 
-	// Initialize communication subsystem
-	CSS::initialize();
-
-	// Initialize fly core
-	FLY_CORE::initialize();
+	communication_initialize();
+	fly_core_initialize();
 }
 
 static void error_status_update() {
 
-	// Check communication subsystem status
-	uint32_t status = CSS::get_status();
-	if (IS_BIT_SET(status, CSS::CONNECTION_LOST) == true)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_LOST);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_LOST);
+	// Clear all errors
+	g_status = TXRX::MAIN_STA_NO_ERROR;
 
-	if (status & CSS::DESYNC)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_DESYNC);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_DESYNC);
+	// Check communication status
+	uint32_t status = communication_get_status();
+	if (IS_BIT_SET(status, COMMUNICATION_BREAK) == true)
+		SET_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_BREAK);
 
+	if (IS_BIT_SET(status, COMMUNICATION_DESYNC))
+		SET_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_DESYNC);
 
-	// Check additional subsystem status
-	status = ASS::get_status();
-	if (IS_BIT_SET(status, ASS::MAIN_POWER_SUPPLY_LOW_VOLTAGE) == true)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_MAIN_POWER_SUPPLY);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_MAIN_POWER_SUPPLY);
+	// Check monitoring status
+	status = monitoring_get_status();
+	if (IS_BIT_SET(status, MONITORING_MAIN_LOW_VOLTAGE) == true)
+		SET_BIT(g_status, TXRX::MAIN_STA_MAIN_LOW_VOLTAGE);
 
-	if (IS_BIT_SET(status, ASS::WIRELESS_POWER_SUPPLY_LOW_VOLTAGE) == true)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_WIRELESS_POWER_SUPPLY);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_WIRELESS_POWER_SUPPLY);
+	if (IS_BIT_SET(status, MONITORING_WIRELESS_LOW_VOLTAGE) == true)
+		SET_BIT(g_status, TXRX::MAIN_STA_WIRELESS_LOW_VOLTAGE);
 
-	if (IS_BIT_SET(status, ASS::CAMERA_POWER_SUPPLY_LOW_VOLTAGE) == true)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_CAMERA_POWER_SUPPLY);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_CAMERA_POWER_SUPPLY);
+	if (IS_BIT_SET(status, MONITORING_SENSORS_LOW_VOLTAGE) == true)
+		SET_BIT(g_status, TXRX::MAIN_STA_SENSORS_LOW_VOLTAGE);
 
-	if (IS_BIT_SET(status, ASS::SENSORS_POWER_SUPPLY_LOW_VOLTAGE) == true)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_SENSORS_POWER_SUPPLY);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_SENSORS_POWER_SUPPLY);
-
+	if (IS_BIT_SET(status, MONITORING_CAMERA_LOW_VOLTAGE) == true)
+		SET_BIT(g_status, TXRX::MAIN_STA_CAMERA_LOW_VOLTAGE);
 
 	// Check fatal errors
 	if (g_status & FATAL_ERRORS_MASK)
-		SET_STATUS_BIT(g_status, TXRX::MAIN_STA_FATAL_ERROR);
-	else
-		CLEAR_STATUS_BIT(g_status, TXRX::MAIN_STA_FATAL_ERROR);
+		SET_BIT(g_status, TXRX::MAIN_STA_FATAL_ERROR);
 }
 
 static void make_state_packet() {
 
 	// Clear packet
-	memset(&g_sp, 0, sizeof(g_sp));
+	memset(&g_comm_sp, 0, sizeof(g_comm_sp));
 
-	g_sp.main_core_status = g_status;
+	g_comm_sp.main_core_status = g_status;
 
-	FLY_CORE::make_state_data(&g_sp);
-	ASS::make_state_data(&g_sp);
+	fly_core_make_state_data(&g_comm_sp);
+	monitoring_make_state_data(&g_comm_sp);
 }

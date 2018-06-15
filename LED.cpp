@@ -1,18 +1,18 @@
 #include <Arduino.h>
 #include "TXRX_PROTOCOL.h"
-#include "configuration_subsystem.h"
+#include "configuration.h"
 #include "LED.h"
 #include "util.h"
 
-#define MAIN_HW_FATAL_ERRORS_MASK	(TXRX::MAIN_STA_WIRELESS_POWER_SUPPLY | TXRX::MAIN_STA_SENSORS_POWER_SUPPLY)
+#define MAIN_HW_FATAL_ERRORS_MASK	(TXRX::MAIN_STA_WIRELESS_LOW_VOLTAGE | TXRX::MAIN_STA_SENSORS_LOW_VOLTAGE)
 #define FLY_HW_FATAL_ERRORS_MASK	(TXRX::FLY_STA_MPU6050_ERROR)
 
-#define MAIN_HW_WARN_ERRORS_MASK	(TXRX::MAIN_STA_MAIN_POWER_SUPPLY | TXRX::MAIN_STA_CAMERA_POWER_SUPPLY)
+#define MAIN_HW_WARN_ERRORS_MASK	(TXRX::MAIN_STA_MAIN_LOW_VOLTAGE | TXRX::MAIN_STA_CAMERA_LOW_VOLTAGE)
 #define FLY_HW_WARN_ERRORS_MASK		(TXRX::FLY_STA_BMP280_ERROR)
 
 static void disable_all_LEDs();
 
-void LED_initialize() {
+void led_initialize() {
 
 	// Blue LED
 	REG_PIOC_PER  = PIO_PC21;
@@ -62,7 +62,7 @@ void LED_initialize() {
 	disable_all_LEDs();
 }
 
-void LED_configuration_mode_enable() {
+void led_configuration_mode_enable() {
 
 	disable_all_LEDs();
 	
@@ -70,23 +70,21 @@ void LED_configuration_mode_enable() {
 	REG_PIOC_SODR = PIO_PC21;
 }
 
-void LED_process(uint32_t main_core_status, uint32_t fly_core_status) {
+void led_process(uint32_t main_core_status, uint32_t fly_core_status) {
 
 	//
 	// Process hull LEDs
 	//
 	static uint32_t prev_switch_time = 0;
-	static uint32_t disable_time = 500;
-	static uint32_t enable_time = 300;
 
 	if (REG_PIOA_ODSR & PIO_PA20) {
-		if (millis() - prev_switch_time > enable_time) {
+		if (millis() - prev_switch_time > g_cfg.LED_enable_time) {
 			REG_PIOA_CODR = PIO_PA20;	// Disable hull LEDs
 			prev_switch_time = millis();
 		}
 	}
 	else {
-		if (millis() - prev_switch_time > disable_time) {
+		if (millis() - prev_switch_time > g_cfg.LED_disable_time) {
 			REG_PIOA_SODR = PIO_PA20;	// Enable hull LEDs
 			prev_switch_time = millis();
 		}

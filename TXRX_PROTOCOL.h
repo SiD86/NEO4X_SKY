@@ -1,9 +1,9 @@
-#ifndef _TXRX_H_
-#define _TXRX_H_
+#ifndef _TXRX_PROTOCOL_H_
+#define _TXRX_PROTOCOL_H_
 
 namespace TXRX {
 
-	// Packet size - 38
+	// Packet size - 39
 	#pragma pack (push, 1)
 	struct fly_controller_packet_t {
 		uint8_t type;
@@ -13,10 +13,10 @@ namespace TXRX {
 	};
 	#pragma pack (pop)
 
-	const uint8_t TYPE_STATE_PACKET				= 0x00;
-	const uint8_t TYPE_CONTROL_PACKET			= 0x01;
-	const uint8_t TYPE_CONFIG_REQ_PACKET		= 0x02;
-	const uint8_t TYPE_CONFIG_ACK_PACKET		= 0x03;
+	const uint8_t TYPE_STATE_PACKET						= 0x00;
+	const uint8_t TYPE_CONTROL_PACKET					= 0x01;
+	const uint8_t TYPE_CONFIG_REQ_PACKET				= 0x02;
+	const uint8_t TYPE_CONFIG_ACK_PACKET				= 0x03;
 }
 
 namespace TXRX {
@@ -37,7 +37,7 @@ namespace TXRX {
 		uint8_t wireless_voltage;	// Wireless power supply voltage	[0.1V]
 		uint8_t camera_voltage;		// Camera power supply voltage		[0.1V]
 		uint8_t sensors_voltage;	// Sensors power supply voltage		[0.1V]
-		uint8_t vibration_level;	// Vibration level					[?]
+		uint8_t hull_vibration;		// Hull vibration level				[?]
 		uint8_t ESC_temperature[4];	// ESC temperatures					[*C]
 
 		//uint8_t reserved[0];
@@ -45,28 +45,28 @@ namespace TXRX {
 	#pragma pack (pop)
 
 	// Main core status (bitfield)
-	const uint8_t MAIN_STA_NO_ERROR					= 0x00;
-	const uint8_t MAIN_STA_FATAL_ERROR				= 0x01;
-	const uint8_t MAIN_STA_CONFIG_ERROR				= 0x02;
-	const uint8_t MAIN_STA_COMMUNICATION_LOST		= 0x04;
-	const uint8_t MAIN_STA_COMMUNICATION_DESYNC		= 0x08;
-	const uint8_t MAIN_STA_MAIN_POWER_SUPPLY		= 0x10;
-	const uint8_t MAIN_STA_WIRELESS_POWER_SUPPLY	= 0x20;
-	const uint8_t MAIN_STA_SENSORS_POWER_SUPPLY		= 0x40;
-	const uint8_t MAIN_STA_CAMERA_POWER_SUPPLY		= 0x80;
+	const uint8_t MAIN_STA_NO_ERROR						= 0x00;
+	const uint8_t MAIN_STA_FATAL_ERROR					= 0x01;
+	const uint8_t MAIN_STA_CONFIG_ERROR					= 0x02;
+	const uint8_t MAIN_STA_COMMUNICATION_BREAK			= 0x04;
+	const uint8_t MAIN_STA_COMMUNICATION_DESYNC			= 0x08;
+	const uint8_t MAIN_STA_MAIN_LOW_VOLTAGE				= 0x10;
+	const uint8_t MAIN_STA_WIRELESS_LOW_VOLTAGE			= 0x20;
+	const uint8_t MAIN_STA_SENSORS_LOW_VOLTAGE			= 0x40;
+	const uint8_t MAIN_STA_CAMERA_LOW_VOLTAGE			= 0x80;
 
 	// Fly core mode
-	const uint8_t FLY_MODE_WAIT						= 0x01;
-	const uint8_t FLY_MODE_STABILIZE				= 0x02;
-	const uint8_t FLY_MODE_ANGLE_PID_SETUP			= 0x03;
-	const uint8_t FLY_MODE_RATE_PID_SETUP			= 0x04;
-	const uint8_t FLY_MODE_DEFENCE					= 0xFF;
+	const uint8_t FLY_MODE_WAIT							= 0x01;
+	const uint8_t FLY_MODE_STABILIZE					= 0x02;
+	const uint8_t FLY_MODE_ANGLE_PID_SETUP				= 0x03;
+	const uint8_t FLY_MODE_RATE_PID_SETUP				= 0x04;
+	const uint8_t FLY_MODE_DEFENCE						= 0xFF;
 
 	// Fly core status (bitfield)
-	const uint8_t FLY_STA_NO_ERROR					= 0x00;
-	const uint8_t FLY_STA_FATAL_ERROR				= 0x01;
-	const uint8_t FLY_STA_MPU6050_ERROR				= 0x02;
-	const uint8_t FLY_STA_BMP280_ERROR				= 0x04;
+	const uint8_t FLY_STA_NO_ERROR						= 0x00;
+	const uint8_t FLY_STA_FATAL_ERROR					= 0x01;
+	const uint8_t FLY_STA_MPU6050_ERROR					= 0x02;
+	const uint8_t FLY_STA_BMP280_ERROR					= 0x04;
 }
 
 namespace TXRX {
@@ -88,11 +88,11 @@ namespace TXRX {
 	#pragma pack (pop)
 
 	// Fly core commands
-	const uint8_t CMD_NO_COMMAND					= 0x00;
-	const uint8_t CMD_SET_FLY_MODE_WAIT				= 0x01;
-	const uint8_t CMD_SET_FLY_MODE_STABILIZE		= 0x02;
-	const uint8_t CMD_SET_FLY_MODE_ANGLE_PID_SETUP  = 0x03;
-	const uint8_t CMD_SET_FLY_MODE_RATE_PID_SETUP   = 0x04;
+	const uint8_t CMD_NO_COMMAND						= 0x00;
+	const uint8_t CMD_SET_FLY_MODE_WAIT					= 0x01;
+	const uint8_t CMD_SET_FLY_MODE_STABILIZE			= 0x02;
+	const uint8_t CMD_SET_FLY_MODE_ANGLE_PID_SETUP		= 0x03;
+	const uint8_t CMD_SET_FLY_MODE_RATE_PID_SETUP		= 0x04;
 }
 
 namespace TXRX {
@@ -106,13 +106,13 @@ namespace TXRX {
 	};
 	#pragma pack (pop) 
 
-	const uint8_t CFG_CMD_READ_DEVICE_ID			= 0x01;
-	const uint8_t CFG_CMD_READ_BLOCK				= 0x02;
-	const uint8_t CFG_CMD_WRITE_BLOCK				= 0x03;
-	const uint8_t CFG_CMD_SET_DEFAULT				= 0x04;
-	const uint8_t CFG_CMD_SOFTWARE_RESET			= 0x05;
+	const uint8_t CFG_CMD_READ_DEVICE_ID				= 0x01;
+	const uint8_t CFG_CMD_READ_BLOCK					= 0x02;
+	const uint8_t CFG_CMD_WRITE_BLOCK					= 0x03;
+	const uint8_t CFG_CMD_SET_DEFAULT					= 0x04;
+	const uint8_t CFG_CMD_SOFTWARE_RESET				= 0x05;
 
-	const uint8_t CFG_OPERATION_ERROR				= 0xFF;
+	const uint8_t CFG_OPERATION_ERROR					= 0xFF;
 }
 
-#endif // _TXRX_PROTOCOL_H_
+#endif /* _TXRX_PROTOCOL_H_ */

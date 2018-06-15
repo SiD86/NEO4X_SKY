@@ -1,10 +1,10 @@
 #include <Arduino.h>
 #include "TXRX_PROTOCOL.h"
 #include "fly_core.h"
-#include "orientation_subsystem.h"
-#include "PDG_subsystem.h"
-#include "additional_subsystem.h"
-#include "configuration_subsystem.h"
+#include "IMU.h"
+#include "PDG.h"
+#include "monitoring.h"
+#include "configuration.h"
 #include "PID_controller.h"
 #include "util.h"
 #define FATAL_ERRORS_MASK			(TXRX::FLY_STA_MPU6050_ERROR)
@@ -14,10 +14,6 @@
 #define STATE_PROCESS				(0x02)
 #define STATE_FAIL					(0x03)
 
-static uint8_t g_state		= STATE_FAIL;
-static uint8_t g_fly_mode	= TXRX::FLY_MODE_WAIT;
-static uint8_t g_status		= TXRX::FLY_STA_NO_ERROR;
-
 static void user_command_handling(uint32_t cmd);
 static void state_ENABLE_handling();
 static void state_PROCESS_handling(TXRX::control_data_t* control_data);
@@ -26,39 +22,43 @@ static void defence_process(float* XYZH);
 static void error_status_update();
 static void request_state(uint32_t next_state);
 
+static uint8_t g_state		= STATE_FAIL;
+static uint8_t g_fly_mode	= TXRX::FLY_MODE_WAIT;
+static uint8_t g_status		= TXRX::FLY_STA_NO_ERROR;
+
 
 //
 // EXTERNAL INTERFACE
 //
-void FLY_CORE::initialize() {
+void fly_core_initialize() {
 
 	// Initialize subsystems
-	PDGSS::initialize(g_cfg.ESC_PWM_frequency);
-	OSS::initialize();
+	pdg_initialize(g_cfg.ESC_PWM_frequency);
+	imu_initialize();
 	
 	// Initialize PID controller channel for axis X
-	PID_initialize(PID_CHANNEL_X, g_cfg.PID_output_limit, g_cfg.I_X_limit);
-	PID_set_tunings(PID_CHANNEL_X, g_cfg.PID_X[0], g_cfg.PID_X[1], g_cfg.PID_X[2]);
+	pid_initialize(PID_CHANNEL_X, g_cfg.PID_output_limit, g_cfg.I_X_limit);
+	pid_set_tunings(PID_CHANNEL_X, g_cfg.PID_X[0], g_cfg.PID_X[1], g_cfg.PID_X[2]);
 	
 	// Initialize PID controller channel for axis Y
-	PID_initialize(PID_CHANNEL_Y, g_cfg.PID_output_limit, g_cfg.I_Y_limit);
-	PID_set_tunings(PID_CHANNEL_Y, g_cfg.PID_Y[0], g_cfg.PID_Y[1], g_cfg.PID_Y[2]);
+	pid_initialize(PID_CHANNEL_Y, g_cfg.PID_output_limit, g_cfg.I_Y_limit);
+	pid_set_tunings(PID_CHANNEL_Y, g_cfg.PID_Y[0], g_cfg.PID_Y[1], g_cfg.PID_Y[2]);
 	
 	// Initialize PID controller channel for axis Z
-	PID_initialize(PID_CHANNEL_Z, g_cfg.PID_output_limit, g_cfg.I_Z_limit);
-	PID_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
+	pid_initialize(PID_CHANNEL_Z, g_cfg.PID_output_limit, g_cfg.I_Z_limit);
+	pid_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
 
 	// Check errors and request go to next state
 	error_status_update();
 	request_state(STATE_ENABLE);
 }
 
-void FLY_CORE::process(TXRX::control_data_t* control_data) {
+void fly_core_process(TXRX::control_data_t* control_data) {
 
 	user_command_handling(control_data->command);
 
 	// Process OSS
-	OSS::process();
+	imu_process();
 
 	switch (g_state)
 	{
@@ -82,26 +82,26 @@ void FLY_CORE::process(TXRX::control_data_t* control_data) {
 	}
 }
 
-void FLY_CORE::make_state_data(TXRX::state_data_t* state_data) {
+void fly_core_make_state_data(TXRX::state_data_t* state_data) {
 
 	state_data->fly_core_status = g_status;
 	state_data->fly_core_mode = g_fly_mode;
 
 	float XYZH[4] = { 0 };
 	float gyro_XYZ[3] = { 0 };
-	OSS::get_position(XYZH, gyro_XYZ);
+	imu_get_position(XYZH, gyro_XYZ);
 
 	state_data->XYZ[0] = XYZH[0] * 100; // to 0.01*
 	state_data->XYZ[1] = XYZH[1] * 100; // to 0.01*
 	state_data->XYZ[2] = XYZH[2] * 100; // to 0.01*
 
-	state_data->gyro_XYZ[0] = gyro_XYZ[0] * 100; // to 0.01*;
-	state_data->gyro_XYZ[1] = gyro_XYZ[1] * 100; // to 0.01*;
-	state_data->gyro_XYZ[2] = gyro_XYZ[2] * 100; // to 0.01*;
+	state_data->gyro_XYZ[0] = gyro_XYZ[0] * 100; // to 0.01*
+	state_data->gyro_XYZ[1] = gyro_XYZ[1] * 100; // to 0.01*
+	state_data->gyro_XYZ[2] = gyro_XYZ[2] * 100; // to 0.01*
 
 	state_data->alttitude = XYZH[3];
 
-	PDGSS::get_power_in_persent(state_data->motors_power);
+	pdg_get_power_in_persent(state_data->motors_power);
 }
 
 
@@ -123,27 +123,21 @@ static void user_command_handling(uint32_t cmd) {
 		if (g_fly_mode == TXRX::FLY_MODE_STABILIZE)
 			break;
 		g_fly_mode = TXRX::FLY_MODE_STABILIZE;
-		PID_reset(PID_CHANNEL_X);
-		PID_reset(PID_CHANNEL_Y);
-		PID_reset(PID_CHANNEL_Z);
+		pid_reset_all_channels();
 		break;
 
 	case TXRX::CMD_SET_FLY_MODE_ANGLE_PID_SETUP:
 		if (g_fly_mode == TXRX::CMD_SET_FLY_MODE_ANGLE_PID_SETUP)
 			break;
 		g_fly_mode = TXRX::FLY_MODE_ANGLE_PID_SETUP;
-		PID_reset(PID_CHANNEL_X);
-		PID_reset(PID_CHANNEL_Y);
-		PID_reset(PID_CHANNEL_Z);
+		pid_reset_all_channels();
 		break;
 
 	case TXRX::CMD_SET_FLY_MODE_RATE_PID_SETUP:
 		if (g_fly_mode == TXRX::CMD_SET_FLY_MODE_RATE_PID_SETUP)
 			break;
 		g_fly_mode = TXRX::FLY_MODE_RATE_PID_SETUP;
-		PID_reset(PID_CHANNEL_X);
-		PID_reset(PID_CHANNEL_Y);
-		PID_reset(PID_CHANNEL_Z);
+		pid_reset_all_channels();
 		break;
 	}
 }
@@ -153,7 +147,7 @@ static void state_ENABLE_handling() {
 	// Set default fly mode
 	g_fly_mode = TXRX::FLY_MODE_WAIT;
 
-	OSS::send_command(OSS::CMD_ENABLE);
+	imu_enable();
 }
 
 static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
@@ -161,11 +155,13 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 	// Get current position
 	float XYZH[4] = { 0 };
 	float gyro_XYZ[3] = { 0 };
-	bool is_position_updated = OSS::is_position_updated(); 
-	OSS::get_position(XYZH, gyro_XYZ);
+	imu_get_position(XYZH, gyro_XYZ);
 
 	// Defence process
 	defence_process(XYZH);
+
+	// Current position is updated?
+	bool is_position_updated = imu_is_position_updated();
 	
 	// Process current fly mode
 	if (g_fly_mode == TXRX::FLY_MODE_STABILIZE || g_fly_mode == TXRX::FLY_MODE_ANGLE_PID_SETUP ||
@@ -177,22 +173,22 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 
 		// Runtime PID setup
 		if (g_fly_mode == TXRX::FLY_MODE_ANGLE_PID_SETUP || g_fly_mode == TXRX::FLY_MODE_RATE_PID_SETUP) {
-			PID_set_tunings(PID_CHANNEL_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
-			PID_set_tunings(PID_CHANNEL_Y, control_data->PIDY[0] / 100.0, control_data->PIDY[1] / 100.0, control_data->PIDY[2] / 100.0);
-			PID_set_tunings(PID_CHANNEL_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
+			pid_set_tunings(PID_CHANNEL_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
+			pid_set_tunings(PID_CHANNEL_Y, control_data->PIDY[0] / 100.0, control_data->PIDY[1] / 100.0, control_data->PIDY[2] / 100.0);
+			pid_set_tunings(PID_CHANNEL_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
 		}
 
 		// Calculation rate PID
 		float PIDU[3] = { 0 };    // X, Y, Z
 		if (g_fly_mode == TXRX::FLY_MODE_RATE_PID_SETUP) { // Use gyro data
-			PIDU[0] = PID_process(PID_CHANNEL_X, gyro_XYZ[0], control_data->XYZ[0]);
-			PIDU[1] = PID_process(PID_CHANNEL_Y, gyro_XYZ[1], control_data->XYZ[1]);
-			PIDU[2] = PID_process(PID_CHANNEL_Z, gyro_XYZ[2], control_data->XYZ[2]);
+			PIDU[0] = pid_calculate(PID_CHANNEL_X, gyro_XYZ[0], control_data->XYZ[0]);
+			PIDU[1] = pid_calculate(PID_CHANNEL_Y, gyro_XYZ[1], control_data->XYZ[1]);
+			PIDU[2] = pid_calculate(PID_CHANNEL_Z, gyro_XYZ[2], control_data->XYZ[2]);
 		}
 		else { // Use angle data
-			PIDU[0] = PID_process(PID_CHANNEL_X, XYZH[0], control_data->XYZ[0]);
-			PIDU[1] = PID_process(PID_CHANNEL_Y, XYZH[1], control_data->XYZ[1]);
-			PIDU[2] = PID_process(PID_CHANNEL_Z, XYZH[2], control_data->XYZ[2]);
+			PIDU[0] = pid_calculate(PID_CHANNEL_X, XYZH[0], control_data->XYZ[0]);
+			PIDU[1] = pid_calculate(PID_CHANNEL_Y, XYZH[1], control_data->XYZ[1]);
+			PIDU[2] = pid_calculate(PID_CHANNEL_Z, XYZH[2], control_data->XYZ[2]);
 		}
 
 		// Constrain thrust [0; 1000 - PID_output_limit]
@@ -210,19 +206,18 @@ static void state_PROCESS_handling(TXRX::control_data_t* control_data) {
 		}
 
 		// Set motor power
-		PDGSS::set_power(motors_power);
+		pdg_set_power(motors_power);
 	}
 	else if (g_fly_mode == TXRX::FLY_MODE_WAIT) {
-		PDGSS::stop();
+		pdg_stop();
 	}
 	else if (g_fly_mode == TXRX::FLY_MODE_DEFENCE) {
-		PDGSS::stop();
+		pdg_stop();
 	}
 }
 
 static void state_FAIL_handling() {
-	PDGSS::stop();
-	OSS::send_command(OSS::CMD_DISABLE);
+	pdg_stop();
 }
 
 static void defence_process(float* XYZH) {
@@ -246,15 +241,15 @@ static void defence_process(float* XYZH) {
 static void error_status_update() {
 
 	// Check orientation subsystem error status
-	uint32_t status = OSS::get_status();
-	if (IS_BIT_SET(status, OSS::MPU6050_ERROR) == true)
-		SET_STATUS_BIT(g_status, TXRX::FLY_STA_MPU6050_ERROR);
-	if (IS_BIT_SET(status, OSS::BMP280_ERROR) == true)
-		SET_STATUS_BIT(g_status, TXRX::FLY_STA_BMP280_ERROR);
+	uint32_t status = imu_get_status();
+	if (IS_BIT_SET(status, IMU_MPU6050_ERROR) == true)
+		SET_BIT(g_status, TXRX::FLY_STA_MPU6050_ERROR);
+	if (IS_BIT_SET(status, IMU_BMP280_ERROR) == true)
+		SET_BIT(g_status, TXRX::FLY_STA_BMP280_ERROR);
 
 	// Check FAIL mode
 	if (g_status & FATAL_ERRORS_MASK)
-		SET_STATUS_BIT(g_status, TXRX::FLY_STA_FATAL_ERROR);
+		SET_BIT(g_status, TXRX::FLY_STA_FATAL_ERROR);
 }
 
 // Call after error_status_update()

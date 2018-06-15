@@ -26,7 +26,7 @@ static pid_param_t g_PID_ch[MAX_CHANNEL_COUNT];
 //
 // EXTERNAL INTERFACE
 //
-void PID_initialize(uint32_t ch, float output_limit, float I_limit) {
+void pid_initialize(uint32_t ch, float output_limit, float I_limit) {
 	
 	g_PID_ch[ch].Kp = 0;
 	g_PID_ch[ch].Ki = 0;
@@ -35,11 +35,13 @@ void PID_initialize(uint32_t ch, float output_limit, float I_limit) {
 	g_PID_ch[ch].output_max = +output_limit;
 	g_PID_ch[ch].integral_min = -I_limit;
 	g_PID_ch[ch].integral_max = +I_limit;
-	
-	PID_reset(ch);
+	g_PID_ch[ch].integral = 0;
+	g_PID_ch[ch].prev_input = 0;
+	g_PID_ch[ch].prev_process_time = micros();
+	g_PID_ch[ch].output = 0;
 }
 
-float PID_process(uint32_t ch, float input, float set_point) {
+float pid_calculate(uint32_t ch, float input, float set_point) {
 
 	// Calculate error and time
 	uint32_t current_time = micros();
@@ -80,19 +82,22 @@ float PID_process(uint32_t ch, float input, float set_point) {
 	return g_PID_ch[ch].output;
 }
 
-float PID_get_last_output(uint32_t ch) {
+float pid_get_last_output(uint32_t ch) {
 	return g_PID_ch[ch].output;
 }
 
-void PID_set_tunings(uint32_t ch, float Kp, float Ki, float Kd) {
+void pid_set_tunings(uint32_t ch, float Kp, float Ki, float Kd) {
 	g_PID_ch[ch].Kp = Kp;
 	g_PID_ch[ch].Ki = Ki;
 	g_PID_ch[ch].Kd = Kd;
 }
 
-void PID_reset(uint32_t ch) {
-	g_PID_ch[ch].integral = 0;
-	g_PID_ch[ch].prev_input = 0;
-	g_PID_ch[ch].prev_process_time = micros();
-	g_PID_ch[ch].output = 0;
+void pid_reset_all_channels() {
+
+	for (uint8_t i = 0; i < MAX_CHANNEL_COUNT; ++i) {
+		g_PID_ch[i].integral = 0;
+		g_PID_ch[i].prev_input = 0;
+		g_PID_ch[i].prev_process_time = micros();
+		g_PID_ch[i].output = 0;
+	}
 }

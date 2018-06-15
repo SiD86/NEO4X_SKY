@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include "LIBRARY\EEPROM.h"
 #include "LED.h"
-#include "configuration_subsystem.h"
-#include "communication_subsystem.h"
+#include "configuration.h"
+#include "communication.h"
 
 #define EE_MEMORY_MAP_VERSION				(0x0000)
 #define EE_FW_VERSION						(0x0002)
@@ -29,18 +29,20 @@ configuration_t g_cfg;
 //
 // EXTERNAL INTERFACE
 //
-bool CONFIG_reset_configuration() {
+bool configuration_reset() {
 	return true;
 }
 
-bool CONFIG_load_and_check_configuration() {
+bool configuration_load() {
 
 	g_cfg.send_state_interval = 30;			// 30 ms
-	g_cfg.desync_silence_window_time = 200; // 200 ms (!!! < connection_lost_timeout !!!)
-	g_cfg.connection_lost_timeout = 1000;	// 1000 ms
+	g_cfg.communication_break_time = 1000;	// 1000 ms
 
 	g_cfg.angle_protect = 60;				// [-60; 60]
 	g_cfg.ESC_PWM_frequency = 400;			// 400 Hz
+
+	g_cfg.LED_disable_time = 1500;			// ms
+	g_cfg.LED_enable_time = 50;				// ms
 
 	g_cfg.PID_output_limit = 400;			// 40%
 	g_cfg.PID_enable_threshold = 0;			// 0% (enable always)
@@ -62,9 +64,11 @@ bool CONFIG_load_and_check_configuration() {
 	return true;
 }
 
-void CONFIG_enter_to_configuration_mode() {
+void configuration_enter_to_change_mode() {
 
-	uint8_t memory_dump[256] = { 0 };
+	while (true);
+
+	/*uint8_t memory_dump[256] = { 0 };
 	bool is_ready = EEPROM_read_bytes(0x0000, memory_dump, sizeof(memory_dump));
 
 	// Configuration loop
@@ -156,6 +160,6 @@ void CONFIG_enter_to_configuration_mode() {
 		}
 
 		CSS::synchronous_process(true, false);
-	}
+	}*/
 }
 

@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "TXRX_PROTOCOL.h"
-#include "PDG_subsystem.h"
+#include "PDG.h"
 #define MIN_POWER_PULSE				(1000)
 #define MAX_POWER_PULSE				(2000)
 
@@ -27,7 +27,7 @@
 //
 // EXTERNAL INTERFACE
 //
-void PDGSS::initialize(uint32_t ESC_frequency) {
+void pdg_initialize(uint32_t ESC_frequency) {
 
 	// Configure calibration enable pin
 	REG_PIOC_PER = PIO_PC23;
@@ -80,11 +80,11 @@ void PDGSS::initialize(uint32_t ESC_frequency) {
 	if (is_calibration_mode == true)
 		delay(4000); // Wait ESC handling MAX pulse width
 
-	PDGSS::stop();
+	pdg_stop();
 	delay(2000); // Wait ESC initialize complete
 }
 
-void PDGSS::stop() {
+void pdg_stop() {
 	SET_FR_MOTOR_PULSE(MIN_POWER_PULSE);
 	SET_RR_MOTOR_PULSE(MIN_POWER_PULSE);
 	SET_RL_MOTOR_PULSE(MIN_POWER_PULSE);
@@ -93,7 +93,7 @@ void PDGSS::stop() {
 	REG_PWM_SCUC = PWM_SCUC_UPDULOCK;
 }
 
-void PDGSS::set_power(int32_t* power) {
+void pdg_set_power(int32_t* power) {
 
 	// Convert [0; 1000] to [1000; 2000]
 	power[0] += MIN_POWER_PULSE;
@@ -116,7 +116,7 @@ void PDGSS::set_power(int32_t* power) {
 	REG_PWM_SCUC = PWM_SCUC_UPDULOCK;
 }
 
-void PDGSS::get_power_in_persent(uint8_t* power) {
+void pdg_get_power_in_persent(uint8_t* power) {
 	// Convert [1000; 2000] to [0; 100]
 	power[0] = (GET_FR_MOTOR_PULSE() - MIN_POWER_PULSE) / 10;
 	power[1] = (GET_RR_MOTOR_PULSE() - MIN_POWER_PULSE) / 10;

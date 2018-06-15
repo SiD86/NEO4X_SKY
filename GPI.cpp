@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "GPI.h"
 
-void GPI_initialize() {
+void gpi_initialize() {
 
 	// Digital pins: 7, 6, 5, 4, 3
 	REG_PIOC_PER  = PIO_PC23 | PIO_PC24 | PIO_PC25 | PIO_PC26 | PIO_PC28;
@@ -16,7 +16,7 @@ void GPI_initialize() {
 	delay(1);
 }
 
-bool GPI_is_low(uint32_t input) {
+bool gpi_is_low(uint32_t input) {
 
 	switch (input) 
 	{

@@ -78,9 +78,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="additional_subsystem.h" />
-    <ClInclude Include="communication_subsystem.h" />
-    <ClInclude Include="configuration_subsystem.h" />
+    <ClInclude Include="monitoring.h" />
+    <ClInclude Include="communication.h" />
+    <ClInclude Include="configuration.h" />
     <ClInclude Include="fly_core.h" />
     <ClInclude Include="GPI.h" />
     <ClInclude Include="LED.h" />
@@ -90,8 +90,8 @@
     <ClInclude Include="library\I2C.h" />
     <ClInclude Include="library\MPU6050.h" />
     <ClInclude Include="LIBRARY\USART3_PDC.h" />
-    <ClInclude Include="orientation_subsystem.h" />
-    <ClInclude Include="PDG_subsystem.h" />
+    <ClInclude Include="IMU.h" />
+    <ClInclude Include="PDG.h" />
     <ClInclude Include="PID_controller.h" />
     <ClInclude Include="TXRX_PROTOCOL.h" />
     <ClInclude Include="util.h" />
@@ -99,9 +99,9 @@
     <ClInclude Include="__vm\.NEO4X_SKY.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="additional_subsystem.cpp" />
-    <ClCompile Include="communication_subsystem.cpp" />
-    <ClCompile Include="configuration_subsystem.cpp" />
+    <ClCompile Include="monitoring.cpp" />
+    <ClCompile Include="communication.cpp" />
+    <ClCompile Include="configuration.cpp" />
     <ClCompile Include="fly_core.cpp" />
     <ClCompile Include="GPI.cpp" />
     <ClCompile Include="LED.cpp" />
@@ -112,8 +112,8 @@
     <ClCompile Include="library\MPU6050.cpp" />
     <ClCompile Include="LIBRARY\USART3_PDC.cpp" />
     <ClCompile Include="main_core.cpp" />
-    <ClCompile Include="orientation_subsystem.cpp" />
-    <ClCompile Include="PDG_subsystem.cpp" />
+    <ClCompile Include="IMU.cpp" />
+    <ClCompile Include="PDG.cpp" />
     <ClCompile Include="PID_controller.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -48,12 +48,6 @@
     <ClInclude Include="version.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="orientation_subsystem.h">
-      <Filter>Заголовочные файлы\FLY_CORE</Filter>
-    </ClInclude>
-    <ClInclude Include="PDG_subsystem.h">
-      <Filter>Заголовочные файлы\FLY_CORE</Filter>
-    </ClInclude>
     <ClInclude Include="fly_core.h">
       <Filter>Заголовочные файлы\FLY_CORE</Filter>
     </ClInclude>
@@ -65,15 +59,6 @@
     </ClInclude>
     <ClInclude Include="util.h">
       <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="additional_subsystem.h">
-      <Filter>Заголовочные файлы\MAIN_CORE</Filter>
-    </ClInclude>
-    <ClInclude Include="communication_subsystem.h">
-      <Filter>Заголовочные файлы\MAIN_CORE</Filter>
-    </ClInclude>
-    <ClInclude Include="configuration_subsystem.h">
-      <Filter>Заголовочные файлы\MAIN_CORE</Filter>
     </ClInclude>
     <ClInclude Include="LIBRARY\EEPROM.h">
       <Filter>library</Filter>
@@ -90,6 +75,21 @@
     <ClInclude Include="GPI.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="monitoring.h">
+      <Filter>Заголовочные файлы\MAIN_CORE</Filter>
+    </ClInclude>
+    <ClInclude Include="communication.h">
+      <Filter>Заголовочные файлы\MAIN_CORE</Filter>
+    </ClInclude>
+    <ClInclude Include="configuration.h">
+      <Filter>Заголовочные файлы\MAIN_CORE</Filter>
+    </ClInclude>
+    <ClInclude Include="IMU.h">
+      <Filter>Заголовочные файлы\FLY_CORE</Filter>
+    </ClInclude>
+    <ClInclude Include="PDG.h">
+      <Filter>Заголовочные файлы\FLY_CORE</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="library\I2C.cpp">
@@ -97,12 +97,6 @@
     </ClCompile>
     <ClCompile Include="library\MPU6050.cpp">
       <Filter>library</Filter>
-    </ClCompile>
-    <ClCompile Include="orientation_subsystem.cpp">
-      <Filter>Файлы исходного кода\FLY_CORE</Filter>
-    </ClCompile>
-    <ClCompile Include="PDG_subsystem.cpp">
-      <Filter>Файлы исходного кода\FLY_CORE</Filter>
     </ClCompile>
     <ClCompile Include="fly_core.cpp">
       <Filter>Файлы исходного кода\FLY_CORE</Filter>
@@ -112,15 +106,6 @@
     </ClCompile>
     <ClCompile Include="LIBRARY\BMP280.cpp">
       <Filter>library</Filter>
-    </ClCompile>
-    <ClCompile Include="additional_subsystem.cpp">
-      <Filter>Файлы исходного кода\MAIN_CORE</Filter>
-    </ClCompile>
-    <ClCompile Include="communication_subsystem.cpp">
-      <Filter>Файлы исходного кода\MAIN_CORE</Filter>
-    </ClCompile>
-    <ClCompile Include="configuration_subsystem.cpp">
-      <Filter>Файлы исходного кода\MAIN_CORE</Filter>
     </ClCompile>
     <ClCompile Include="LIBRARY\EEPROM.cpp">
       <Filter>library</Filter>
@@ -139,6 +124,21 @@
     </ClCompile>
     <ClCompile Include="GPI.cpp">
       <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="monitoring.cpp">
+      <Filter>Файлы исходного кода\MAIN_CORE</Filter>
+    </ClCompile>
+    <ClCompile Include="configuration.cpp">
+      <Filter>Файлы исходного кода\MAIN_CORE</Filter>
+    </ClCompile>
+    <ClCompile Include="communication.cpp">
+      <Filter>Файлы исходного кода\MAIN_CORE</Filter>
+    </ClCompile>
+    <ClCompile Include="IMU.cpp">
+      <Filter>Файлы исходного кода\FLY_CORE</Filter>
+    </ClCompile>
+    <ClCompile Include="PDG.cpp">
+      <Filter>Файлы исходного кода\FLY_CORE</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
