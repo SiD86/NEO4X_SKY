@@ -3,7 +3,7 @@
 #define USART_BAUDRATE						(175000)
 #define TX_PIN								(PIO_PD4)
 #define RX_PIN								(PIO_PD5)
-#define MAX_BUFFER_SIZE						(128)
+#define MAX_BUFFER_SIZE						(64)
 
 static uint8_t g_tx_buffer[MAX_BUFFER_SIZE] = { 0 };
 static uint8_t g_rx_buffer[MAX_BUFFER_SIZE] = { 0 };
@@ -36,10 +36,6 @@ void USART3_initialize() {
 	REG_PIOD_PDR   = RX_PIN;
 	REG_PIOD_ABSR |= RX_PIN;
 
-	// Configure TX and RX pins
-	//REG_PIOD_PDR = TX_PIN | RX_PIN;		// Disable PIO control, enable peripheral control
-	//REG_PIOD_ABSR |= TX_PIN | RX_PIN;	// Set peripheral B function
-
 	// Disable PDC channels and reset TX and RX
 	REG_USART3_PTCR = US_PTCR_TXTDIS | US_PTCR_RXTDIS;
 	REG_USART3_CR = US_CR_RSTTX | US_CR_RSTRX | US_CR_RSTSTA;
@@ -52,6 +48,7 @@ void USART3_initialize() {
 
 	// Disable all interrupts
 	REG_USART3_IDR = 0xFFFFFFFF;
+	NVIC_EnableIRQ(USART1_IRQn);
 
 	// Configure PDC channels
 	REG_USART3_TCR = 0;
@@ -71,6 +68,7 @@ bool USART3_is_error() {
 void USART3_reset(bool tx, bool rx) {
 
 	if (tx == true) {
+
 		// Disable PDC channel and reset TX
 		REG_USART3_PTCR = US_PTCR_TXTDIS;
 		REG_USART3_CR = US_CR_RSTTX | US_CR_RSTSTA;
@@ -84,9 +82,13 @@ void USART3_reset(bool tx, bool rx) {
 	}
 
 	if (rx == true) {
+
 		// Disable PDC channel and reset RX
 		REG_USART3_PTCR = US_PTCR_RXTDIS;
 		REG_USART3_CR = US_CR_RSTRX | US_CR_RSTSTA;
+
+		// Disable all interrupts
+		REG_USART3_IDR = 0xFFFFFFFF;
 
 		// Reset PDC channel
 		REG_USART3_RCR = 0;
@@ -98,10 +100,7 @@ void USART3_reset(bool tx, bool rx) {
 }
 
 
-void USART3_TX_start(uint32_t size) {
-
-	if (REG_USART3_TCR != 0)
-		return;
+void USART3_start_tx(uint32_t size) {
 
 	// Initialize DMA for transfer 
 	REG_USART3_PTCR = US_PTCR_TXTDIS;
@@ -110,32 +109,52 @@ void USART3_TX_start(uint32_t size) {
 	REG_USART3_PTCR = US_PTCR_TXTEN;
 }
 
-bool USART3_TX_is_complete() {
+bool USART3_is_tx_complete() {
 	uint32_t reg = REG_USART3_CSR;
 	return (reg & US_CSR_TXEMPTY);
 }
 
-uint8_t* USART3_TX_get_buffer_address() {
+uint8_t* USART3_get_tx_buffer_address() {
 	return g_tx_buffer;
 }
 
 
-void USART3_RX_start(uint32_t size) {
+void USART3_start_rx() {
 
-	if (REG_USART3_RCR != 0)
-		return;
+	// Disable DMA
+	REG_USART3_PTCR = US_PTCR_RXTDIS;
+
+	// Initialize frame timeout
+	REG_USART3_RTOR = 35;
+	REG_USART3_CR |= US_CR_STTTO;
+	REG_USART3_IER = US_IER_TIMEOUT;
 
 	// Initialize DMA for receive
-	REG_USART3_PTCR = US_PTCR_RXTDIS;
 	REG_USART3_RPR = (uint32_t)g_rx_buffer;
-	REG_USART3_RCR = size;
+	REG_USART3_RCR = MAX_BUFFER_SIZE;
+
+	// Enable DMA
 	REG_USART3_PTCR = US_PTCR_RXTEN;
 }
 
-bool USART3_RX_is_complete() {
-	return (REG_USART3_RCR == 0);
+bool USART3_is_frame_received() {
+	return REG_USART3_CSR & US_CSR_TIMEOUT;
 }
 
-uint8_t* USART3_RX_get_buffer_address() {
+uint32_t USART3_get_frame_size() {
+	return MAX_BUFFER_SIZE - REG_USART3_RCR;
+}
+
+uint8_t* USART3_get_rx_buffer_address() {
 	return g_rx_buffer;
+}
+
+
+//
+// This for only frame timeout IRQ
+//
+void USART3_Handler() {
+	// Disable DMA and frame timeout IRQ
+	REG_USART3_IDR = US_IER_TIMEOUT;
+	REG_USART3_PTCR = US_PTCR_RXTDIS;
 }

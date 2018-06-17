@@ -1,8 +1,6 @@
 #ifndef __EEPROM_H__
 #define __EEPROM_H__
 
-// LIBRARY VERSION: 0.0.0
-
 /**************************************************************************
 * @brief	Function for read data from EEPROM
 * @param	address: address to EEPROM memory cell

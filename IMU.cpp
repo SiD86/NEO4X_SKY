@@ -233,8 +233,8 @@ static void error_status_update(bool check_MPU6050, bool check_BMP280, bool is_f
 		uint32_t status = BMP280_get_status();
 		if (status == BMP280_DRIVER_ERROR) {
 
-			g_BMP280_error_count;
-			if (++g_BMP280_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
+			++g_BMP280_error_count;
+			if (g_BMP280_error_count >= MAX_ERROR_COUNT || is_fatal_operation == true)
 				SET_BIT(g_status, IMU_BMP280_ERROR);
 		}
 		else if (status == BMP280_DRIVER_NO_ERROR) {

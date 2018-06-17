@@ -149,13 +149,18 @@ static void process_ESC_temperature() {
 
 static void process_hull_vibration() {
 
-	const float alpha = 0.0005; // Filtering parameter
-	const float convert_factor = 255.0 / 4095.0;
+	const float alpha = 0.005; // Filtering parameter
+	const float convert_factor = 255.0 / 1000.0;
 
 	// Calculate ADC
 	uint32_t adc = ADC_get_data(ADC_VIBRATION_CHANNEL);
 	adc = adc * (3.3 / g_sensors_power_supply_voltage);
-	adc = adc * convert_factor; // Convert [0; 4095] -> [0; 255]
+
+	// Convert [0; 4095] -> [0; 255]
+	adc = adc * convert_factor; 
+	if (adc > 255) {
+		adc = 255;
+	}
 
 	// Filtering [flt = alpha * uflt + (1 - alpha) * flt]
 	if (g_hull_vibration == 0)

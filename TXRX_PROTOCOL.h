@@ -3,20 +3,14 @@
 
 namespace TXRX {
 
-	// Packet size - 39
+	// Packet size - 38
 	#pragma pack (push, 1)
 	struct fly_controller_packet_t {
-		uint8_t type;
 		uint16_t number;
 		uint8_t data[32];
 		uint32_t CRC;
 	};
 	#pragma pack (pop)
-
-	const uint8_t TYPE_STATE_PACKET						= 0x00;
-	const uint8_t TYPE_CONTROL_PACKET					= 0x01;
-	const uint8_t TYPE_CONFIG_REQ_PACKET				= 0x02;
-	const uint8_t TYPE_CONFIG_ACK_PACKET				= 0x03;
 }
 
 namespace TXRX {
@@ -49,7 +43,7 @@ namespace TXRX {
 	const uint8_t MAIN_STA_FATAL_ERROR					= 0x01;
 	const uint8_t MAIN_STA_CONFIG_ERROR					= 0x02;
 	const uint8_t MAIN_STA_COMMUNICATION_BREAK			= 0x04;
-	const uint8_t MAIN_STA_COMMUNICATION_DESYNC			= 0x08;
+	//const uint8_t MAIN_STA_COMMUNICATION_DESYNC			= 0x08;
 	const uint8_t MAIN_STA_MAIN_LOW_VOLTAGE				= 0x10;
 	const uint8_t MAIN_STA_WIRELESS_LOW_VOLTAGE			= 0x20;
 	const uint8_t MAIN_STA_SENSORS_LOW_VOLTAGE			= 0x40;
@@ -98,21 +92,17 @@ namespace TXRX {
 namespace TXRX {
 
 	#pragma pack (push, 1)
-	struct configure_data_t {
-		uint8_t cmd;
-		uint8_t bytes;
-		uint16_t address;
-		uint8_t data[28];
+	struct configuration_data_t {
+		uint8_t command;
+		uint8_t data[256];
+		uint32_t CRC;
 	};
-	#pragma pack (pop) 
+	#pragma pack (pop)
 
-	const uint8_t CFG_CMD_READ_DEVICE_ID				= 0x01;
-	const uint8_t CFG_CMD_READ_BLOCK					= 0x02;
-	const uint8_t CFG_CMD_WRITE_BLOCK					= 0x03;
-	const uint8_t CFG_CMD_SET_DEFAULT					= 0x04;
-	const uint8_t CFG_CMD_SOFTWARE_RESET				= 0x05;
-
-	const uint8_t CFG_OPERATION_ERROR					= 0xFF;
+	const uint8_t CMD_CONFIG_READ_INFORMATION			= 0x01;
+	const uint8_t CMD_CONFIG_READ_MEMORY				= 0x02;
+	const uint8_t CMD_CONFIG_WRITE_MEMORY				= 0x03;
+	const uint8_t CMD_CONFIG_RESET						= 0xFF;
 }
 
 #endif /* _TXRX_PROTOCOL_H_ */

@@ -90,6 +90,9 @@
     <ClInclude Include="PDG.h">
       <Filter>Заголовочные файлы\FLY_CORE</Filter>
     </ClInclude>
+    <ClInclude Include="LIBRARY\USART1_PDC.h">
+      <Filter>library</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="library\I2C.cpp">
@@ -139,6 +142,9 @@
     </ClCompile>
     <ClCompile Include="PDG.cpp">
       <Filter>Файлы исходного кода\FLY_CORE</Filter>
+    </ClCompile>
+    <ClCompile Include="LIBRARY\USART1_PDC.cpp">
+      <Filter>library</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -7,8 +7,7 @@
 // Error bits
 //
 #define COMMUNICATION_NO_ERROR				(0x00)
-#define COMMUNICATION_DESYNC				(0x01)
-#define COMMUNICATION_BREAK					(0x02)
+#define COMMUNICATION_BREAK					(0x01)
 
 
 //

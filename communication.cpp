@@ -9,7 +9,7 @@
 
 static void async_process_rx();
 static void async_process_tx();
-static bool is_rx_data_valid(uint8_t* data, uint32_t packet_type);
+static bool is_rx_data_valid(uint8_t* data, uint32_t data_size);
 static uint32_t calculate_CRC(const uint8_t* data);
 
 static uint32_t g_status = COMMUNICATION_NO_ERROR;
@@ -23,13 +23,15 @@ TXRX::state_data_t g_comm_sp = {0};
 //
 void communication_initialize() {
 	USART3_initialize();
-	USART3_RX_start(PACKET_SIZE);
+	USART3_start_rx();
 }
 
 void communication_process() {
 
-	if (USART3_is_error() == true)
+	if (USART3_is_error() == true) {
 		USART3_reset(true, true);
+		USART3_start_rx();
+	}
 
 	async_process_tx();
 	async_process_rx();
@@ -53,18 +55,17 @@ static void async_process_tx() {
 		return;
 
 	// Check complete TX previus data
-	if (USART3_TX_is_complete() == false)
+	if (USART3_is_tx_complete() == false)
 		return;
 
 	// Build new packet
-	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_TX_get_buffer_address();
-	packet->type = TXRX::TYPE_STATE_PACKET;
+	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)USART3_get_tx_buffer_address();
 	packet->number = packet_number;
 	memcpy(packet->data, &g_comm_sp, PACKET_DATA_SIZE);
 	packet->CRC = calculate_CRC(packet->data);
 
 	// Start transmit
-	USART3_TX_start(PACKET_SIZE);
+	USART3_start_tx(PACKET_SIZE);
 
 	prev_tx_time = millis();	// Update time 
 	++packet_number;			// Update packet counter
@@ -73,50 +74,28 @@ static void async_process_tx() {
 static void async_process_rx() {
 
 	static uint32_t prev_rx_data_time = 0;
+
 	uint32_t current_time = millis();
 
-	if (USART3_RX_is_complete() == true) {
+	if (USART3_is_frame_received() == true) {
 
-		// Process data if no desync communication
-		if (IS_BIT_CLEAR(g_status, COMMUNICATION_DESYNC)) {
+		uint8_t* recv_data = USART3_get_tx_buffer_address();
+		uint32_t data_size = USART3_get_frame_size();
+		if (is_rx_data_valid(recv_data, data_size) == true) {
 
-			static uint32_t error_count = 0;
+			// Copy packet data field
+			TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)recv_data;
+			memcpy(&g_comm_cp, packet->data, PACKET_DATA_SIZE);
 
-			uint8_t* recv_data = USART3_RX_get_buffer_address();
-			if (is_rx_data_valid(recv_data, TXRX::TYPE_CONTROL_PACKET) == true) {
-
-				// Copy data
-				TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)recv_data;
-				memcpy(&g_comm_cp, packet->data, PACKET_DATA_SIZE);
-
-				// Reset error counter and connection lost bit
-				error_count = 0;
-				CLEAR_BIT(g_status, COMMUNICATION_BREAK);
-			}
-			else {
-
-				if (++error_count >= 5) {
-					SET_BIT(g_status, COMMUNICATION_DESYNC);
-				}
-			}
+			// Reset connection lost bit
+			CLEAR_BIT(g_status, COMMUNICATION_BREAK);
 		}
 
-		// Update time and start receive next data
+		// Update time and start receive next frame
 		prev_rx_data_time = current_time;
-		USART3_RX_start(PACKET_SIZE);
+		USART3_start_rx();
 	}
 	else {
-
-		// Check desync communication
-		if (IS_BIT_SET(g_status, COMMUNICATION_DESYNC)) {
-
-			// Wait silence window and reset receiver
-			if (current_time - prev_rx_data_time > DESYNC_SILENCE_TIME) {
-				USART3_reset(false, true);
-				USART3_RX_start(PACKET_SIZE);
-				CLEAR_BIT(g_status, COMMUNICATION_DESYNC);
-			}
-		}
 
 		// Check communication break
 		if (current_time - prev_rx_data_time > g_cfg.communication_break_time) {
@@ -125,18 +104,20 @@ static void async_process_rx() {
 	}
 }
 
-static bool is_rx_data_valid(uint8_t* data, uint32_t packet_type) {
+static bool is_rx_data_valid(uint8_t* data, uint32_t data_size) {
 
 	TXRX::fly_controller_packet_t* packet = (TXRX::fly_controller_packet_t*)data;
 
-	// Check packet type
-	if (packet->type != packet_type) {
+	// Check packet size
+	if (data_size != PACKET_SIZE) {
+		Serial.println("PACKET_SIZE");
 		return false;
 	}
 
 	// Check CRC
 	uint32_t CRC = calculate_CRC(packet->data);
 	if (packet->CRC != CRC) {
+		Serial.println("CRC");
 		return false;
 	}
 

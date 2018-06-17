@@ -1,11 +1,11 @@
-#ifndef __USART3_PDR_H__
-#define __USART3_PDR_H__
+#ifndef __USART1_PDR_H__
+#define __USART1_PDR_H__
 
 /*******************************************************************************
 * @brief	Initialize USART
 * @note		Mode 8N1
 *******************************************************************************/
-void USART3_initialize();
+void USART1_initialize();
 
 /*******************************************************************************
 * @brief	Reset USART
@@ -13,30 +13,29 @@ void USART3_initialize();
 * @param	tx: true - reset TX
 * @param	rx: true - reset RX
 *******************************************************************************/
-void USART3_reset(bool tx, bool rx);
+void USART1_reset(bool tx, bool rx);
 
 /*******************************************************************************
 * @brief	Asynchronous transmit control
 * @param	size: bytes count for transmit
 *******************************************************************************/
-void USART3_start_tx(uint32_t size);
-bool USART3_is_tx_complete();
-uint8_t* USART3_get_tx_buffer_address();
+void USART1_start_tx(uint32_t size);
+bool USART1_is_tx_complete();
+uint8_t* USART1_get_tx_buffer_address();
 
 /*******************************************************************************
 * @brief	Asynchronous receive control
 *******************************************************************************/
-void USART3_start_rx();
-bool USART3_is_frame_received();
-uint32_t USART3_get_frame_size();
-uint8_t* USART3_get_rx_buffer_address();
-
+void USART1_start_rx();
+bool USART1_is_frame_receive();
+uint32_t USART1_get_frame_size();
+uint8_t* USART1_get_rx_buffer_address();
 
 /*******************************************************************************
 * @brief	Check USART errors
 * @note		Check overrun error, framing error, parity error. Need reset USART
 * @retval	true - error, false - no errors
 *******************************************************************************/
-bool USART3_is_error();
+bool USART1_is_error();
 
-#endif /* __USART3_PDR_H__ */
+#endif /* __USART1_PDR_H__ */

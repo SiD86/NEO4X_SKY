@@ -160,9 +160,6 @@ static void error_status_update() {
 	if (IS_BIT_SET(status, COMMUNICATION_BREAK) == true)
 		SET_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_BREAK);
 
-	if (IS_BIT_SET(status, COMMUNICATION_DESYNC))
-		SET_BIT(g_status, TXRX::MAIN_STA_COMMUNICATION_DESYNC);
-
 	// Check monitoring status
 	status = monitoring_get_status();
 	if (IS_BIT_SET(status, MONITORING_MAIN_LOW_VOLTAGE) == true)
