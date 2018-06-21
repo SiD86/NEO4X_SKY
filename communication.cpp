@@ -79,7 +79,7 @@ static void async_process_rx() {
 
 	if (USART3_is_frame_received() == true) {
 
-		uint8_t* recv_data = USART3_get_tx_buffer_address();
+		uint8_t* recv_data = USART3_get_rx_buffer_address();
 		uint32_t data_size = USART3_get_frame_size();
 		if (is_rx_data_valid(recv_data, data_size) == true) {
 
@@ -110,14 +110,12 @@ static bool is_rx_data_valid(uint8_t* data, uint32_t data_size) {
 
 	// Check packet size
 	if (data_size != PACKET_SIZE) {
-		Serial.println("PACKET_SIZE");
 		return false;
 	}
 
 	// Check CRC
 	uint32_t CRC = calculate_CRC(packet->data);
 	if (packet->CRC != CRC) {
-		Serial.println("CRC");
 		return false;
 	}
 
