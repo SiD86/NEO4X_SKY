@@ -42,7 +42,7 @@ void I2C_initialize(uint32_t clock_speed) {
 
 	// Configure I2C controller
 	REG_TWI1_RHR; // Reset holding register
-	REG_TWI1_CWGR = clock_speed; // SCL speed
+	REG_TWI1_CWGR = clock_speed;
 	REG_TWI1_CR = TWI_CR_MSEN | TWI_CR_SVDIS; 
 	
 	REG_TWI1_IDR = 0xFFFFFFFF;

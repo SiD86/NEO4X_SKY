@@ -82,7 +82,6 @@ bool is_recv_request_valid(uint8_t* data, uint32_t size) {
 
 	// Check request size
 	if (size != PACKET_SIZE) {
-		Serial.println("PACKET_SIZE");
 		return false;
 	}
 	
@@ -91,7 +90,6 @@ bool is_recv_request_valid(uint8_t* data, uint32_t size) {
 	// Check CRC
 	uint32_t crc = calculcate_CRC(data);
 	if (request->CRC != crc) {
-		Serial.println("CRC");
 		return false;
 	}
 
@@ -101,10 +99,12 @@ bool is_recv_request_valid(uint8_t* data, uint32_t size) {
 
 void configuration_enter_to_change_mode() {
 
-	Serial.println("CONFIGURATION");
-
 	uint8_t eeprom_dump[256] = { 0 };
-	memset(eeprom_dump, 0xCC, sizeof(eeprom_dump));
+	memset(eeprom_dump, 0xFF, 256);
+
+	/*EEPROM_write_bytes(0x0000, eeprom_dump, 256);
+	EEPROM_read_bytes(0x0000, eeprom_dump, 256);*/
+
 
 	USART1_initialize();
 
@@ -114,15 +114,12 @@ void configuration_enter_to_change_mode() {
 		USART1_start_rx();
 		while (USART1_is_frame_receive() == false);
 
-		Serial.println("FRAME RECV");
-
 		// Get frame data and size
 		uint8_t* rx_data = USART1_get_rx_buffer_address();
 		uint32_t rx_size = USART1_get_frame_size();
 
 		// Check frame
 		if (is_recv_request_valid(rx_data, rx_size) == false) {
-			Serial.println("PACKET INVALID");
 			continue;
 		}
 
@@ -142,38 +139,29 @@ void configuration_enter_to_change_mode() {
 			response->data[4] = MAIN_VERSION;
 			response->data[5] = SUB_VERSION;
 			response->data[6] = AUX_VERSION;
-
-			Serial.println("CMD_CONFIG_READ_INFORMATION");
 			break;
 
 		case TXRX::CMD_CONFIG_READ_MEMORY:
 			response->command = request->command;
 			memcpy(response->data, eeprom_dump, sizeof(request->data));
-			
-			Serial.println("CMD_CONFIG_READ_MEMORY");
 			break;
 
 		case TXRX::CMD_CONFIG_WRITE_MEMORY:
 			response->command = request->command;
 			memcpy(eeprom_dump, request->data, sizeof(request->data));
-
-			Serial.println("CMD_CONFIG_WRITE_MEMORY");
 			break;
 
 		case TXRX::CMD_CONFIG_RESET:
 			response->command = request->command;
-
 			response->CRC = calculcate_CRC(tx_data);
-			USART1_start_tx(PACKET_SIZE);
 
-			Serial.println("CMD_CONFIG_RESET");
+			USART1_start_tx(PACKET_SIZE);
 			while (USART1_is_tx_complete() == false);
 
 			REG_RSTC_CR = 0xA5000005;
 			continue;
 
 		default:
-			Serial.println("UNKNOWN CMD");
 			continue;
 		}
 
