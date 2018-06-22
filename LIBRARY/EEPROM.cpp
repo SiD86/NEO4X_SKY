@@ -2,7 +2,7 @@
 #include "I2C.h"
 #include "EEPROM.h"
 #define ADDRESS						(0x50)
-#define MAX_BLOCK_SIZE				(32)
+#define MAX_BLOCK_SIZE				(7)
 
 bool EEPROM_read_bytes(uint32_t address, uint8_t* data, uint32_t size) {
 
@@ -39,7 +39,7 @@ bool EEPROM_write_bytes(uint32_t address, uint8_t* data, uint32_t size) {
 		data += count;
 		size -= count;
 
-		delay(100);
+		delay(50);
 	}
 	return true;
 }

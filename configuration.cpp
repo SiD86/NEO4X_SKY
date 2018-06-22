@@ -71,13 +71,6 @@ bool configuration_load() {
 	return true;
 }
 
-
-#define FRAME_ADDRESS			(0)
-#define FRAME_COMMAND			(1)
-#define FRAME_SIZE_MSB			(2)
-#define FRAME_SIZE_LSB			(3)
-#define FRAME_DATA				(4)
-
 bool is_recv_request_valid(uint8_t* data, uint32_t size) {
 
 	// Check request size
@@ -96,14 +89,12 @@ bool is_recv_request_valid(uint8_t* data, uint32_t size) {
 	return true;
 }
 
-
 void configuration_enter_to_change_mode() {
 
+	// Read memory
 	uint8_t eeprom_dump[256] = { 0 };
-	memset(eeprom_dump, 0xFF, 256);
-
-	/*EEPROM_write_bytes(0x0000, eeprom_dump, 256);
-	EEPROM_read_bytes(0x0000, eeprom_dump, 256);*/
+	if (EEPROM_read_bytes(0x0000, eeprom_dump, 256) == false)
+		Serial.println("FAIL");
 
 
 	USART1_initialize();
@@ -149,6 +140,7 @@ void configuration_enter_to_change_mode() {
 		case TXRX::CMD_CONFIG_WRITE_MEMORY:
 			response->command = request->command;
 			memcpy(eeprom_dump, request->data, sizeof(request->data));
+			EEPROM_write_bytes(0x0000, eeprom_dump, 256);
 			break;
 
 		case TXRX::CMD_CONFIG_RESET:
@@ -170,100 +162,6 @@ void configuration_enter_to_change_mode() {
 
 		while (USART1_is_tx_complete() == false);
 	}
-
-	/*uint8_t memory_dump[256] = { 0 };
-	bool is_ready = EEPROM_read_bytes(0x0000, memory_dump, sizeof(memory_dump));
-
-	// Configuration loop
-	while (true) {
-
-		// Wait command
-		while (CSS::synchronous_process(false, true) == false);
-
-		// Check data
-		if (is_ready == false || g_rx_cfg_data.address > 0xFF || g_rx_cfg_data.bytes > sizeof(TXRX::configure_data_t::data)) {
-			g_tx_cfg_data.cmd	  = TXRX::CFG_OPERATION_ERROR;
-			g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
-			g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
-			memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
-			CSS::synchronous_process(true, false);
-			continue;
-		}
-
-		// Process command
-		switch (g_rx_cfg_data.cmd)
-		{
-		case TXRX::CFG_CMD_READ_DEVICE_ID:
-			g_tx_cfg_data.cmd	  = g_rx_cfg_data.cmd;
-			g_tx_cfg_data.bytes	  = g_rx_cfg_data.bytes;
-			g_tx_cfg_data.address = g_rx_cfg_data.address;
-			g_tx_cfg_data.data[0] = 0x99;
-			g_tx_cfg_data.data[1] = 0x88;
-			g_tx_cfg_data.data[2] = 0x77;
-			g_tx_cfg_data.data[3] = 0x66;
-			break;
-
-		case TXRX::CFG_CMD_READ_BLOCK:
-			g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
-			g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
-			g_tx_cfg_data.address = g_rx_cfg_data.address;
-			memcpy(g_tx_cfg_data.data, &memory_dump[g_rx_cfg_data.address], g_rx_cfg_data.bytes);
-			break;
-
-		case TXRX::CFG_CMD_WRITE_BLOCK:
-			if (EEPROM_write_bytes(g_rx_cfg_data.address, g_rx_cfg_data.data, g_rx_cfg_data.bytes) == false) {
-				g_tx_cfg_data.cmd     = TXRX::CFG_OPERATION_ERROR;
-				g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
-				g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
-				memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
-			}
-			else {
-				g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
-				g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
-				g_tx_cfg_data.address = g_rx_cfg_data.address;
-				memcpy(&memory_dump[g_rx_cfg_data.address], g_rx_cfg_data.data, g_rx_cfg_data.bytes);
-			}
-			break;
-
-		case TXRX::CFG_CMD_SET_DEFAULT:
-			for (int i = 0; i < 256; ++i)
-				memory_dump[i] = i;
-
-			if (EEPROM_write_bytes(0x0000, memory_dump, sizeof(memory_dump)) == false) {
-				g_tx_cfg_data.cmd     = TXRX::CFG_OPERATION_ERROR;
-				g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
-				g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
-				memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
-			}
-			else {
-				g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
-				g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
-				g_tx_cfg_data.address = g_rx_cfg_data.address;
-				memset(g_tx_cfg_data.data, 0, sizeof(g_tx_cfg_data.data));
-			}
-			break;
-
-		case TXRX::CFG_CMD_SOFTWARE_RESET:
-			g_tx_cfg_data.cmd     = g_rx_cfg_data.cmd;
-			g_tx_cfg_data.bytes   = g_rx_cfg_data.bytes;
-			g_tx_cfg_data.address = g_rx_cfg_data.address;
-			memset(g_tx_cfg_data.data, 0, sizeof(g_tx_cfg_data.data));
-
-			CSS::synchronous_process(true, false);
-
-			REG_RSTC_CR = 0xA5000005;
-			continue;
-
-		default: // Unknown command
-			g_tx_cfg_data.cmd     = TXRX::CFG_OPERATION_ERROR;
-			g_tx_cfg_data.bytes   = TXRX::CFG_OPERATION_ERROR;
-			g_tx_cfg_data.address = TXRX::CFG_OPERATION_ERROR;
-			memset(g_tx_cfg_data.data, TXRX::CFG_OPERATION_ERROR, sizeof(g_tx_cfg_data.data));
-			break;
-		}
-
-		CSS::synchronous_process(true, false);
-	}*/
 }
 
 static uint32_t calculcate_CRC(uint8_t* data) {
