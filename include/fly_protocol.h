@@ -48,8 +48,8 @@ typedef struct __attribute__ ((packed)) {
 // Fly core mode
 #define FP_FLY_MODE_WAIT							(0x01)
 #define FP_FLY_MODE_STABILIZE						(0x02)
-#define FP_FLY_MODE_ANGLE_PID_SETUP					(0x03)
-#define FP_FLY_MODE_RATE_PID_SETUP					(0x04)
+#define FP_FLY_MODE_RATE_PID_SETUP					(0x03)
+#define FP_FLY_MODE_ANGLE_PID_SETUP					(0x04)
 #define FP_FLY_MODE_DEFENCE							(0xFF)
 
 // Fly core status (bitfield)
@@ -79,8 +79,8 @@ typedef struct __attribute__ ((packed)) {
 #define FP_CMD_NO_COMMAND							(0x00)
 #define FP_CMD_SET_FLY_MODE_WAIT					(0x01)
 #define FP_CMD_SET_FLY_MODE_STABILIZE				(0x02)
-#define FP_CMD_SET_FLY_MODE_ANGLE_PID_SETUP			(0x03)
-#define FP_CMD_SET_FLY_MODE_RATE_PID_SETUP			(0x04)
+#define FP_CMD_SET_FLY_MODE_RATE_PID_SETUP			(0x03)
+#define FP_CMD_SET_FLY_MODE_ANGLE_PID_SETUP			(0x04)
 
 
 //

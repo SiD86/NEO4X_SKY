@@ -10,17 +10,25 @@ typedef struct {
 	uint8_t angle_protect;
 	uint16_t ESC_PWM_frequency;
 
-	uint16_t LED_disable_time;
-	uint16_t LED_enable_time;
+	uint16_t led_disable_time;
+	uint16_t led_enable_time;
 
-	uint16_t PID_output_limit;
-	uint16_t PID_enable_threshold;
-	float PID_X[3];
-	float I_X_limit;
-	float PID_Y[3];
-	float I_Y_limit;
-	float PID_Z[3];
-	float I_Z_limit;
+	uint16_t pid_output_limit;
+	uint16_t pid_enable_threshold;
+	
+	float rate_pid_x[3];
+	float rate_i_x_limit;
+	float rate_pid_y[3];
+	float rate_i_y_limit;
+	float rate_pid_z[3];
+	float rate_i_z_limit;
+	
+	float angle_pid_x[3];
+	float angle_i_x_limit;
+	float angle_pid_y[3];
+	float angle_i_y_limit;
+	float angle_pid_z[3];
+	float angle_i_z_limit;
 
 } configuration_t;
 
