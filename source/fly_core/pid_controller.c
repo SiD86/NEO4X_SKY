@@ -1,7 +1,7 @@
 #include "sam3x8e.h"
 #include "pid_controller.h"
 #include "systimer.h"
-#define MAX_CHANNEL_COUNT				(3)
+#define MAX_CHANNEL_COUNT				(6)
 
 typedef struct {
 

@@ -50,26 +50,41 @@ bool configuration_load(void) {
 	g_cfg.angle_protect = 60;				// [-60; 60]
 	g_cfg.ESC_PWM_frequency = 400;			// 400 Hz
 
-	g_cfg.LED_disable_time = 1500;			// ms
-	g_cfg.LED_enable_time = 50;				// ms
+	g_cfg.led_disable_time = 1500;			// ms
+	g_cfg.led_enable_time = 50;				// ms
 
-	g_cfg.PID_output_limit = 400;			// 40%
-	g_cfg.PID_enable_threshold = 0;			// 0% (enable always)
+	g_cfg.pid_output_limit = 400;			// 40%
+	g_cfg.pid_enable_threshold = 0;			// 0% (enable always)
 
-	g_cfg.PID_X[0] = 0;
-	g_cfg.PID_X[1] = 0;
-	g_cfg.PID_X[2] = 0;
-	g_cfg.I_X_limit = 300;
-
-	g_cfg.PID_Y[0] = 0;
-	g_cfg.PID_Y[1] = 0;
-	g_cfg.PID_Y[2] = 0;
-	g_cfg.I_Y_limit = 300;
-
-	g_cfg.PID_Z[0] = 0;
-	g_cfg.PID_Z[1] = 0;
-	g_cfg.PID_Z[2] = 0;
-	g_cfg.I_Z_limit = 300;
+	g_cfg.rate_pid_x[0] = 0;
+	g_cfg.rate_pid_x[1] = 0;
+	g_cfg.rate_pid_x[2] = 0;
+	g_cfg.rate_i_x_limit = 300;
+	
+	g_cfg.rate_pid_y[0] = 0;
+	g_cfg.rate_pid_y[1] = 0;
+	g_cfg.rate_pid_y[2] = 0;
+	g_cfg.rate_i_y_limit = 300;
+	
+	g_cfg.rate_pid_z[0] = 0;
+	g_cfg.rate_pid_z[1] = 0;
+	g_cfg.rate_pid_z[2] = 0;
+	g_cfg.rate_i_z_limit = 300;
+	
+	g_cfg.angle_pid_x[0] = 0;
+	g_cfg.angle_pid_x[1] = 0;
+	g_cfg.angle_pid_x[2] = 0;
+	g_cfg.angle_i_x_limit = 300;
+	
+	g_cfg.angle_pid_y[0] = 0;
+	g_cfg.angle_pid_y[1] = 0;
+	g_cfg.angle_pid_y[2] = 0;
+	g_cfg.angle_i_y_limit = 300;
+	
+	g_cfg.angle_pid_z[0] = 0;
+	g_cfg.angle_pid_z[1] = 0;
+	g_cfg.angle_pid_z[2] = 0;
+	g_cfg.angle_i_z_limit = 300;
 	
 	return true;
 }

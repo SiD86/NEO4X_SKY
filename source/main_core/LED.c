@@ -80,13 +80,13 @@ void led_process(uint32_t main_core_status, uint32_t fly_core_status) {
 	static uint32_t prev_switch_time = 0;
 
 	if (REG_PIOA_ODSR & PIO_PA20) {
-		if (millis() - prev_switch_time > g_cfg.LED_enable_time) {
+		if (millis() - prev_switch_time > g_cfg.led_enable_time) {
 			REG_PIOA_CODR = PIO_PA20;	// Disable hull LEDs
 			prev_switch_time = millis();
 		}
 	}
 	else {
-		if (millis() - prev_switch_time > g_cfg.LED_disable_time) {
+		if (millis() - prev_switch_time > g_cfg.led_disable_time) {
 			REG_PIOA_SODR = PIO_PA20;	// Enable hull LEDs
 			prev_switch_time = millis();
 		}

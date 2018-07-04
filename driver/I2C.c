@@ -2,6 +2,7 @@
 #include <string.h>
 #include "sam3x8e.h"
 #include "I2C.h"
+#include "systimer.h"
 #define IS_BIT_SET(_status, _bit)		(((_status) & (_bit)) == (_bit))
 #define SDA_PIN							(PIO_PB12)
 #define SCK_PIN							(PIO_PB13)
@@ -38,6 +39,17 @@ void I2C_initialize(uint32_t clock_speed) {
 	// Disable and reset I2C controller
 	REG_TWI1_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS; // Disable PDC
 	REG_TWI1_CR = TWI_CR_SWRST | TWI_CR_SVDIS | TWI_CR_MSDIS;
+	
+	// Send 9 pulses on SCL
+	REG_PIOB_PER = SCK_PIN;
+	REG_PIOB_OER = SCK_PIN;
+	for (uint32_t i = 0; i < 9; ++i) {
+		
+		REG_PIOB_CODR = SCK_PIN;
+		delay(1);
+		REG_PIOB_SODR = SCK_PIN;
+		delay(1);
+	}
 
 	// Configure SCK and SDA as A peripheral function
 	REG_PIOB_PDR = SDA_PIN | SCK_PIN;					// Disable PIO

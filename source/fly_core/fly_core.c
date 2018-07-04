@@ -35,17 +35,30 @@ void fly_core_initialize() {
 	pdg_initialize(g_cfg.ESC_PWM_frequency);
 	imu_initialize();
 	
-	// Initialize PID controller channel for axis X
-	pid_initialize(PID_CHANNEL_X, g_cfg.PID_output_limit, g_cfg.I_X_limit);
-	pid_set_tunings(PID_CHANNEL_X, g_cfg.PID_X[0], g_cfg.PID_X[1], g_cfg.PID_X[2]);
-	
-	// Initialize PID controller channel for axis Y
-	pid_initialize(PID_CHANNEL_Y, g_cfg.PID_output_limit, g_cfg.I_Y_limit);
-	pid_set_tunings(PID_CHANNEL_Y, g_cfg.PID_Y[0], g_cfg.PID_Y[1], g_cfg.PID_Y[2]);
-	
-	// Initialize PID controller channel for axis Z
-	pid_initialize(PID_CHANNEL_Z, g_cfg.PID_output_limit, g_cfg.I_Z_limit);
-	pid_set_tunings(PID_CHANNEL_Z, g_cfg.PID_Z[0], g_cfg.PID_Z[1], g_cfg.PID_Z[2]);
+	//
+	// Initialize rate PID
+	//
+	pid_initialize(PID_CHANNEL_RATE_X, g_cfg.pid_output_limit, g_cfg.rate_i_x_limit);
+	pid_set_tunings(PID_CHANNEL_RATE_X, g_cfg.rate_pid_x[0], g_cfg.rate_pid_x[1], g_cfg.rate_pid_x[2]);
+
+	pid_initialize(PID_CHANNEL_RATE_Y, g_cfg.pid_output_limit, g_cfg.rate_i_y_limit);
+	pid_set_tunings(PID_CHANNEL_RATE_Y, g_cfg.rate_pid_y[0], g_cfg.rate_pid_y[1], g_cfg.rate_pid_y[2]);
+
+	pid_initialize(PID_CHANNEL_RATE_Z, g_cfg.pid_output_limit, g_cfg.rate_i_z_limit);
+	pid_set_tunings(PID_CHANNEL_RATE_Z, g_cfg.rate_pid_z[0], g_cfg.rate_pid_z[1], g_cfg.rate_pid_z[2]);
+
+	//
+	// Initialize angle PID
+	//
+	pid_initialize(PID_CHANNEL_ANGLE_X, g_cfg.pid_output_limit, g_cfg.angle_i_x_limit);
+	pid_set_tunings(PID_CHANNEL_ANGLE_X, g_cfg.angle_pid_x[0], g_cfg.angle_pid_x[1], g_cfg.angle_pid_x[2]);
+
+	pid_initialize(PID_CHANNEL_ANGLE_Y, g_cfg.pid_output_limit, g_cfg.angle_i_y_limit);
+	pid_set_tunings(PID_CHANNEL_ANGLE_Y, g_cfg.angle_pid_y[0], g_cfg.angle_pid_y[1], g_cfg.angle_pid_y[2]);
+
+	pid_initialize(PID_CHANNEL_ANGLE_Z, g_cfg.pid_output_limit, g_cfg.angle_i_z_limit);
+	pid_set_tunings(PID_CHANNEL_ANGLE_Z, g_cfg.angle_pid_z[0], g_cfg.angle_pid_z[1], g_cfg.angle_pid_z[2]);
+
 
 	// Check errors and request go to next state
 	error_status_update();
@@ -119,22 +132,25 @@ static void user_command_handling(uint32_t cmd) {
 		break;
 
 	case FP_CMD_SET_FLY_MODE_STABILIZE:
-		if (g_fly_mode == FP_FLY_MODE_STABILIZE)
+		if (g_fly_mode == FP_FLY_MODE_STABILIZE) {
 			break;
+		}
 		g_fly_mode = FP_FLY_MODE_STABILIZE;
 		pid_reset_all_channels();
 		break;
-
+		
 	case FP_CMD_SET_FLY_MODE_ANGLE_PID_SETUP:
-		if (g_fly_mode == FP_CMD_SET_FLY_MODE_ANGLE_PID_SETUP)
+		if (g_fly_mode == FP_CMD_SET_FLY_MODE_ANGLE_PID_SETUP) {
 			break;
+		}
 		g_fly_mode = FP_FLY_MODE_ANGLE_PID_SETUP;
 		pid_reset_all_channels();
 		break;
 
 	case FP_CMD_SET_FLY_MODE_RATE_PID_SETUP:
-		if (g_fly_mode == FP_CMD_SET_FLY_MODE_RATE_PID_SETUP)
+		if (g_fly_mode == FP_CMD_SET_FLY_MODE_RATE_PID_SETUP) {
 			break;
+		}
 		g_fly_mode = FP_FLY_MODE_RATE_PID_SETUP;
 		pid_reset_all_channels();
 		break;
@@ -163,39 +179,59 @@ static void state_PROCESS_handling(fly_protocol_control_data_t* control_data) {
 	bool is_position_updated = imu_is_position_updated();
 	
 	// Process current fly mode
-	if (g_fly_mode == FP_FLY_MODE_STABILIZE || g_fly_mode == FP_FLY_MODE_ANGLE_PID_SETUP || g_fly_mode == FP_FLY_MODE_RATE_PID_SETUP) {
+	if (g_fly_mode == FP_FLY_MODE_STABILIZE || g_fly_mode == FP_FLY_MODE_RATE_PID_SETUP || g_fly_mode == FP_FLY_MODE_ANGLE_PID_SETUP) {
 		
-		if (is_position_updated == false)
+		// PID process only after IMU update
+		if (is_position_updated == false) {
 			return;
+		}
 
 		// Runtime PID setup
-		if (g_fly_mode == FP_FLY_MODE_ANGLE_PID_SETUP || g_fly_mode == FP_FLY_MODE_RATE_PID_SETUP) {
-			pid_set_tunings(PID_CHANNEL_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
-			pid_set_tunings(PID_CHANNEL_Y, control_data->PIDY[0] / 100.0, control_data->PIDY[1] / 100.0, control_data->PIDY[2] / 100.0);
-			pid_set_tunings(PID_CHANNEL_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
+		if (g_fly_mode == FP_FLY_MODE_RATE_PID_SETUP) {
+			pid_set_tunings(PID_CHANNEL_RATE_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
+			pid_set_tunings(PID_CHANNEL_RATE_Y, control_data->PIDY[0] / 100.0, control_data->PIDY[1] / 100.0, control_data->PIDY[2] / 100.0);
+			pid_set_tunings(PID_CHANNEL_RATE_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
+		}
+		if (g_fly_mode == FP_FLY_MODE_ANGLE_PID_SETUP) {
+			pid_set_tunings(PID_CHANNEL_ANGLE_X, control_data->PIDX[0] / 100.0, control_data->PIDX[1] / 100.0, control_data->PIDX[2] / 100.0);
+			pid_set_tunings(PID_CHANNEL_ANGLE_Y, control_data->PIDY[0] / 100.0, control_data->PIDY[1] / 100.0, control_data->PIDY[2] / 100.0);
+			pid_set_tunings(PID_CHANNEL_ANGLE_Z, control_data->PIDZ[0] / 100.0, control_data->PIDZ[1] / 100.0, control_data->PIDZ[2] / 100.0);
 		}
 
 		// Calculation rate PID
 		float PIDU[3] = { 0 };    // X, Y, Z
-		if (g_fly_mode == FP_FLY_MODE_RATE_PID_SETUP) { // Use gyro data
-			PIDU[0] = pid_calculate(PID_CHANNEL_X, gyro_XYZ[0], control_data->XYZ[0]);
-			PIDU[1] = pid_calculate(PID_CHANNEL_Y, gyro_XYZ[1], control_data->XYZ[1]);
-			PIDU[2] = pid_calculate(PID_CHANNEL_Z, gyro_XYZ[2], control_data->XYZ[2]);
+		if (g_fly_mode == FP_FLY_MODE_RATE_PID_SETUP) {
+			
+			// Calculate internal PID loop (input: degree in second, output: motor power)
+			PIDU[0] = pid_calculate(PID_CHANNEL_RATE_X, gyro_XYZ[0], control_data->XYZ[0]);
+			PIDU[1] = pid_calculate(PID_CHANNEL_RATE_Y, gyro_XYZ[1], control_data->XYZ[1]);
+			PIDU[2] = pid_calculate(PID_CHANNEL_RATE_Z, gyro_XYZ[2], control_data->XYZ[2]);
 		}
-		else { // Use angle data
-			PIDU[0] = pid_calculate(PID_CHANNEL_X, XYZH[0], control_data->XYZ[0]);
-			PIDU[1] = pid_calculate(PID_CHANNEL_Y, XYZH[1], control_data->XYZ[1]);
-			PIDU[2] = pid_calculate(PID_CHANNEL_Z, XYZH[2], control_data->XYZ[2]);
+		else { // FP_FLY_MODE_ANGLE_PID_SETUP or FP_FLY_MODE_STABILIZE fly mode
+			
+			// Calculate external PID loop (input: angle, output: degree in second)
+			float internal_out[3] = {0};
+			internal_out[0] = pid_calculate(PID_CHANNEL_ANGLE_X, XYZH[0], control_data->XYZ[0]);
+			internal_out[1] = pid_calculate(PID_CHANNEL_ANGLE_Y, XYZH[1], control_data->XYZ[1]);
+			internal_out[2] = pid_calculate(PID_CHANNEL_ANGLE_Z, XYZH[2], control_data->XYZ[2]);
+			
+			// Calculate internal PID loop (input: degree in second, output: motor power)
+			PIDU[0] = pid_calculate(PID_CHANNEL_RATE_X, gyro_XYZ[0], internal_out[0]);
+			PIDU[1] = pid_calculate(PID_CHANNEL_RATE_Y, gyro_XYZ[1], internal_out[1]);
+			PIDU[2] = pid_calculate(PID_CHANNEL_RATE_Z, gyro_XYZ[2], internal_out[2]);
 		}
 
+		// Scale thrust [0; 100] -> [0; 1000]
+		int32_t thrust = control_data->thrust * 10; 
+		
 		// Constrain thrust [0; 1000 - PID_output_limit]
-		int32_t thrust = control_data->thrust * 10; // Scale thrust [0; 100] -> [0; 1000]
-		if (thrust + g_cfg.PID_output_limit > 1000)
-			thrust = 1000 - g_cfg.PID_output_limit;
+		if (thrust > 1000 - g_cfg.pid_output_limit) {
+			thrust = 1000 - g_cfg.pid_output_limit;
+		}
 
 		// Calculate motor power
 		int32_t motors_power[4] = { thrust, thrust, thrust, thrust };
-		if (thrust >= g_cfg.PID_enable_threshold) {
+		if (thrust >= g_cfg.pid_enable_threshold) {
 			motors_power[0] += SYNTHESIS(PIDU, -1.0F, -1.0F, -1.0F);
 			motors_power[1] += SYNTHESIS(PIDU, -1.0F, +1.0F, +1.0F);
 			motors_power[2] += SYNTHESIS(PIDU, +1.0F, +1.0F, -1.0F);
